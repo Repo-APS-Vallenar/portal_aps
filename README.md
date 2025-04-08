@@ -1,4 +1,3 @@
-
 Portal APS - Sistema de Gestión de Plataformas y Tickets para los usuarios de APS
 
 
@@ -145,8 +144,14 @@ CSS
 PostgreSQL
 
 👥 Equipo
+<<<<<<< HEAD
 Jorge Trigo Barrera
 
 Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
 
 (Versión inicial del Portal APS)
+=======
+
+Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
+=======
+
