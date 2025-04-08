@@ -6,18 +6,33 @@
     <div class="text-center mb-5 fade-in">
         <div class="logo-container">
             <div class="logo-text">
-                <span class="logo-letter">P</span>
-                <span class="logo-letter">O</span>
-                <span class="logo-letter">R</span>
+                <span class="logo-letter">I</span>
+                <span class="logo-letter">N</span>
                 <span class="logo-letter">T</span>
+                <span class="logo-letter">R</span>
+                <span class="logo-letter">A</span>
+                <span class="logo-letter">N</span>
+                <span class="logo-letter">E</span>
+                <span class="logo-letter">T</span>
+                <span class="logo-letter"> </span>
+                <span class="logo-letter"> </span>
+                <span class="logo-letter"> </span>
+                <span class="logo-letter"> </span>
+                <span class="logo-letter">V</span>
                 <span class="logo-letter">A</span>
                 <span class="logo-letter">L</span>
+                <span class="logo-letter">L</span>
+                <span class="logo-letter">E</span>
+                <span class="logo-letter">N</span>
+                <span class="logo-letter">A</span>
+                <span class="logo-letter">R</span>
             </div>
             <div class="logo-text">
                 <span class="logo-letter">A</span>
                 <span class="logo-letter">P</span>
                 <span class="logo-letter">S</span>
             </div>
+
         </div>
         <p class="lead mt-3">Acceso centralizado a todos los sistemas utilizados por los usuarios de la institución</p>
     </div>
@@ -34,7 +49,7 @@
         </div>
     </div>
 
-    <!-- Botón destacado para tickets con animación -->
+    <!-- Botón destacado para tickets con animación 
     @guest
     <div class="row mb-5">
         <div class="col-12 text-center">
@@ -44,7 +59,7 @@
             </a>
         </div>
     </div>
-    @endguest
+    @endguest-->
 
     <!-- Plataformas Generalizadas con título mejorado -->
     <div class="section-title mb-4">
@@ -71,7 +86,7 @@
                                 {{ $platform['nombre'] }}
                             </h5>
                             <p class="card-text">{{ $platform['descripcion'] }}</p>
-                            <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button">
+                            <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button" target="_blank" rel="noopener noreferrer">
                                 <i class="fas fa-external-link-alt me-1"></i> Acceder
                             </a>
                         </div>
@@ -81,6 +96,23 @@
         </div>
         @endforeach
     </div>
+
+    <!-- Pie de página con información institucional -->
+    <footer class="footer mt-5 py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-center">
+                    <img src="{{ asset('images/municipalidad-vallenar.png') }}" alt="Municipalidad de Vallenar" class="footer-logo">
+                </div>
+                <div class="col-md-4 text-center">
+                    <p>Portal APS Vallenar &copy; {{ date('Y') }}</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <img src="{{ asset('images/departamento-salud.png') }}" alt="Departamento de Salud" class="footer-logo">
+                </div>
+            </div>
+        </div>
+    </footer>
 </div>
 
 @push('styles')
@@ -88,6 +120,40 @@
 /* Estilos generales */
 body {
     background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    flex: 1 0 auto;
+    padding-bottom: 0;
+}
+
+/* Footer */
+.footer {
+    background-color: #f1f1f1;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 10px 0;
+}
+
+.footer-logo {
+    max-height: 100px;
+    max-width: 100%;
+    transition: transform 0.3s ease;
+    margin: 10px 0;
+}
+
+.footer-logo:hover {
+    transform: scale(1.05);
 }
 
 /* Logo CSS */
@@ -117,15 +183,39 @@ body {
     color: #28a745;
 }
 
-.logo-text:last-child .logo-letter:nth-child(1) {
-    color: #322f6c;
+.logo-text:first-child .logo-letter:nth-child(13) {
+    color: #f29307;
 }
-
-.logo-text:last-child .logo-letter:nth-child(2) {
+.logo-text:first-child .logo-letter:nth-child(14) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(15) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(16) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(17) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(18) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(19) {
+    color: #f29307;
+}
+.logo-text:first-child .logo-letter:nth-child(20) {
     color: #f29307;
 }
 
-.logo-text:last-child .logo-letter:nth-child(3) {
+.logo-text:nth-child(2) .logo-letter {
+    color: #322f6c;
+}
+
+.logo-text:nth-child(2) .logo-letter:nth-child(2) {
+    color: #f29307;
+}
+.logo-text:nth-child(2) .logo-letter:nth-child(3) {
     color: #01a3d5;
 }
 
