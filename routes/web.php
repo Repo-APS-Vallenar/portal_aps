@@ -28,3 +28,12 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/platforms', [PlatformController::class, 'index'])->name('platforms.index');
 Route::get('/contacto', [ContactController::class, 'index'])->name('contacto');
+
+Route::get('/run-admin-seeder', function () {
+    Artisan::call('db:seed', [
+        '--class' => 'AdminUserSeeder',
+        '--force' => true,
+    ]);
+
+    return 'Seeder ejecutado correctamente';
+});
