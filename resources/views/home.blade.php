@@ -1,9 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+@include('layouts.navbar')
+<!-- Contenido principal con padding-top para compensar el navbar fijo -->
+<div class="container" style="padding-top: 20px;">
     <!-- Título del Portal con animación -->
-    <div class="text-center mb-5 fade-in">
+    <div class="text-center mb-4 fade-in">
         <div class="logo-container">
             <div class="logo-text">
                 <span class="logo-letter">I</span>
@@ -38,7 +40,7 @@
     </div>
 
     <!-- Sección de búsqueda mejorada -->
-    <div class="row mb-5">
+    <div class="row mb-4">
         <div class="col-md-6 mx-auto">
             <div class="search-container">
                 <div class="search-wrapper">
@@ -51,7 +53,7 @@
 
     <!-- Botón destacado para tickets con animación 
     @guest
-    <div class="row mb-5">
+    <div class="row mb-4">
         <div class="col-12 text-center">
             <a href="{{ route('login') }}" class="btn btn-lg btn-success pulse-button">
                 <i class="fas fa-ticket-alt me-2"></i>
@@ -62,12 +64,12 @@
     @endguest-->
 
     <!-- Plataformas Generalizadas con título mejorado -->
-    <div class="section-title mb-4">
+    <div class="section-title mb-3">
         <h2>Plataformas Utilizadas</h2>
         <div class="title-underline"></div>
     </div>
     
-    <div class="row mb-5">
+    <div class="row mb-4">
         @foreach($platforms['clinicos'] as $platform)
         <div class="col-md-4 mb-4">
             <div class="card h-100 platform-card">
@@ -98,14 +100,15 @@
     </div>
 
     <!-- Pie de página con información institucional -->
-    <footer class="footer mt-5 py-4">
+    <footer class="footer mt-4 py-3">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-4 text-center">
                     <img src="{{ asset('images/municipalidad-vallenar.png') }}" alt="Municipalidad de Vallenar" class="footer-logo">
                 </div>
                 <div class="col-md-4 text-center">
-                    <p>Portal APS Vallenar &copy; {{ date('Y') }}</p>
+                    <p class="mb-2"><i class="fas fa-map-marker-alt"></i> Calle Marañon #1379</p>
+                    <p class="mb-0">Portal APS Vallenar &copy; {{ date('Y') }}</p>
                 </div>
                 <div class="col-md-4 text-center">
                     <img src="{{ asset('images/departamento-salud.png') }}" alt="Departamento de Salud" class="footer-logo">
@@ -117,6 +120,69 @@
 
 @push('styles')
 <style>
+/* Estilos del Navbar */
+.navbar {
+    transition: all 0.3s ease;
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+.nav-link {
+    position: relative;
+    color: #2c3e50 !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: #01a3d5;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 80%;
+}
+
+.nav-link:hover {
+    color: #01a3d5 !important;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+
+
+.dropdown-item {
+    padding: 0.7rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #28a745;
+    transform: translateX(5px);
+}
+
 /* Estilos generales */
 body {
     background-color: #f8f9fa;
@@ -134,19 +200,25 @@ body {
 
 /* Footer */
 .footer {
-    background-color:rgb(255, 255, 255);
+    background-color: rgb(255, 255, 255);
     border-top: 1px solid #e0e0e0;
-    flex-shrink: 0;
-    width: 100%;
+    padding: 15px 0;
     position: fixed;
     bottom: 0;
     left: 0;
+    width: 100%;
     z-index: 100;
-    padding: 10px 0;
+}
+
+.footer p {
+    color: #2c3e50;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
 }
 
 .footer-logo {
-    max-height: 120px;
+    max-height: 80px;
     max-width: 100%;
     transition: transform 0.3s ease;
     margin: 10px 0;
@@ -249,16 +321,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Logo del portal */
-.portal-logo {
-    max-height: 200px;
-    transition: transform 0.3s ease;
-}
-
-.portal-logo:hover {
-    transform: scale(1.05);
-}
-
 /* Barra de búsqueda mejorada */
 .search-container {
     background-color: white;
@@ -302,15 +364,6 @@ body {
     outline: none;
     background-color: #fff;
     box-shadow: inset 0 0 0 2px #3498db;
-}
-
-.search-input::placeholder {
-    color: #95a5a6;
-}
-
-.search-container:focus-within .search-icon {
-    color: #2ecc71;
-    transform: scale(1.1);
 }
 
 /* Botón de tickets */
@@ -392,14 +445,37 @@ body {
 }
 
 .platform-button {
+    background-color: #01a3d5 !important;
+    border-color: #01a3d5 !important;
+    color: white !important;
     border-radius: 50px;
     padding: 8px 20px;
     transition: all 0.3s ease;
 }
 
 .platform-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    background-color: #0188b3 !important;
+    border-color: #0188b3 !important;
+    box-shadow: 0 4px 8px rgba(1, 163, 213, 0.3) !important;
+}
+
+/* Botones */
+.btn-primary {
+    background-color: #01a3d5 !important;
+    border-color: #01a3d5 !important;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover, 
+.btn-primary:focus {
+    background-color: #0188b3 !important;
+    border-color: #0188b3 !important;
+    box-shadow: 0 4px 8px rgba(1, 163, 213, 0.3) !important;
+}
+
+.btn-primary:active {
+    background-color: #016e91 !important;
+    border-color: #016e91 !important;
 }
 </style>
 @endpush
