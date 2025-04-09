@@ -15,6 +15,7 @@ return new class extends Migration
             $table->enum('role', ['admin', 'user'])->default('user');
         });
     }
+    
 
     /**
      * Reverse the migrations.
