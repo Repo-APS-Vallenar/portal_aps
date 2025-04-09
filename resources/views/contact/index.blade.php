@@ -54,6 +54,7 @@
         </div>
     </div>
 </div>
+@include('layouts.footer')
 
 @push('styles')
 <style>

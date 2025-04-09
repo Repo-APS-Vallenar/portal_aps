@@ -54,22 +54,6 @@ class PlatformController extends Controller
                     'contacto_soporte' => 'soporte@imed.cl'
                 ],
             ],
-            'administrativos' => [
-                [
-                    'nombre' => 'Sistema de Gestión Municipal',
-                    'descripcion' => 'Gestión administrativa municipal',
-                    'url' => '#',
-                    'imagen' => 'municipalidad-vallenar.png',
-                    'categoria' => 'Gestión Municipal',
-                    'estadisticas' => [
-                        'usuarios_activos' => 50,
-                        'accesos_diarios' => 25,
-                        'ultima_actualizacion' => '2024-03-20'
-                    ],
-                    'guia_acceso' => 'Acceso mediante credenciales municipales.',
-                    'contacto_soporte' => 'soporte@municipalidad.cl'
-                ],
-            ]
         ];
 
         return view('platforms.index', compact('platforms'));

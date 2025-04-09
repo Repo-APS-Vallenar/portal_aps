@@ -105,6 +105,7 @@
         @endforeach
     </div>
 </div>
+@include('layouts.footer')
 
 @push('styles')
 <style>

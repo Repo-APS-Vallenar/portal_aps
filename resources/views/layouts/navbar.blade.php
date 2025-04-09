@@ -1,8 +1,8 @@
 <!-- Navbar fijo -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-3">
+    <div class="container-fluid px-5">
         <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
-            <img src="{{ asset('images/municipalidad-vallenar.png') }}" alt="Logo" class="img-fluid" style="max-height: 40px;">
+            <img src="{{ asset('images/logo_vallenar.png') }}" alt="Logo" class="img-fluid" style="max-height: 50px;margin-right: 50px;">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
             <span class="navbar-toggler-icon"></span>
