@@ -28,8 +28,9 @@
                 <span class="logo-letter">N</span>
                 <span class="logo-letter">A</span>
                 <span class="logo-letter">R</span>
-            </div>
-            <div class="logo-text">
+                <span class="logo-letter"> </span>
+                <span class="logo-letter"> </span>
+                <span class="logo-letter"> </span>
                 <span class="logo-letter">A</span>
                 <span class="logo-letter">P</span>
                 <span class="logo-letter">S</span>
@@ -37,6 +38,45 @@
 
         </div>
         <p class="lead mt-3">Acceso centralizado a todos los sistemas utilizados por los usuarios de la institución</p>
+    </div>
+
+    <!-- Carrusel Informativo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div id="infoCarousel" class="carousel slide shadow-sm rounded" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#infoCarousel" data-bs-slide-to="0" class="active"></button>
+                    <button type="button" data-bs-target="#infoCarousel" data-bs-slide-to="1"></button>
+                    <button type="button" data-bs-target="#infoCarousel" data-bs-slide-to="2"></button>
+                </div>
+                <div class="carousel-inner rounded">
+                    <div class="carousel-item active">
+                        <div class="carousel-content bg-primary text-white p-4">
+                            <h3><i class="fas fa-clock me-2"></i>Horarios de Atención</h3>
+                            <p>Lunes a Viernes: 8:00 - 17:00<br>Sábados: 9:00 - 13:00</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="carousel-content bg-info text-white p-4">
+                            <h3><i class="fas fa-phone-alt me-2"></i>Contactos Importantes</h3>
+                            <p>Mesa de Ayuda: +56 9 1234 5678<br>Soporte Técnico: soporte@aps-vallenar.cl</p>
+                        </div>
+                    </div>
+                    <div class="carousel-item">
+                        <div class="carousel-content bg-success text-white p-4">
+                            <h3><i class="fas fa-file-alt me-2"></i>Documentación</h3>
+                            <p>Encuentra manuales y guías de uso en la sección de Documentos</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#infoCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#infoCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Sección de búsqueda mejorada -->
@@ -77,7 +117,9 @@
                     <div class="col-md-4">
                         <div class="platform-image-container">
                             <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}" 
-                                 class="platform-image" 
+                                 class="platform-image lazy"
+                                 loading="lazy"
+                                 data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
                                  alt="{{ $platform['nombre'] }}">
                         </div>
                     </div>
@@ -100,18 +142,22 @@
     </div>
 
     <!-- Pie de página con información institucional -->
-    <footer class="footer mt-4 py-3">
+    <footer class="footer">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-4 text-center">
-                    <img src="{{ asset('images/municipalidad-vallenar.png') }}" alt="Municipalidad de Vallenar" class="footer-logo">
+                <div class="col-md-3 text-center">
+                    <img src="{{ asset('images/municipalidad-vallenar.png') }}" 
+                        alt="Municipalidad de Vallenar" 
+                        class="footer-logo">
                 </div>
-                <div class="col-md-4 text-center">
-                    <p class="mb-2"><i class="fas fa-map-marker-alt"></i> Calle Marañon #1379</p>
-                    <p class="mb-0">Portal APS Vallenar &copy; {{ date('Y') }}</p>
+                <div class="col-md-6 text-center">
+                    <p><i class="fas fa-map-marker-alt"></i> Calle Marañon #1379</p>
+                    <p>Portal APS Vallenar &copy; {{ date('Y') }}</p>
                 </div>
-                <div class="col-md-4 text-center">
-                    <img src="{{ asset('images/departamento-salud.png') }}" alt="Departamento de Salud" class="footer-logo">
+                <div class="col-md-3 text-center">
+                    <img src="{{ asset('images/departamento-salud.png') }}" 
+                        alt="Departamento de Salud" 
+                        class="footer-logo">
                 </div>
             </div>
         </div>
@@ -185,43 +231,76 @@
 
 /* Estilos generales */
 body {
-    background-color: #f8f9fa;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Container principal */
 .container {
-    flex: 1 0 auto;
-    padding-bottom: 0;
+  flex: 1 0 auto;
 }
 
-/* Footer */
+/* El contenido principal */
+.content {
+  background-color: #ffffff;
+  margin: 1em;
+  padding: 1em;
+  margin-bottom: 2rem;
+}
+
+/* Estilos del footer completamente revisados */
 .footer {
-    background-color: rgb(255, 255, 255);
-    border-top: 1px solid #e0e0e0;
-    padding: 15px 0;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background-color: #f8f9fa; /* o quita este color si prefieres que sea transparente como en la imagen */
+  padding: 5px 0;
+  margin-top: 15px;
+  border-top: 1px solid #e7e7e7; /* Añade una línea sutil como separador */
+}
+
+/* Estructura más compacta para el contenido del footer */
+.footer .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+}
+
+/* Ajustes para los logos */
+.footer-logo {
+  max-height: 200px; /* Logos más pequeños */
+  max-width: 100%;
+  margin: 5px 0;
+}
+
+/* Ajustes específicos para el texto */
+.footer .col-md-4 p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #333; /* Color del texto oscuro como en la imagen */
+}
+
+/* Quitar todas las clases de padding y margin que puedan estar afectando */
+.footer.mt-4 {
+  margin-top: 0 !important;
+}
+
+.footer.py-3 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Asegurar que las columnas estén bien dimensionadas */
+.footer .col-md-4 {
+  padding: 0 10px;
 }
 
 .footer p {
-    color: #2c3e50;
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.5;
-}
-
-.footer-logo {
-    max-height: 80px;
-    max-width: 100%;
-    transition: transform 0.3s ease;
-    margin: 10px 0;
+  margin-bottom: 0.25rem; /* Reducimos el espacio entre párrafos */
+  font-size: 0.9rem; /* Opcionalmente, texto un poco más pequeño */
 }
 
 .footer-logo:hover {
@@ -255,39 +334,16 @@ body {
     color: #28a745;
 }
 
-.logo-text:first-child .logo-letter:nth-child(13) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(14) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(15) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(16) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(17) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(18) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(19) {
-    color: #f29307;
-}
-.logo-text:first-child .logo-letter:nth-child(20) {
-    color: #f29307;
-}
 
-.logo-text:nth-child(2) .logo-letter {
+
+.logo-text:first-child .logo-letter:nth-child(24) {
     color: #322f6c;
 }
 
-.logo-text:nth-child(2) .logo-letter:nth-child(2) {
+.logo-text:first-child .logo-letter:nth-child(25) {
     color: #f29307;
 }
-.logo-text:nth-child(2) .logo-letter:nth-child(3) {
+.logo-text:first-child .logo-letter:nth-child(26) {
     color: #01a3d5;
 }
 
@@ -477,6 +533,49 @@ body {
     background-color: #016e91 !important;
     border-color: #016e91 !important;
 }
+
+/* Estilos del Carrusel */
+.carousel {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.carousel-content {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: linear-gradient(45deg, #01a3d5, #0188b3);
+}
+
+.carousel-content h3 {
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.carousel-content p {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+
+.carousel-indicators {
+    margin-bottom: 1rem;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+    width: 5%;
+}
+
+/* Optimización de imágenes lazy loading */
+.lazy {
+    opacity: 0;
+    transition: opacity 0.3s ease-in;
+}
+
+.lazy.loaded {
+    opacity: 1;
+}
 </style>
 @endpush
 
@@ -502,6 +601,30 @@ document.getElementById('searchPlatform').addEventListener('input', function(e) 
         } else {
             card.closest('.col-md-4').style.display = 'none';
         }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Lazy Loading para imágenes
+    const lazyImages = document.querySelectorAll('img.lazy');
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.add('loaded');
+                observer.unobserve(img);
+            }
+        });
+    });
+
+    lazyImages.forEach(img => imageObserver.observe(img));
+
+    // Inicialización del carrusel
+    const carousel = new bootstrap.Carousel(document.getElementById('infoCarousel'), {
+        interval: 5000,
+        touch: true
     });
 });
 </script>
