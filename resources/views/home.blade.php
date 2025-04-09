@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <!-- Botón destacado para tickets con animación 
+    <!-- Botón destacado para tickets con animación -->
     @guest
     <div class="row mb-4">
         <div class="col-12 text-center">
@@ -101,7 +101,7 @@
             </a>
         </div>
     </div>
-    @endguest-->
+    @endguest
 
     <!-- Plataformas Generalizadas con título mejorado -->
     <div class="section-title mb-3">
