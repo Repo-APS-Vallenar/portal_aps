@@ -134,7 +134,7 @@ body {
 
 /* Footer */
 .footer {
-    background-color: #f1f1f1;
+    background-color:rgb(255, 255, 255);
     border-top: 1px solid #e0e0e0;
     flex-shrink: 0;
     width: 100%;
@@ -146,7 +146,7 @@ body {
 }
 
 .footer-logo {
-    max-height: 100px;
+    max-height: 120px;
     max-width: 100%;
     transition: transform 0.3s ease;
     margin: 10px 0;
