@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
@@ -11,7 +13,7 @@
                         <i class="fas fa-plus"></i> Nuevo Ticket
                     </a>
                 </div>
-
+                <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                 <div class="card-body">
                     @if (session('success'))
                         <div class="alert alert-success" role="alert">
@@ -30,6 +32,7 @@
                             No hay tickets disponibles.
                         </div>
                     @else
+                    
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
@@ -67,11 +70,11 @@
                                             <td>{{ $ticket->creator->name }}</td>
                                             <td>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</td>
                                             <td>
-                                                <a href="{{ route('tickets.show', $ticket) }}" class="btn btn-sm btn-info">
+                                                <a href="{{ route('tickets.show', $ticket) }}" class="btn btn-sm btn-success">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if(Auth::user()->isAdmin())
-                                                    <a href="{{ route('tickets.edit', $ticket) }}" class="btn btn-sm btn-primary">
+                                                    <a href="{{ route('tickets.edit', $ticket) }}" class="btn btn-sm btn-warning">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <form action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-inline">

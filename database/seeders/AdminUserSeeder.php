@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -14,13 +13,13 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!User::where('email', 'admin@aps.com')->exists()) {
-            User::create([
+        User::updateOrCreate(
+            ['email' => 'admin@aps.com'],
+            [
                 'name' => 'Administrador',
-                'email' => 'admin@aps.com',
                 'password' => Hash::make('admin123'),
-                'role' => 'admin' // si tienes esta columna
-            ]);
-        }
+                'role' => 'admin' // solo si tienes esta columna en la base de datos
+            ]
+        );
     }
 }

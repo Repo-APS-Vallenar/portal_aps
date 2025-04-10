@@ -37,3 +37,13 @@ Route::get('/run-admin-seeder', function () {
 
     return 'Seeder ejecutado correctamente';
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/comments/{comment}/edit', [TicketCommentController::class, 'edit'])->name('comments.edit');
+    Route::put('/comments/{comment}', [TicketCommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [TicketCommentController::class, 'destroy'])->name('comments.destroy');
+});
+
+Route::put('/tickets/comments/{id}', [TicketController::class, 'updateComment'])->name('tickets.updateComment');
+
+Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');

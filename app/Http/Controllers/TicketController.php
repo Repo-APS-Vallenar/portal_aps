@@ -7,6 +7,8 @@ use App\Models\TicketCategory;
 use App\Models\TicketStatus;
 use App\Models\TicketComment;
 use App\Models\User;
+use App\Models\Category;
+use App\Models\Status;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,7 +28,7 @@ class TicketController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         // Todos los usuarios pueden ver todos los tickets
         $tickets = Ticket::with(['category', 'status', 'creator', 'assignee'])
             ->latest()
@@ -40,16 +42,23 @@ class TicketController extends Controller
      */
     public function create()
     {
-        $categories = TicketCategory::where('is_active', true)
-            ->orderBy('name')
-            ->distinct()
-            ->get();
-        $statuses = TicketStatus::where('is_active', true)
-            ->orderBy('name')
-            ->select('id', 'name', 'color')
-            ->distinct()
-            ->get();
+        $categories = TicketCategory::all();
+
+        if (auth()->user()->role === 'user') {
+            $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
+
+            if (!$statusSolicitado) {
+                return redirect()->route('tickets.index')->with('error', 'No se encontró el estado "Solicitado".');
+            }
+
+            return view('tickets.create', compact('categories', 'statusSolicitado'));
+        }
+
+        // Si es admin, puedes pasarle todos los estados
+        $statuses = TicketStatus::all();
+
         return view('tickets.create', compact('categories', 'statuses'));
+
     }
 
     /**
@@ -85,25 +94,25 @@ class TicketController extends Controller
 
         $ticket = new Ticket($validated);
         $ticket->created_by = Auth::id();
-        
+
         // Obtener el estado "Solicitado"
         $solicitadoStatus = TicketStatus::where('name', 'Solicitado')->first();
         if (!$solicitadoStatus) {
             // Si no existe el estado "Solicitado", usar "Pendiente" como respaldo
             $solicitadoStatus = TicketStatus::where('name', 'Pendiente')->first();
         }
-        
+
         if (!$solicitadoStatus) {
             // Si no hay ningún estado disponible, usar el primero que encuentre
             $solicitadoStatus = TicketStatus::first();
         }
-        
+
         if (!$solicitadoStatus) {
             return redirect()->back()
                 ->with('error', 'No se encontró ningún estado disponible para el ticket.')
                 ->withInput();
         }
-        
+
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
 
@@ -117,7 +126,7 @@ class TicketController extends Controller
     public function show(Ticket $ticket)
     {
         $this->authorize('view', $ticket);
-        
+
         $ticket->load(['category', 'status', 'creator', 'assignee', 'comments.user']);
         return view('tickets.show', compact('ticket'));
     }
@@ -128,7 +137,7 @@ class TicketController extends Controller
     public function edit(Ticket $ticket)
     {
         $this->authorize('update', $ticket);
-        
+
         $categories = TicketCategory::where('is_active', true)
             ->orderBy('name')
             ->distinct()
@@ -139,7 +148,7 @@ class TicketController extends Controller
             ->distinct()
             ->get();
         $users = User::all();
-        
+
         return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users'));
     }
 
@@ -149,7 +158,7 @@ class TicketController extends Controller
     public function update(Request $request, Ticket $ticket)
     {
         $this->authorize('update', $ticket);
-        
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -190,7 +199,7 @@ class TicketController extends Controller
     public function destroy(Ticket $ticket)
     {
         $this->authorize('delete', $ticket);
-        
+
         $ticket->delete();
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado exitosamente.');
@@ -202,17 +211,49 @@ class TicketController extends Controller
     public function addComment(Request $request, Ticket $ticket)
     {
         $validated = $request->validate([
-            'content' => 'required|string',
+            'comment' => 'required|string',
             'is_internal' => 'boolean'
         ]);
 
-        $comment = new TicketComment($validated);
-        $comment->ticket_id = $ticket->id;
-        $comment->user_id = Auth::id();
-        $comment->save();
-
+        TicketComment::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => auth()->id(),
+            'comment' => $request->comment,
+            'is_internal' => $request->has('is_internal'),
+        ]);
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Comentario agregado exitosamente.');
     }
+
+    public function updateComment(Request $request, $id)
+    {
+        $request->validate([
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        $comment = TicketComment::findOrFail($id);
+
+        // Solo el autor o admin puede editar
+        if (auth()->id() !== $comment->user_id && !auth()->user()->isAdmin()) {
+            return response()->json(['success' => false], 403);
+        }
+
+        $comment->comment = $request->comment;
+        $comment->save();
+
+        return response()->json(['success' => true, 'updated_comment' => e($comment->comment)]);
+    }
+
+    public function deleteComment(Ticket $ticket, TicketComment $comment)
+    {
+        if (auth()->id() !== $comment->user_id && !auth()->user()->isAdmin()) {
+            return redirect()->back()->with('error', 'No tienes permiso para eliminar este comentario.');
+        }
+
+        $comment->delete();
+
+        return redirect()->back()->with('success', 'Comentario eliminado correctamente.');
+    }
+
 }
 
