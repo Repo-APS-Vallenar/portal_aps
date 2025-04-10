@@ -47,3 +47,20 @@ Route::middleware(['auth'])->group(function () {
 Route::put('/tickets/comments/{id}', [TicketController::class, 'updateComment'])->name('tickets.updateComment');
 
 Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
+
+Route::get('/run-seeders', function () {
+    if (auth()->check() && auth()->user()->isAdmin()) {
+        Artisan::call('db:seed', [
+            '--class' => 'CategorySeeder',
+            '--force' => true
+        ]);
+        Artisan::call('db:seed', [
+            '--class' => 'StatusSeeder',
+            '--force' => true
+        ]);
+
+        return "Seeders ejecutados correctamente.";
+    }
+
+    abort(403);
+});
