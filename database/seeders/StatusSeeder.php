@@ -12,6 +12,7 @@ class StatusSeeder extends Seeder
         TicketStatus::truncate(); // Limpia la tabla antes de poblarla
 
         TicketStatus::insert([
+            ['name' => 'Solicitado', 'color' => '#01a3d5'],     // Rojo
             ['name' => 'Pendiente', 'color' => '#dc3545'],     // Rojo
             ['name' => 'En Proceso', 'color' => '#ffc107'],    // Amarillo
             ['name' => 'Resuelto', 'color' => '#28a745'],      // Verde
