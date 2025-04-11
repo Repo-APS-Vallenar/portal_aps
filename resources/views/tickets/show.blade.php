@@ -172,6 +172,7 @@
                         </div>
                         <div class="card-body">
                             <dl class="row">
+                            @if(Auth::user()->isAdmin())
                                 @if($ticket->marca)
                                     <dt class="col-sm-4">Marca:</dt>
                                     <dd class="col-sm-8">{{ $ticket->marca }}</dd>
@@ -186,7 +187,7 @@
                                     <dt class="col-sm-4">Número de Serie:</dt>
                                     <dd class="col-sm-8">{{ $ticket->numero_serie }}</dd>
                                 @endif
-
+                            @endif
                                 @if($ticket->ubicacion)
                                     <dt class="col-sm-4">Ubicación:</dt>
                                     <dd class="col-sm-8">{{ $ticket->ubicacion }}</dd>
@@ -201,7 +202,7 @@
                                     <dt class="col-sm-4">IP Red WiFi:</dt>
                                     <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
                                 @endif
-
+                            @if(Auth::user()->isAdmin())
                                 @if($ticket->cpu)
                                     <dt class="col-sm-4">CPU:</dt>
                                     <dd class="col-sm-8">{{ $ticket->cpu }}</dd>
@@ -221,12 +222,12 @@
                                     <dt class="col-sm-4">Tarjeta de Video:</dt>
                                     <dd class="col-sm-8">{{ $ticket->tarjeta_video }}</dd>
                                 @endif
-
+                            @endif
                                 @if($ticket->id_anydesk)
                                     <dt class="col-sm-4">ID AnyDesk:</dt>
                                     <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
                                 @endif
-
+                            @if(Auth::user()->isAdmin())
                                 @if($ticket->version_windows)
                                     <dt class="col-sm-4">Versión Windows:</dt>
                                     <dd class="col-sm-8">{{ $ticket->version_windows }}</dd>
@@ -241,7 +242,7 @@
                                     <dt class="col-sm-4">Fecha de Instalación:</dt>
                                     <dd class="col-sm-8">{{ $ticket->fecha_instalacion->format('d/m/Y') }}</dd>
                                 @endif
-
+                            @endif
                                 @if($ticket->comentarios)
                                     <dt class="col-sm-4">Comentarios:</dt>
                                     <dd class="col-sm-8">{{ $ticket->comentarios }}</dd>

@@ -80,7 +80,7 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
+                                <!--<div class="mb-3">
                                     <div class="col-md-12">
                                         <label for="due_date" class="form-label">Fecha límite</label>
                                         <input type="datetime-local"
@@ -91,6 +91,7 @@
                                         @enderror
                                     </div>
                                 </div>
+                                -->
 
                                 <div class="mb-3">
                                     <div class="col-md-12">
@@ -107,6 +108,7 @@
                                 <h4 class="mb-3">Información del Equipo</h4>
 
                                 <div class="mb-3">
+                                @if(Auth::user()->isAdmin())
                                     <div class="col-md-12">
                                         <label for="marca" class="form-label">Marca</label>
                                         <input type="text" class="form-control @error('marca') is-invalid @enderror"
@@ -133,6 +135,7 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+                                @endif
                                 </div>
 
                                 <div class="mb-3">
@@ -165,9 +168,8 @@
                                         @enderror
                                     </div>
                                 </div>
-
+                                @if(Auth::user()->isAdmin())
                                 <h4 class="mb-3">Especificaciones Técnicas</h4>
-
                                 <div class="mb-3">
                                     <div class="col-md-12">
                                         <label for="cpu" class="form-label">CPU</label>
@@ -210,7 +212,7 @@
                                         @enderror
                                     </div>
                                 </div>
-
+                                @endif
                                 <h4 class="mb-3">Información de Acceso Remoto</h4>
 
                                 <div class="mb-3">
@@ -223,64 +225,9 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-12">
-                                        <label for="pass_anydesk" class="form-label">Contraseña AnyDesk</label>
-                                        <input type="text" class="form-control @error('pass_anydesk') is-invalid @enderror"
-                                            id="pass_anydesk" name="pass_anydesk" value="{{ old('pass_anydesk') }}">
-                                        @error('pass_anydesk')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
-
+                                @if(Auth::user()->isAdmin())
                                 <div class="col-md-12 mb-3">
-                                    <label for="version_windows" class="form-label">Versión Windows</label>
-                                    <input type="text" class="form-control @error('version_windows') is-invalid @enderror"
-                                        id="version_windows" name="version_windows" value="{{ old('version_windows') }}">
-                                    @error('version_windows')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label for="licencia_windows" class="form-label">Licencia Windows</label>
-                                    <input type="text" class="form-control @error('licencia_windows') is-invalid @enderror"
-                                        id="licencia_windows" name="licencia_windows" value="{{ old('licencia_windows') }}">
-                                    @error('licencia_windows')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label for="version_office" class="form-label">Versión Office</label>
-                                    <input type="text" class="form-control @error('version_office') is-invalid @enderror"
-                                        id="version_office" name="version_office" value="{{ old('version_office') }}">
-                                    @error('version_office')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label for="licencia_office" class="form-label">Licencia Office</label>
-                                    <input type="text" class="form-control @error('licencia_office') is-invalid @enderror"
-                                        id="licencia_office" name="licencia_office" value="{{ old('licencia_office') }}">
-                                    @error('licencia_office')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label for="password_cuenta" class="form-label">Contraseña de Cuenta</label>
-                                    <input type="text" class="form-control @error('password_cuenta') is-invalid @enderror"
-                                        id="password_cuenta" name="password_cuenta" value="{{ old('password_cuenta') }}">
-                                    @error('password_cuenta')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="col-md-12 mb-3">
-                                    <label for="fecha_instalacion" class="form-label">Fecha de Instalación</label>
+                                    <label for="fecha_instalacion" class="form-label">Fecha de Reinstalación</label>
                                     <input type="date" class="form-control @error('fecha_instalacion') is-invalid @enderror"
                                         id="fecha_instalacion" name="fecha_instalacion"
                                         value="{{ old('fecha_instalacion') }}">
@@ -288,6 +235,7 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                                @endif
 
                                 <div class="row mb-3">
                                     <div class="col-md-12">

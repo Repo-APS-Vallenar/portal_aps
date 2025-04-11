@@ -187,9 +187,6 @@ body {
     transition: all 0.3s ease;
 }
 
-.logo-text:first-child .logo-letter {
-    color: #28a745;
-}
 
 
 
@@ -203,6 +200,11 @@ body {
 .logo-text:first-child .logo-letter:nth-child(3) {
     color: #01a3d5;
 }
+
+.logo-text:last-child .logo-letter {
+    color: #28a745;
+}
+
 
 .logo-letter::after {
     content: '';

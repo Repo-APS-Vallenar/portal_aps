@@ -420,3 +420,45 @@ body {
     line-height: 1.5;
 }
 
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-text {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--color-primary);
+    letter-spacing: 0.15rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.logo-letter {
+    display: inline-block;
+    opacity: 0;
+    animation: fadeLetterIn 1s forwards;
+}
+
+.logo-letter:nth-child(1)  { animation-delay: 0.1s; }
+.logo-letter:nth-child(2)  { animation-delay: 0.2s; }
+.logo-letter:nth-child(3)  { animation-delay: 0.3s; }
+/* Agrega más delays según la cantidad de letras que tengas */
+
+@keyframes fadeLetterIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.logo-text {
+    font-size: clamp(12px, 5vw, 20px); /* Ajusta el tamaño de fuente entre 16px y 24px según el ancho de la ventana */
+  }
