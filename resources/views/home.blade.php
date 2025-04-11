@@ -83,7 +83,7 @@
                                         alt="{{ $platform['nombre'] }}">
                                 </div>
                             </div>
-                            @if($platform['url'] != '/login')
+                            @if($platform['url'] != '/tickets')
                                 <div class="col-md-8">
                                     <div class="card-body">
                                         <h5 class="card-title">

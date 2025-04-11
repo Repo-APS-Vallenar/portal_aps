@@ -35,7 +35,7 @@ class HomeController extends Controller
                 [
                     'nombre' => 'FixSalud',
                     'descripcion' => 'Sistema de tickets para reportes técnicos en centros de salud.',
-                    'url' => '/login',
+                    'url' => '/tickets',
                     'icono' => '',
                     'imagen' => 'fix-salud.png'
                 ],
