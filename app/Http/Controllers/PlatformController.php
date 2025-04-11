@@ -54,7 +54,7 @@ class PlatformController extends Controller
                     'nombre' => 'FixSalud',
                     'descripcion' => 'Sistema de Tickets de Soporte Informático',
                     'url' => '/login',
-                    'imagen' => 'fix-salud.png',
+                    'imagen' => 'fixsalud.png',
                     'categoria' => 'Gestión de Tickets',
                     'guia_acceso' => 'Accede a una plataforma de tickets para soluciones TI enfocado en el area de Salud Urbana y Rural de la ciudad de Vallenar',
                     'contacto_soporte' => 'informatica.aps.vallenar@gmail.cl'
