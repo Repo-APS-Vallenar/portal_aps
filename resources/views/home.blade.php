@@ -6,32 +6,6 @@
     <div class="container" style="padding-top: 20px;">
         <!-- Título del Portal con animación -->
         <div class="text-center mb-4 fade-in">
-            <div class="logo-container">
-                <div class="logo-text">
-                    <span class="logo-letter">A</span>
-                    <span class="logo-letter">P</span>
-                    <span class="logo-letter">S</span>
-                </div>
-                <div class="logo-text">
-                    <span class="logo-letter">I</span>
-                    <span class="logo-letter">N</span>
-                    <span class="logo-letter">T</span>
-                    <span class="logo-letter">R</span>
-                    <span class="logo-letter">A</span>
-                    <span class="logo-letter">N</span>
-                    <span class="logo-letter">E</span>
-                    <span class="logo-letter">T</span>
-                    <span class="logo-letter"> </span>
-                    <span class="logo-letter">V</span>
-                    <span class="logo-letter">A</span>
-                    <span class="logo-letter">L</span>
-                    <span class="logo-letter">L</span>
-                    <span class="logo-letter">E</span>
-                    <span class="logo-letter">N</span>
-                    <span class="logo-letter">A</span>
-                    <span class="logo-letter">R</span>
-                </div>
-            </div>
             <p class="lead mt-3">Acceso centralizado a todos los sistemas utilizados por los usuarios de la institución
             </p>
         </div>
@@ -91,19 +65,6 @@
             </div>
         </div>
 
-        <!-- Botón destacado para tickets con animación -->
-        @guest
-            <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <a href="{{ route('login') }}" class="btn btn-lg btn-success pulse-button">
-                        <i class="fas fa-ticket-alt me-2"></i>
-                        Plataforma de Tickets
-                    </a>
-                </div>
-            </div>
-        @endguest
-
-        <!-- Plataformas Generalizadas con título mejorado -->
         <div class="section-title mb-3">
             <h2>Plataformas Utilizadas</h2>
             <div class="title-underline"></div>
@@ -122,19 +83,35 @@
                                         alt="{{ $platform['nombre'] }}">
                                 </div>
                             </div>
-                            <div class="col-md-8">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas {{ $platform['icono'] }} me-2"></i>
-                                        {{ $platform['nombre'] }}
-                                    </h5>
-                                    <p class="card-text">{{ $platform['descripcion'] }}</p>
-                                    <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button" target="_blank"
-                                        rel="noopener noreferrer">
-                                        <i class="fas fa-external-link-alt me-1"></i> Acceder
-                                    </a>
+                            @if($platform['url'] != '/login')
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fas {{ $platform['icono'] }} me-2"></i>
+                                            {{ $platform['nombre'] }}
+                                        </h5>
+                                        <p class="card-text">{{ $platform['descripcion'] }}</p>
+                                        <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button" target="_blank"
+                                            rel="noopener noreferrer">
+                                            <i class="fas fa-external-link-alt me-1"></i> Acceder
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
+                            @else
+                                <div class="col-md-8">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fas {{ $platform['icono'] }} me-2"></i>
+                                            {{ $platform['nombre'] }}
+                                        </h5>
+                                        <p class="card-text">{{ $platform['descripcion'] }}</p>
+                                        <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button"
+                                            rel="noopener noreferrer">
+                                            <i class="fas fa-play me-1"></i> Acceder
+                                        </a>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -4,7 +4,6 @@
 <div class="container">
     <!-- Encabezado de la página -->
     <div class="text-center mb-4 fade-in">
-        <h1 class="display-4 mb-3">Plataformas Institucionales</h1>
         <p class="lead text-muted">Encuentra aquí todas las plataformas y sistemas utilizados en la institución por el personal de salud</p>
     </div>
 
@@ -34,8 +33,8 @@
                         <button type="button" class="btn btn-outline-primary" data-filter="salud">
                             <i class="fas fa-heartbeat me-2"></i>Salud
                         </button>
-                        <button type="button" class="btn btn-outline-primary" data-filter="administrativos">
-                            <i class="fas fa-building me-2"></i>Administrativos
+                        <button type="button" class="btn btn-outline-primary" data-filter="tecnicos">
+                            <i class="fas fa-building me-2"></i>Soluciones TI
                         </button>
                     </div>
                 </div>
@@ -61,23 +60,6 @@
                             </div>
                             
                             <p class="card-text">{{ $platform['descripcion'] }}</p>
-                            
-                            <div class="platform-stats mb-3">
-                                <div class="row text-center">
-                                    <div class="col-4">
-                                        <small class="text-muted">Usuarios Activos</small>
-                                        <p class="mb-0">{{ $platform['estadisticas']['usuarios_activos'] }}</p>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-muted">Accesos Diarios</small>
-                                        <p class="mb-0">{{ $platform['estadisticas']['accesos_diarios'] }}</p>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-muted">Última Actualización</small>
-                                        <p class="mb-0">{{ \Carbon\Carbon::parse($platform['estadisticas']['ultima_actualizacion'])->format('d/m/Y') }}</p>
-                                    </div>
-                                </div>
-                            </div>
 
                             <div class="platform-actions">
                                 <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2" target="_blank">

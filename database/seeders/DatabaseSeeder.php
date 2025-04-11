@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             TicketInitialDataSeeder::class,
             CategorySeeder::class,
             StatusSeeder::class,
+            LocationSeeder::class,
         ]);
     }
 }

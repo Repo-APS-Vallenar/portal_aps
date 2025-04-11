@@ -92,7 +92,12 @@ a:hover {
 }
 
 /* Títulos */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--color-accent);
 }
 
@@ -169,7 +174,7 @@ footer {
 
 .bg-accent {
     background-color: var(--color-accent) !important;
-} 
+}
 
 .search-filter-container {
     background-color: #fff;
@@ -288,8 +293,15 @@ footer {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Botón Acceder personalizado */
@@ -299,7 +311,7 @@ footer {
     transition: all 0.3s ease;
 }
 
-.btn-primary:hover, 
+.btn-primary:hover,
 .btn-primary:focus {
     background-color: #0188b3 !important;
     border-color: #0188b3 !important;
@@ -443,9 +455,18 @@ body {
     animation: fadeLetterIn 1s forwards;
 }
 
-.logo-letter:nth-child(1)  { animation-delay: 0.1s; }
-.logo-letter:nth-child(2)  { animation-delay: 0.2s; }
-.logo-letter:nth-child(3)  { animation-delay: 0.3s; }
+.logo-letter:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.logo-letter:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.logo-letter:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
 /* Agrega más delays según la cantidad de letras que tengas */
 
 @keyframes fadeLetterIn {
@@ -453,6 +474,7 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+
     from {
         opacity: 0;
         transform: translateY(-10px);
@@ -460,5 +482,72 @@ body {
 }
 
 .logo-text {
-    font-size: clamp(12px, 5vw, 20px); /* Ajusta el tamaño de fuente entre 16px y 24px según el ancho de la ventana */
-  }
+    font-size: clamp(12px, 5vw, 20px);
+    /* Ajusta el tamaño de fuente entre 16px y 24px según el ancho de la ventana */
+}
+
+.logo-letter {
+    font-size: 2.5vw;
+}
+
+.logo-letter {
+    font-size: clamp(16px, 2.5vw, 32px);
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* separa el logo del texto */
+}
+
+.logo-text {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.logo-letter {
+    font-weight: bold;
+    color: var(--main-color);
+    /* o el color que uses */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: clamp(16px, 2vw, 28px);
+    transition: transform 0.3s ease;
+}
+
+.logo-letter:hover {
+    transform: scale(1.1);
+}
+
+.intranet-logo {
+    font-weight: bold;
+    font-size: clamp(18px, 2.5vw, 32px);
+    color: var(--main-color);
+    /* o usa un color directo como #3498db */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+    cursor: default;
+}
+
+.intranet-logo:hover {
+    transform: scale(1.05);
+}
+
+.intranet-logo-gradient {
+    font-weight: bold;
+    font-size: clamp(10px, 2.5vw, 16px);
+    background: linear-gradient(90deg, #322f6c, #f29307, #01a3d5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: moveGradient 3s infinite linear;
+}
+
+@keyframes moveGradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 100% 50%;
+    }
+}

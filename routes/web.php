@@ -59,9 +59,17 @@ Route::get('/run-seeders', function () {
             '--class' => 'StatusSeeder',
             '--force' => true
         ]);
+        Artisan::call('db:seed', [
+            '--class' => 'LocationSeeder',
+            '--force' => true
+        ]);
 
         return "Seeders ejecutados correctamente.";
     }
 
     abort(403);
 });
+
+Route::put('/tickets/comments/{comment}', [TicketController::class, 'updateComment'])->name('tickets.updateComment');
+Route::delete('/tickets/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
+

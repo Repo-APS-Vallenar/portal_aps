@@ -27,7 +27,7 @@ class PlatformController extends Controller
                 ],
                 [
                     'nombre' => 'RAYEN APS',
-                    'descripcion' => 'Accede a una mejor experiencia para la APS Digital',
+                    'descripcion' => 'Mejor experiencia para la APS Digital',
                     'url' => 'https://www.rayenaps.cl/',
                     'imagen' => 'rayen-aps.png',
                     'categoria' => 'Gestión APS',
@@ -45,17 +45,23 @@ class PlatformController extends Controller
                     'url' => 'https://www.licencia.cl/sesiones/nueva/rol.profesional',
                     'imagen' => 'imed.png',
                     'categoria' => 'Licencias Médicas',
-                    'estadisticas' => [
-                        'usuarios_activos' => 80,
-                        'accesos_diarios' => 30,
-                        'ultima_actualizacion' => '2024-03-01'
-                    ],
                     'guia_acceso' => 'Se requiere lector de huellas y credenciales MINSAL.',
                     'contacto_soporte' => 'soporte@imed.cl'
                 ],
             ],
+            'tecnicos' => [
+                [
+                    'nombre' => 'FixSalud',
+                    'descripcion' => 'Sistema de Tickets de Soporte Informático',
+                    'url' => '/login',
+                    'imagen' => 'fix-salud.png',
+                    'categoria' => 'Gestión de Tickets',
+                    'guia_acceso' => 'Accede a una plataforma de tickets para soluciones TI enfocado en el area de Salud Urbana y Rural de la ciudad de Vallenar',
+                    'contacto_soporte' => 'informatica.aps.vallenar@gmail.cl'
+                ],
+            ]
         ];
 
         return view('platforms.index', compact('platforms'));
     }
-} 
+}

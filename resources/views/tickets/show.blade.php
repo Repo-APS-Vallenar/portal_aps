@@ -85,7 +85,7 @@
                                     @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
                                         <div class="mt-2">
                                             <button class="btn btn-sm btn-outline-secondary me-1"
-                                                onclick="editComment({{ $comment->id }}, '{{ addslashes($comment->comment) }}')">
+                                                onclick="editComment({{ $comment->id }}, {!! json_encode($comment->comment) !!})">
                                                 Editar
                                             </button>
 
@@ -146,32 +146,35 @@
                                 </span>
                             </dd>
 
+                            <dt class="col-sm-4">Ubicación:</dt>
+                            <dd class="col-sm-8">{{ $ticket->location->name ?? 'No asignada' }}</dd>
+
                             <dt class="col-sm-4">Asignado a:</dt>
                             <dd class="col-sm-8">
-                                {{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}
+                                {{ $ticket->assignee->name ?? 'No asignado' }}
                             </dd>
 
-                            <dt class="col-sm-4">Fecha límite:</dt>
-                            <dd class="col-sm-8">
-                                {{ $ticket->due_date ? $ticket->due_date->format('d/m/Y') : 'No establecida' }}
-                            </dd>
 
                             <dt class="col-sm-4">Última actualización:</dt>
                             <dd class="col-sm-8">
                                 {{ $ticket->updated_at->format('d/m/Y H:i') }}
                             </dd>
+
+
+                            <dt class="col-sm-4">Solución Aplicada:</dt>
+                            <dd class="col-sm-8">{{ $ticket->comentarios ?? 'No hay solución aplicada aún' }}</dd>
                         </dl>
                     </div>
                 </div>
 
                 <!-- Información del Hardware/Software -->
-                @if($ticket->marca || $ticket->modelo || $ticket->numero_serie)
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h4 class="mb-0">Información del Equipo</h4>
-                        </div>
-                        <div class="card-body">
-                            <dl class="row">
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4 class="mb-0">Información del Equipo</h4>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
                             @if(Auth::user()->isAdmin())
                                 @if($ticket->marca)
                                     <dt class="col-sm-4">Marca:</dt>
@@ -188,20 +191,20 @@
                                     <dd class="col-sm-8">{{ $ticket->numero_serie }}</dd>
                                 @endif
                             @endif
-                                @if($ticket->ubicacion)
-                                    <dt class="col-sm-4">Ubicación:</dt>
-                                    <dd class="col-sm-8">{{ $ticket->ubicacion }}</dd>
-                                @endif
+                            @if($ticket->location_id)
+                                <dt class="col-sm-4">Ubicación:</dt>
+                                <dd class="col-sm-8">{{ $ticket->location->name ?? 'No asignada' }}</dd>
+                            @endif
 
-                                @if($ticket->usuario)
-                                    <dt class="col-sm-4">Usuario:</dt>
-                                    <dd class="col-sm-8">{{ $ticket->usuario }}</dd>
-                                @endif
+                            @if($ticket->usuario)
+                                <dt class="col-sm-4">Usuario:</dt>
+                                <dd class="col-sm-8">{{ $ticket->usuario }}</dd>
+                            @endif
 
-                                @if($ticket->ip_red_wifi)
-                                    <dt class="col-sm-4">IP Red WiFi:</dt>
-                                    <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
-                                @endif
+                            @if($ticket->ip_red_wifi)
+                                <dt class="col-sm-4">IP Red WiFi:</dt>
+                                <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
+                            @endif
                             @if(Auth::user()->isAdmin())
                                 @if($ticket->cpu)
                                     <dt class="col-sm-4">CPU:</dt>
@@ -223,10 +226,10 @@
                                     <dd class="col-sm-8">{{ $ticket->tarjeta_video }}</dd>
                                 @endif
                             @endif
-                                @if($ticket->id_anydesk)
-                                    <dt class="col-sm-4">ID AnyDesk:</dt>
-                                    <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
-                                @endif
+                            @if($ticket->id_anydesk)
+                                <dt class="col-sm-4">ID AnyDesk:</dt>
+                                <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
+                            @endif
                             @if(Auth::user()->isAdmin())
                                 @if($ticket->version_windows)
                                     <dt class="col-sm-4">Versión Windows:</dt>
@@ -243,14 +246,10 @@
                                     <dd class="col-sm-8">{{ $ticket->fecha_instalacion->format('d/m/Y') }}</dd>
                                 @endif
                             @endif
-                                @if($ticket->comentarios)
-                                    <dt class="col-sm-4">Comentarios:</dt>
-                                    <dd class="col-sm-8">{{ $ticket->comentarios }}</dd>
-                                @endif
-                            </dl>
-                        </div>
+                        </dl>
                     </div>
-                @endif
+                </div>
+
             </div>
         </div>
     </div>
@@ -261,14 +260,14 @@
 
             // Reemplazar el texto por un formulario
             commentText.outerHTML = `
-                    <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
-                        <div class="mb-2">
-                            <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
-                        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
-                    </form>
-                `;
+                                                        <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
+                                                            <div class="mb-2">
+                                                                <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
+                                                            </div>
+                                                            <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
+                                                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
+                                                        </form>
+                                                    `;
         }
 
         function cancelEdit(commentId, originalText) {

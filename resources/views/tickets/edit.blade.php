@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="mb-0">Editar Ticket #{{ $ticket->id }}</h2>
+                    <h2 class="mb-0">Editar Ticket Enviado por: {{ $ticket->title }}</h2>
                 </div>
 
                 <div class="card-body">
@@ -15,7 +15,7 @@
                         @method('PUT')
 
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título</label>
+                            <label for="title" class="form-label">Nombre del funcionario</label>
                             <input type="text" class="form-control @error('title') is-invalid @enderror" 
                                 id="title" name="title" value="{{ old('title', $ticket->title) }}" required>
                             @error('title')
@@ -120,16 +120,6 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="due_date" class="form-label">Fecha límite</label>
-                            <input type="datetime-local" class="form-control @error('due_date') is-invalid @enderror" 
-                                id="due_date" name="due_date" 
-                                value="{{ old('due_date', $ticket->due_date ? $ticket->due_date->format('Y-m-d\TH:i') : '') }}">
-                            @error('due_date')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
                         <hr>
 
                         <h4>Información del Equipo</h4>
@@ -165,14 +155,16 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="ubicacion" class="form-label">Ubicación</label>
-                                <input type="text" class="form-control @error('ubicacion') is-invalid @enderror" 
-                                    id="ubicacion" name="ubicacion" value="{{ old('ubicacion', $ticket->ubicacion) }}">
-                                @error('ubicacion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                <label for="location_id" class="form-label">Ubicación</label>
+                                <select class="form-select" id="location_id" name="location_id">
+                                    <option value="">-- Selecciona una ubicación --</option>
+                                    @foreach($locations as $location)
+                                        <option value="{{ $location->id }}" {{ $ticket->location_id == $location->id ? 'selected' : '' }}>
+                                            {{ $location->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
-                        </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -255,7 +247,7 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="comentarios" class="form-label">Comentarios Adicionales</label>
+                            <label for="comentarios" class="form-label">Solución Aplicada</label>
                             <textarea class="form-control @error('comentarios') is-invalid @enderror" 
                                 id="comentarios" name="comentarios" rows="3">{{ old('comentarios', $ticket->comentarios) }}</textarea>
                             @error('comentarios')

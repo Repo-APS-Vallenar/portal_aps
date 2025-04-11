@@ -7,8 +7,7 @@ use App\Models\TicketCategory;
 use App\Models\TicketStatus;
 use App\Models\TicketComment;
 use App\Models\User;
-use App\Models\Category;
-use App\Models\Status;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,7 +42,7 @@ class TicketController extends Controller
     public function create()
     {
         $categories = TicketCategory::all();
-
+        $locations = Location::all();
         if (auth()->user()->role === 'user') {
             $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
 
@@ -51,19 +50,23 @@ class TicketController extends Controller
                 return redirect()->route('tickets.index')->with('error', 'No se encontró el estado "Solicitado".');
             }
 
-            return view('tickets.create', compact('categories', 'statusSolicitado'));
+            return view('tickets.create', compact('categories', 'statusSolicitado', 'locations'));
         }
 
         // Si es admin, puedes pasarle todos los estados
         $statuses = TicketStatus::all();
 
-        return view('tickets.create', compact('categories', 'statuses'));
+
+
+
+        return view('tickets.create', compact('categories', 'statuses', 'locations'));
 
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location');
+    }
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -74,7 +77,7 @@ class TicketController extends Controller
             'marca' => 'nullable|string|max:255',
             'modelo' => 'nullable|string|max:255',
             'numero_serie' => 'nullable|string|max:255',
-            'ubicacion' => 'nullable|string|max:255',
+            'location_id' => 'required|exists:locations,id',
             'usuario' => 'nullable|string|max:255',
             'ip_red_wifi' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
@@ -90,6 +93,8 @@ class TicketController extends Controller
             'password_cuenta' => 'nullable|string|max:255',
             'fecha_instalacion' => 'nullable|date',
             'comentarios' => 'nullable|string',
+            'contact_phone',
+            'contact_email',
         ]);
 
         $ticket = new Ticket($validated);
@@ -127,7 +132,7 @@ class TicketController extends Controller
     {
         $this->authorize('view', $ticket);
 
-        $ticket->load(['category', 'status', 'creator', 'assignee', 'comments.user']);
+        $ticket->load(['category', 'status', 'creator', 'location', 'assignee', 'comments.user']);
         return view('tickets.show', compact('ticket'));
     }
 
@@ -137,7 +142,7 @@ class TicketController extends Controller
     public function edit(Ticket $ticket)
     {
         $this->authorize('update', $ticket);
-
+        $locations = Location::all();
         $categories = TicketCategory::where('is_active', true)
             ->orderBy('name')
             ->distinct()
@@ -149,7 +154,8 @@ class TicketController extends Controller
             ->get();
         $users = User::all();
 
-        return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users'));
+
+        return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users', 'locations'));
     }
 
     /**
@@ -169,7 +175,7 @@ class TicketController extends Controller
             'marca' => 'nullable|string|max:255',
             'modelo' => 'nullable|string|max:255',
             'numero_serie' => 'nullable|string|max:255',
-            'ubicacion' => 'nullable|string|max:255',
+            'location_id' => 'required|exists:locations,id',
             'usuario' => 'nullable|string|max:255',
             'ip_red_wifi' => 'nullable|string|max:255',
             'cpu' => 'nullable|string|max:255',
@@ -185,10 +191,12 @@ class TicketController extends Controller
             'password_cuenta' => 'nullable|string|max:255',
             'fecha_instalacion' => 'nullable|date',
             'comentarios' => 'nullable|string',
+            'contact_phone',
+            'contact_email',
         ]);
 
         $ticket->update($validated);
-
+        //dd($request->all());
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket actualizado exitosamente.');
     }

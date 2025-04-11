@@ -11,11 +11,20 @@
 
                     <div class="card-body">
                         <form method="POST" action="{{ route('tickets.store') }}">
+                            @if ($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul>
+                                        @foreach ($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                             @csrf
 
                             <div class="mb-3">
-                                <div class="col-md-12">
-                                    <label for="title" class="form-label">Título</label>
+                                <div class="col-md-12 mb-3">
+                                    <label for="title" class="form-label">Nombre del funcionario (Quien hace la solicitud)</label>
                                     <input type="text" class="form-control @error('title') is-invalid @enderror" id="title"
                                         name="title" value="{{ old('title') }}" required>
                                     @error('title')
@@ -41,7 +50,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <div class="col-md-12">
+                                <div class="col-md-12 mb-3">
                                     <label for="priority" class="form-label">Prioridad</label>
                                     <select class="form-select @error('priority') is-invalid @enderror" id="priority"
                                         name="priority" required>
@@ -93,19 +102,15 @@
                                 </div>
                                 -->
 
-                                <div class="mb-3">
-                                    <div class="col-md-12">
-                                        <label for="description" class="form-label">Descripción</label>
-                                        <textarea class="form-control @error('description') is-invalid @enderror"
-                                            id="description" name="description" rows="4"
-                                            required>{{ old('description') }}</textarea>
-                                        @error('description')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
                                 <h4 class="mb-3">Información del Equipo</h4>
+                                <div class="col-md-12 mb-3">
+                                    <label for="description" class="form-label">Descripción del problema</label>
+                                    <textarea class="form-control @error('description') is-invalid @enderror"
+                                            id="description" name="description" rows="3">{{ old('description') }}</textarea>
+                                    @error('description')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
 
                                 <div class="mb-3">
                                 @if(Auth::user()->isAdmin())
@@ -139,11 +144,17 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <div class="col-md-12">
-                                        <label for="ubicacion" class="form-label">Ubicación</label>
-                                        <input type="text" class="form-control @error('ubicacion') is-invalid @enderror"
-                                            id="ubicacion" name="ubicacion" value="{{ old('ubicacion') }}">
-                                        @error('ubicacion')
+                                    <div class="col-md-12 mb-3">
+                                        <label for="location_id" class="form-label">Ubicación</label>
+                                        <select class="form-select @error('location_id') is-invalid @enderror" id="location_id" name="location_id" required>
+                                            <option value="">Selecciona una ubicación</option>
+                                            @foreach($locations as $location)
+                                                <option value="{{ $location->id }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>
+                                                    {{ $location->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('location_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -158,6 +169,9 @@
                                     </div>
                                 </div>
 
+
+                                @if(Auth::user()->isAdmin())
+
                                 <div class="mb-3">
                                     <div class="col-md-12">
                                         <label for="ip_red_wifi" class="form-label">IP/Red WiFi</label>
@@ -168,7 +182,7 @@
                                         @enderror
                                     </div>
                                 </div>
-                                @if(Auth::user()->isAdmin())
+
                                 <h4 class="mb-3">Especificaciones Técnicas</h4>
                                 <div class="mb-3">
                                     <div class="col-md-12">
@@ -213,6 +227,7 @@
                                     </div>
                                 </div>
                                 @endif
+                                @if(Auth::user()->isAdmin())
                                 <h4 class="mb-3">Información de Acceso Remoto</h4>
 
                                 <div class="mb-3">
@@ -224,7 +239,8 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-
+                                </div>
+                                @endif
                                 @if(Auth::user()->isAdmin())
                                 <div class="col-md-12 mb-3">
                                     <label for="fecha_instalacion" class="form-label">Fecha de Reinstalación</label>
@@ -236,11 +252,27 @@
                                     @enderror
                                 </div>
                                 @endif
+                                <div class="col-md-12 mb-3">
+                                    <label for="contact_phone" class="form-label">Número de contacto</label>
+                                    <input type="text" class="form-control @error('contact_phone') is-invalid @enderror"
+                                        id="contact_phone" name="contact_phone" value="{{ old('contact_phone') }}">
+                                    @error('contact_phone')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
 
+                                <div class="col-md-12 mb-3">
+                                    <label for="contact_email" class="form-label">Correo electrónico de contacto</label>
+                                    <input type="email" class="form-control @error('contact_email') is-invalid @enderror"
+                                        id="contact_email" name="contact_email" value="{{ old('contact_email') }}">
+                                    @error('contact_email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                @if(Auth::user()->isAdmin())
                                 <div class="row mb-3">
                                     <div class="col-md-12">
-                                        <label for="comentarios" class="form-label">Comentarios sobre el ticket (Tipo de
-                                            error/falla/problema/etc)</label>
+                                        <label for="comentarios" class="form-label">Comentarios sobre el ticket (Que tareas se realizaron, que se hizo para la solucion, etc)</label>
                                         <textarea class="form-control @error('comentarios') is-invalid @enderror"
                                             id="comentarios" name="comentarios" rows="3">{{ old('comentarios') }}</textarea>
                                         @error('comentarios')
@@ -248,7 +280,7 @@
                                         @enderror
                                     </div>
                                 </div>
-
+                                @endif
                                 <div class="d-flex justify-content-between">
                                     <a href="{{ route('tickets.index') }}" class="btn btn-secondary">Cancelar</a>
                                     <button type="submit" class="btn btn-primary">Crear Ticket</button>

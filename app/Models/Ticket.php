@@ -32,11 +32,10 @@ class Ticket extends Model
         'created_by',
         'assigned_to',
         'priority',
-        'due_date',
         'marca',
         'modelo',
         'numero_serie',
-        'ubicacion',
+        'location_id',
         'usuario',
         'ip_red_wifi',
         'cpu',
@@ -51,7 +50,9 @@ class Ticket extends Model
         'licencia_office',
         'password_cuenta',
         'fecha_instalacion',
-        'comentarios'
+        'comentarios',
+        'contact_phone',
+        'contact_email',
     ];
 
     protected $casts = [
@@ -101,7 +102,7 @@ class Ticket extends Model
     // Scopes
     public function scopeActive($query)
     {
-        return $query->whereHas('status', function($q) {
+        return $query->whereHas('status', function ($q) {
             $q->where('is_active', true);
         });
     }
@@ -134,15 +135,15 @@ class Ticket extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now())
-                    ->whereHas('status', function($q) {
-                        $q->whereNotIn('name', ['Resuelto', 'Cerrado', 'Cancelado']);
-                    });
+            ->whereHas('status', function ($q) {
+                $q->whereNotIn('name', ['Resuelto', 'Cerrado', 'Cancelado']);
+            });
     }
 
     // Método para obtener el color de la prioridad
     public function getPriorityColor()
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             self::PRIORITY_BAJA => 'success',
             self::PRIORITY_MEDIA => 'info',
             self::PRIORITY_ALTA => 'warning',
@@ -154,12 +155,16 @@ class Ticket extends Model
     // Método para obtener el texto de la prioridad
     public function getPriorityText()
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             self::PRIORITY_BAJA => 'Baja',
             self::PRIORITY_MEDIA => 'Media',
             self::PRIORITY_ALTA => 'Alta',
             self::PRIORITY_URGENTE => 'Urgente',
             default => 'Desconocida'
         };
+    }
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }
