@@ -37,7 +37,7 @@ class HomeController extends Controller
                     'descripcion' => 'Sistema de tickets para reportes técnicos en centros de salud.',
                     'url' => '/tickets',
                     'icono' => '',
-                    'imagen' => 'fix-salud.png'
+                    'imagen' => 'fixsalud.png'
                 ],
             ],
         ];
