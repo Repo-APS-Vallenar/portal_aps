@@ -68,40 +68,43 @@
                             <p class="text-muted">No hay comentarios aún.</p>
                         @else
                             @foreach($ticket->comments as $comment)
-                                <div class="comment mb-4" id="comment-{{ $comment->id }}">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-1">{{ $comment->user->name }}</h6>
-                                        <small class="text-muted">{{ $comment->created_at->format('d/m/Y H:i') }}</small>
-                                    </div>
-
-                                    <!-- Texto del comentario -->
-                                    <p class="mb-1" id="comment-text-{{ $comment->id }}">{{ $comment->comment }}</p>
-
-                                    @if($comment->is_internal)
-                                        <span class="badge bg-warning">Interno</span>
-                                    @endif
-
-                                    <!-- Botones para editar y eliminar (solo si es admin o el autor del comentario) -->
-                                    @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
-                                        <div class="mt-2">
-                                            <button class="btn btn-sm btn-outline-secondary me-1"
-                                                onclick="editComment({{ $comment->id }}, {!! json_encode($comment->comment) !!})">
-                                                Editar
-                                            </button>
-
-                                            <form action="{{ route('tickets.deleteComment', [$ticket->id, $comment->id]) }}"
-                                                method="POST" class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-sm btn-outline-danger"
-                                                    onclick="return confirm('¿Estás seguro de eliminar este comentario?')">
-                                                    Eliminar
-                                                </button>
-                                            </form>
+                                @if(!$comment->is_internal || (Auth::check() && Auth::user()->isAdmin()))
+                                    <div class="comment mb-4" id="comment-{{ $comment->id }}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-1">{{ $comment->user->name }}</h6>
+                                            <small class="text-muted">{{ $comment->created_at->format('d/m/Y H:i') }}</small>
                                         </div>
-                                    @endif
-                                </div>
+
+                                        <!-- Texto del comentario -->
+                                        <p class="mb-1" id="comment-text-{{ $comment->id }}">{{ $comment->comment }}</p>
+
+                                        @if($comment->is_internal)
+                                            <span class="badge bg-warning">Interno</span>
+                                        @endif
+
+                                        <!-- Botones para editar y eliminar (solo si es admin o el autor del comentario) -->
+                                        @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-secondary me-1"
+                                                    onclick="editComment({{ $comment->id }}, {!! json_encode($comment->comment) !!})">
+                                                    Editar
+                                                </button>
+
+                                                <form action="{{ route('tickets.deleteComment', [$ticket->id, $comment->id]) }}"
+                                                    method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('¿Estás seguro de eliminar este comentario?')">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             @endforeach
+
                         @endif
 
                         <!-- Formulario para nuevo comentario -->
@@ -260,14 +263,14 @@
 
             // Reemplazar el texto por un formulario
             commentText.outerHTML = `
-                                                        <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
-                                                            <div class="mb-2">
-                                                                <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
-                                                            </div>
-                                                            <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
-                                                            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
-                                                        </form>
-                                                    `;
+                                                            <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
+                                                                <div class="mb-2">
+                                                                    <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
+                                                                <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
+                                                            </form>
+                                                        `;
         }
 
         function cancelEdit(commentId, originalText) {
