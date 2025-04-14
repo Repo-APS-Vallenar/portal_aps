@@ -54,6 +54,11 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+    public function isSuperadmin()
+    {
+        return $this->role === 'superadmin';
+    }
+    
 
     /**
      * Verifica si el usuario es un usuario regular

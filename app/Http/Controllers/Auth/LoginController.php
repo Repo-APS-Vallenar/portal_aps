@@ -7,7 +7,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Validation\ValidationException;
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
@@ -39,6 +39,30 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
+    protected function credentials(Request $request)
+    {
+        return [
+            'email' => $request->get('email'),
+            'password' => $request->get('password'),
+            'is_active' => true, // Solo usuarios activos pueden iniciar sesión
+        ];
+    }
+
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if ($user && !$user->is_active) {
+            throw ValidationException::withMessages([
+                'email' => ['Tu cuenta está deshabilitada. Contacta con el administrador.'],
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => [trans('auth.failed')],
+        ]);
+    }
+
     /**
      * Handle a login request to the application.
      *
@@ -47,19 +71,16 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required'],
-        ]);
+        $this->validateLogin($request);
+
+        $credentials = $this->credentials($request);
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended($this->redirectTo);
         }
 
-        return back()->withErrors([
-            'email' => 'Las credenciales proporcionadas no coinciden con nuestros registros.',
-        ])->onlyInput('email');
+        return $this->sendFailedLoginResponse($request); // <-- Esta línea llama a la lógica personalizada
     }
 
     /**
@@ -75,4 +96,4 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
         return redirect('/');
     }
-} 
+}

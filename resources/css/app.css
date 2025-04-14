@@ -229,6 +229,9 @@ footer {
     margin: 0 0.25rem;
     padding: 0.5rem 1rem;
 }
+.btn-no-rounded {
+    border-radius: 5px !important;
+}
 
 .btn-group .btn.active {
     background-color: #28a745;

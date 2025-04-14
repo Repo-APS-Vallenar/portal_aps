@@ -18,7 +18,15 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'Administrador',
                 'password' => Hash::make('admin123'),
-                'role' => 'admin' // solo si tienes esta columna en la base de datos
+                'role' => 'superadmin' // solo si tienes esta columna en la base de datos
+            ]
+        );
+        User::updateOrCreate(
+            ['email' => 'superadmin@aps.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => bcrypt('12345678'),
+                'role' => 'superadmin',
             ]
         );
     }

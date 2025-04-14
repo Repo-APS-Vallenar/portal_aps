@@ -73,3 +73,18 @@ Route::get('/run-seeders', function () {
 Route::put('/tickets/comments/{comment}', [TicketController::class, 'updateComment'])->name('tickets.updateComment');
 Route::delete('/tickets/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
 
+Route::patch('/admin/users/{id}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
+
+
+
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
+    Route::post('/admin/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
+    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
+});
+
+Route::put('/admin/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.updatePassword');
