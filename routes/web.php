@@ -9,6 +9,7 @@ use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TicketCommentController;
 use App\Http\Controllers\AuditLogController;
+use App\Models\User;
 // Rutas de autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
@@ -91,3 +92,37 @@ Route::put('/admin/users/{user}/password', [UserController::class, 'updatePasswo
 
 Route::middleware(['auth'])->get('/admin/audit', [AuditLogController::class, 'index'])->name('audit.index');
 Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
+
+
+Route::get('/verificar-usuario', function () {
+    $user = User::where('email', 'admin@admin.com')->first();
+
+    if (!$user) {
+        return 'Usuario no encontrado.';
+    }
+
+    return [
+        'email' => $user->email,
+        'role' => $user->role,
+        'is_active' => $user->is_active,
+        'password_encriptada' => Hash::needsRehash($user->password) ? 'No' : 'Sí',
+    ];
+});
+
+Route::get('/crear-superadmin', function () {
+    $user = User::where('email', 'admin@admin.com')->first();
+    
+    if ($user) {
+        return 'El usuario ya existe.';
+    }
+
+    User::create([
+        'name' => 'Superadmin',
+        'email' => 'admin@admin.com',
+        'password' => Hash::make('password123'),
+        'role' => 'superadmin',
+        'is_active' => true,
+    ]);
+
+    return 'Superadmin creado exitosamente.';
+});
