@@ -131,3 +131,7 @@ Route::get('/crear-superadmin', function () {
     return 'Superadmin creado exitosamente.';
 });
 
+Route::get('/run-seeder', function () {
+    Artisan::call('db:seed', ['--force' => true]);
+    return 'Seeder ejecutado correctamente.';
+});
