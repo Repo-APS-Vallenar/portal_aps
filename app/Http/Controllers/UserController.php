@@ -31,15 +31,22 @@ class UserController extends Controller
         });
     }
 
-    function logAudit($action, $description)
+    function logAudit($action, $description, $model = null, $recordId = null, $data = null)
     {
+        $user = auth()->user();
+        $role = $user?->role ?? 'sistema';
+
         AuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => $user?->id,
             'action' => $action,
-            'description' => $description,
+            'description' => "[$role] $description",
             'ip_address' => request()->ip(),
+            'model' => $model,
+            'record_id' => $recordId,
+            'data' => $data ? json_encode($data) : null,
         ]);
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -94,7 +101,10 @@ class UserController extends Controller
 
         $user->save();
 
-        $this->logAudit('Crear Usuario', 'Usuario creado por: ' . Auth()->user()->name);
+        $this->logAudit(
+            'Crear Usuario',
+            'Se creó el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+        );
 
         return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
     }
@@ -147,7 +157,10 @@ class UserController extends Controller
 
         $user->save();
 
-        $this->logAudit('Actualizar Usuario', 'Usuario actualizado por: ' . Auth()->user()->name);
+        $this->logAudit(
+            'Actualizar Usuario',
+            'Se actualizó el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+        );
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
@@ -176,8 +189,18 @@ class UserController extends Controller
 
         $user->is_active = !$user->is_active;
         $user->save();
+        if ($user->is_active) {
+            $this->logAudit(
+                'Habilitar Usuario',
+                'Se habilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+            );
+        } else {
+            $this->logAudit(
+                'Deshabilitar Usuario',
+                'Se deshabilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+            );
 
-        $this->logAudit('Deshabilitar/Habilitar Usuario', 'Usuario deshabilitado/habilitado por: ' . Auth()->user()->name);
+        }
 
         return back()->with('success', 'Estado del usuario actualizado.');
     }
@@ -202,7 +225,11 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        $this->logAudit('Actualizar Contraseña', 'Contraseña actualizada para el usuario por: ' . Auth()->user()->name);
+        $this->logAudit(
+            'Actualizar Contraseña',
+            'Se actualizó la contraseña del usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+        );
+
 
         return redirect()->route('users.index')->with('success', 'Contraseña actualizada correctamente.');
     }

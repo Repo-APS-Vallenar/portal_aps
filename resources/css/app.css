@@ -229,8 +229,30 @@ footer {
     margin: 0 0.25rem;
     padding: 0.5rem 1rem;
 }
+
 .btn-no-rounded {
     border-radius: 5px !important;
+}
+
+.pagination {
+    font-size: 0.8rem;
+}
+
+.pagination .page-link {
+    padding: 0.25rem 0.5rem;
+}
+
+.table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #343a40; /* Color de fondo para que no quede transparente */
+    color: white;
+    z-index: 2;
 }
 
 .btn-group .btn.active {

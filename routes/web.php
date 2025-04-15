@@ -9,7 +9,11 @@ use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TicketCommentController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\AuditController;
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Controllers\ExportController;
 // Rutas de autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
@@ -139,3 +143,15 @@ Route::get('/run-seederr', function () {
         return response('Error al ejecutar el seeder: ' . $e->getMessage(), 500);
     }
 });
+
+Route::get('/audit/search', [AuditLogController::class, 'search'])->name('audit.search');
+
+
+Route::get('/audit/export/excel', [AuditLogController::class, 'exportExcel'])->name('audit.export.excel');
+
+Route::get('/export/auditlogs', [ExportController::class, 'exportAuditLogs'])->name('export.auditlogs');
+
+Route::get('/audit/export/pdf', [AuditLogController::class, 'exportPdf'])->name('export.auditlogs.pdf');
+
+
+
