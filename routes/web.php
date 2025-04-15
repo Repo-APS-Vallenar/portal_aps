@@ -8,7 +8,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\TicketCommentController;
-
+use App\Http\Controllers\AuditLogController;
 // Rutas de autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
@@ -88,3 +88,6 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::put('/admin/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.updatePassword');
+
+Route::middleware(['auth'])->get('/admin/audit', [AuditLogController::class, 'index'])->name('audit.index');
+Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');

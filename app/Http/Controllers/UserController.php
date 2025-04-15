@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-
+use App\Models\AuditLog;
 class UserController extends Controller
 {
     public function __construct()
@@ -31,7 +31,15 @@ class UserController extends Controller
         });
     }
 
-
+    function logAudit($action, $description)
+    {
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'ip_address' => request()->ip(),
+        ]);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -86,6 +94,8 @@ class UserController extends Controller
 
         $user->save();
 
+        $this->logAudit('Crear Usuario', 'Usuario creado por: ' . Auth()->user()->name);
+
         return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
     }
 
@@ -137,6 +147,8 @@ class UserController extends Controller
 
         $user->save();
 
+        $this->logAudit('Actualizar Usuario', 'Usuario actualizado por: ' . Auth()->user()->name);
+
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
 
@@ -165,6 +177,8 @@ class UserController extends Controller
         $user->is_active = !$user->is_active;
         $user->save();
 
+        $this->logAudit('Deshabilitar/Habilitar Usuario', 'Usuario deshabilitado/habilitado por: ' . Auth()->user()->name);
+
         return back()->with('success', 'Estado del usuario actualizado.');
     }
 
@@ -187,6 +201,8 @@ class UserController extends Controller
 
         $user->password = Hash::make($request->password);
         $user->save();
+
+        $this->logAudit('Actualizar Contraseña', 'Contraseña actualizada para el usuario por: ' . Auth()->user()->name);
 
         return redirect()->route('users.index')->with('success', 'Contraseña actualizada correctamente.');
     }

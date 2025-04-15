@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\AuditLog;
 
 class TicketController extends Controller
 {
@@ -19,8 +20,17 @@ class TicketController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-    }
+        }
 
+    function logAudit($action, $description)
+    {
+        AuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'description' => $description,
+            'ip_address' => request()->ip(),
+        ]);
+    }
     /**
      * Display a listing of the resource.
      */
@@ -55,6 +65,7 @@ class TicketController extends Controller
 
         // Si es admin, puedes pasarle todos los estados
         $statuses = TicketStatus::all();
+
 
 
 
@@ -120,6 +131,7 @@ class TicketController extends Controller
 
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
+        $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth()->user()->name);
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket creado exitosamente.');
@@ -153,6 +165,7 @@ class TicketController extends Controller
             ->distinct()
             ->get();
         $users = User::all();
+
 
 
         return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users', 'locations'));
@@ -196,6 +209,8 @@ class TicketController extends Controller
         ]);
 
         $ticket->update($validated);
+        $this->logAudit('Actualizar Ticket', 'Ticket actualizado por: ' . Auth()->user()->name);
+
         //dd($request->all());
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket actualizado exitosamente.');
@@ -209,6 +224,8 @@ class TicketController extends Controller
         $this->authorize('delete', $ticket);
 
         $ticket->delete();
+        $this->logAudit('Eliminar Ticket', 'Ticket eliminado por: ' . Auth()->user()->name);
+
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado exitosamente.');
     }
@@ -229,6 +246,8 @@ class TicketController extends Controller
             'comment' => $request->comment,
             'is_internal' => $request->has('is_internal'),
         ]);
+        $this->logAudit('Añadir Comentario', 'Comentario añadido por: ' . Auth()->user()->name);
+
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Comentario agregado exitosamente.');
     }
@@ -248,6 +267,8 @@ class TicketController extends Controller
 
         $comment->comment = $request->comment;
         $comment->save();
+        $this->logAudit('Actualizar Comentario', 'Comentario actualizado por: ' . Auth()->user()->name);
+
 
         return response()->json(['success' => true, 'updated_comment' => e($comment->comment)]);
     }
@@ -259,6 +280,7 @@ class TicketController extends Controller
         }
 
         $comment->delete();
+        $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth()->user()->name);
 
         return redirect()->back()->with('success', 'Comentario eliminado correctamente.');
     }

@@ -36,6 +36,13 @@
                     <a class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}"
                         href="{{ route('contacto') }}">Contacto</a>
                 </li>
+                @auth
+                    @if (auth()->user()->role === 'superadmin')
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('audit.index') }}">Auditoría</a>
+                        </li>
+                    @endif
+                @endauth
             </ul>
 
             <!-- Right Side Of Navbar -->
@@ -56,7 +63,7 @@
                                 Registrar Usuario
                             </a>
                             <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                                     document.getElementById('logout-form').submit();">
+                                                                         document.getElementById('logout-form').submit();">
                                 Cerrar Sesión
                             </a>
 

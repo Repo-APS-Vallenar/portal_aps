@@ -194,10 +194,6 @@
                                     <dd class="col-sm-8">{{ $ticket->numero_serie }}</dd>
                                 @endif
                             @endif
-                            @if($ticket->location_id)
-                                <dt class="col-sm-4">Ubicación:</dt>
-                                <dd class="col-sm-8">{{ $ticket->location->name ?? 'No asignada' }}</dd>
-                            @endif
 
                             @if($ticket->usuario)
                                 <dt class="col-sm-4">Usuario:</dt>
