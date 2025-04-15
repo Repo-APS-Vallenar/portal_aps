@@ -64,6 +64,10 @@ Route::get('/run-seeders', function () {
             '--class' => 'LocationSeeder',
             '--force' => true
         ]);
+        Artisan::call('db:seed', [
+            '--class' => 'AdminUserSeeder',
+            '--force' => true
+        ]);
 
         return "Seeders ejecutados correctamente.";
     }
@@ -126,3 +130,4 @@ Route::get('/crear-superadmin', function () {
 
     return 'Superadmin creado exitosamente.';
 });
+
