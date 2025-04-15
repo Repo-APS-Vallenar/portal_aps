@@ -131,7 +131,11 @@ Route::get('/crear-superadmin', function () {
     return 'Superadmin creado exitosamente.';
 });
 
-Route::get('/run-seed', function () {
-    Artisan::call('db:seed', ['--force' => true]);
-    return 'Seeder ejecutado correctamente.';
+Route::get('/run-seederr', function () {
+    try {
+        Artisan::call('db:seed', ['--force' => true]);
+        return 'Seeder ejecutado correctamente.';
+    } catch (\Throwable $e) {
+        return response('Error al ejecutar el seeder: ' . $e->getMessage(), 500);
+    }
 });
