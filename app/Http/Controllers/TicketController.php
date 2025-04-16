@@ -20,7 +20,7 @@ class TicketController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        }
+    }
 
     function logAudit($action, $description)
     {
@@ -42,7 +42,9 @@ class TicketController extends Controller
         $tickets = Ticket::with(['category', 'status', 'creator', 'assignee'])
             ->latest()
             ->paginate(10);
-
+        if (\App\Models\Setting::getValue('maintenance_mode') === 'on') {
+            return view('maintenance');
+        }
         return view('tickets.index', compact('tickets'));
     }
 

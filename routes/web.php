@@ -14,6 +14,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\SettingController;
+
 // Rutas de autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
@@ -160,3 +163,7 @@ Route::post('/audit/export-selected', [AuditLogController::class, 'exportSelecte
 // routes/web.php
 
 Route::post('/users/{userId}/toggle-block', [UserController::class, 'toggleBlockUser'])->name('users.toggleBlock');
+Route::post('/settings/toggle-maintenance', [SettingController::class, 'toggleMaintenance'])->name('settings.toggle-maintenance');
+Route::get('/settings', [SettingController::class, 'index'])
+    ->middleware('auth')
+    ->name('settings.index');

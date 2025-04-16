@@ -77,6 +77,9 @@ class AuditLogController extends Controller
         if ($request->ajax()) {
             return view('audit.partials.logs', compact('logs'))->render();
         }
+        if (\App\Models\Setting::getValue('maintenance_mode') === 'on') {
+            return view('maintenance');
+        }
 
         return view('audit.index', compact('logs', 'usuarios', 'accionesUnicas'));
     }

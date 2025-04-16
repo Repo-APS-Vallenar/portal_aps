@@ -41,7 +41,9 @@ class HomeController extends Controller
                 ],
             ],
         ];
-
+        if (\App\Models\Setting::getValue('maintenance_mode') === 'on') {
+            return view('maintenance');
+        }
         return view('home', compact('platforms'));
     }
 }

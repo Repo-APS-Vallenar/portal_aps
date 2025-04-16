@@ -57,14 +57,20 @@
 
                         <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="{{ route('users.index') }}">
-                                Lista de Usuarios
+                                👤 Lista de Usuarios
                             </a>
                             <a class="dropdown-item" href="{{ route('users.create') }}">
-                                Registrar Usuario
+                                ➕👤 Registrar Usuario
                             </a>
-                            <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                                         document.getElementById('logout-form').submit();">
-                                Cerrar Sesión
+                            @if(auth()->user()->role === 'superadmin')
+                                <a class="dropdown-item" href="{{ route('settings.index') }}">
+                                    ⚙️ Configuración
+                                </a>
+                            @endif
+                            <a class="dropdown-item" href="{{ route('logout') }}"
+                                onclick="event.preventDefault();
+                                                                                 document.getElementById('logout-form').submit();">
+                                🔒 Cerrar Sesión
                             </a>
 
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
