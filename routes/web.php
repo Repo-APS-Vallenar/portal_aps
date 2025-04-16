@@ -157,3 +157,6 @@ Route::get('/audit/export/pdf', [AuditLogController::class, 'exportPdf'])->name(
 Route::post('/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected');
 
 
+// routes/web.php
+
+Route::post('/users/{userId}/toggle-block', [UserController::class, 'toggleBlockUser'])->name('users.toggleBlock');

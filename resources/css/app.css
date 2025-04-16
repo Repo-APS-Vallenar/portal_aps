@@ -234,6 +234,17 @@ footer {
     border-radius: 5px !important;
 }
 
+
+
+.user-blocked {
+    background-color: #f8d7da; /* Fondo rojo claro */
+    color: #721c24; /* Texto oscuro */
+}
+
+.user-blocked .badge-danger {
+    background-color: #721c24; /* Badge rojo */
+}
+
 .pagination {
     font-size: 0.8rem;
 }
@@ -250,7 +261,8 @@ footer {
 .table thead th {
     position: sticky;
     top: 0;
-    background-color: #343a40; /* Color de fondo para que no quede transparente */
+    background-color: #343a40;
+    /* Color de fondo para que no quede transparente */
     color: white;
     z-index: 2;
 }
