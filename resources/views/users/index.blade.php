@@ -9,6 +9,7 @@
         @endif
 
         <table class="table table-bordered table-striped">
+            
             <thead>
                 <tr>
                     <th>Nombre</th>
@@ -20,7 +21,7 @@
             </thead>
             <tbody>
                 @foreach($users as $user)
-                            <tr>
+                            <tr class="{{ $user->is_blocked ? 'user-blocked' : '' }}">
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>
@@ -38,7 +39,13 @@
                                     @else
                                         <span class="badge bg-danger">Deshabilitado</span>
                                     @endif
+                                    @if($user->locked_until && now()->lessThan($user->locked_until))
+                                        <span class="badge bg-danger">Bloqueado</span>
+                                    @else
+                                        <span class="badge bg-primary">Desbloqueado</span>
+                                    @endif
                                 </td>
+
                                 <td>
                                     <div class="btn-group" role="group">
                                         <!-- Botón para editar solo si el usuario está activo -->
@@ -161,6 +168,29 @@
                                                     </div>
                                                 @endif
                                                 <!-- Agrega aquí los campos adicionales (rol, teléfono, contraseña) si deseas -->
+                                                @if(auth()->user()->role === 'superadmin' || auth()->user()->role === 'admin')
+                                                    @if($user->locked_until && now()->lessThan($user->locked_until))
+                                                        <div class="form-group mt-3">
+                                                            <label>
+                                                                <input type="checkbox" name="unlock_account" value="1">
+                                                                Desbloquear cuenta
+                                                            </label>
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                                @if(auth()->user()->role === 'superadmin' && (!($user->locked_until && now()->lessThan($user->locked_until))))
+                                                    <div class="form-group mt-2">
+                                                        <label for="lock_user" class="form-label">Bloquear usuario manualmente</label>
+                                                        <input type="checkbox" name="lock_user" id="lock_user">
+
+                                                    </div>
+                                                @elseif(auth()->user()->role === 'superadmin')
+                                                    <div class="alert alert-warning mt-2">
+                                                        Este usuario está bloqueado hasta
+                                                        {{ \Carbon\Carbon::parse($user->locked_until)->format('d/m/Y H:i') }}.
+                                                    </div>
+                                                @endif
+
                                             </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary"
@@ -172,6 +202,8 @@
                                 </div>
                             </div>
                 @endforeach
+
+
                 <!-- Modal de error -->
                 <div class="modal fade" id="modalError" tabindex="-1" aria-labelledby="modalErrorLabel" aria-hidden="true">
                     <div class="modal-dialog">
