@@ -4,7 +4,10 @@ FROM php:8.2-fpm
 # Instalar dependencias necesarias
 RUN apt-get update && apt-get install -y \
     git unzip curl libpq-dev libzip-dev libonig-dev \
-    libxml2-dev zip sqlite3 && docker-php-ext-install pdo pdo_pgsql zip
+    libxml2-dev zip sqlite3 \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql zip gd
 
 # Instalar Composer desde la imagen oficial
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
