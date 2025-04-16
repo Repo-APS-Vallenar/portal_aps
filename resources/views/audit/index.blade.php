@@ -6,23 +6,67 @@
             <div class="card-body">
                 <div class="row align-items-center g-2">
                     <div class="row col-md-8">
-                        <div class="col-md-8">
-                            <input type="text" id="search" class="form-control"
-                                placeholder="Buscar por usuario, acción, descripción o IP">
-                        </div>
-                        <div class="col-md-4">
-                            <button id="btn-search" class="btn btn-primary" type="button">
-                                Buscar
-                            </button>
-                        </div>
+                        <form method="GET" action="{{ route('audit.index') }}">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="user_id">Usuario</label>
+                                    <select name="user_id" id="user_id" class="form-select">
+                                        <option value="">Todos</option>
+                                        @foreach ($usuarios as $usuario)
+                                            <option value="{{ $usuario->id }}" {{ request('user_id') == $usuario->id ? 'selected' : '' }}>
+                                                {{ $usuario->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="action">Acción</label>
+                                    <select name="action" id="action" class="form-select">
+                                        <option value="">Todas</option>
+                                        @foreach ($accionesUnicas as $accion)
+                                            <option value="{{ $accion }}" {{ request('action') == $accion ? 'selected' : '' }}>
+                                                {{ $accion }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="from">Desde</label>
+                                    <input type="date" name="from" id="from" class="form-control"
+                                        value="{{ request('from') }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="to">Hasta</label>
+                                    <input type="date" name="to" id="to" class="form-control" value="{{ request('to') }}">
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column flex-md-row justify-content-between">
+                                <div class="col-md-6 mb-3">
+                                    <input type="text" name="search" class="form-control" placeholder="Buscar..."
+                                        value="{{ request('search') }}">
+                                </div>
+                                <div class="row col-md-6 text-end">
+                                    <div class="col-md-6 mb-3">
+                                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                                    </div>
+                                    <div class="col-md-6">
+
+                                        <a href="{{ route('audit.index') }}" class="btn btn-secondary">Limpiar</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    <div class="col-md-4 text-md-end">
-                        <a href="{{ route('export.auditlogs') }}" class="btn btn-success btn-sm me-1">
-                            <i class="bi bi-file-earmark-excel me-1"></i> Exportar Bitacora en Excel
-                        </a>
-                        <a href="{{ route('export.auditlogs.pdf') }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-file-earmark-pdf me-1"></i> Exportar Bitacora en PDF
-                        </a>
+                    <div class="col-md-4 text-md-end d-flex justify-content-end gap-2">
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('audit.export.excel', ['search' => request('search')]) }}"
+                                class="btn btn-success"><i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel</a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('export.auditlogs.pdf', ['search' => request('search')]) }}"
+                                class="btn btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF</a>
+                        </div>
                     </div>
                 </div>
             </div>

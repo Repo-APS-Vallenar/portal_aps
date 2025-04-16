@@ -6,23 +6,40 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Excel;
 use App\Exports\FromCollectionExport;
+use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel as ExcelFacade;
+use App\Exports\AuditLogsExport;
 use PDF;
 
 class AuditLogController extends Controller
 {
     public function exportPdf(Request $request)
     {
-        $logs = AuditLog::latest()->get();
+        $query = AuditLog::with('user')->latest();
+
+        if ($request->has('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']))
+                    ->orWhereRaw('LOWER(action) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(ip_address) LIKE ?', ['%' . strtolower($search) . '%']);
+            });
+        }
+
+        $logs = $query->get();
 
         $pdf = Pdf::loadView('audit.partials.pdf', compact('logs'));
         return $pdf->download('bitacora.pdf');
     }
+
     public function index(Request $request)
     {
         $query = AuditLog::with('user')->latest();
 
-        if ($request->has('search')) {
+        // Filtro de búsqueda general
+        if ($request->filled('search')) {
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
@@ -33,31 +50,86 @@ class AuditLogController extends Controller
             });
         }
 
+        // Filtro por usuario
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Filtro por acción
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        // Filtro por fechas
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
         $logs = $query->simplePaginate(10);
+
+        $usuarios = User::orderBy('name')->get();
+        $accionesUnicas = AuditLog::select('action')->distinct()->pluck('action');
 
         if ($request->ajax()) {
             return view('audit.partials.logs', compact('logs'))->render();
         }
 
-        return view('audit.index', compact('logs'));
+        return view('audit.index', compact('logs', 'usuarios', 'accionesUnicas'));
     }
 
-    public function exportExcel()
+
+    public function exportExcel(Request $request)
     {
-        $logs = AuditLog::with('user')->latest()->get();
+        $query = AuditLog::with('user')->latest();
 
-        $exportData = $logs->map(function ($log) {
+        if ($request->has('search') && $request->filled('search')) {
+            $search = strtolower($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(action) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(ip_address) LIKE ?', ["%$search%"])
+                    ->orWhereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%$search%"]));
+            });
+        }
+
+        $logs = $query->get();
+
+        $exportData = collect($logs)->map(function ($log) {
             return [
-                'Fecha' => $log->created_at->format('d/m/Y H:i'),
-                'Usuario' => $log->user->name ?? 'Sistema',
-                'Acción' => $log->action,
-                'Descripción' => $log->description,
-                'IP' => $log->ip_address,
+                $log->created_at->format('d/m/Y H:i'),
+                $log->user->name ?? 'Sistema',
+                $log->action,
+                $log->description,
+                $log->ip_address,
             ];
-        });
+        })->toArray();
 
-        return ExcelFacade::download(new FromCollectionExport($exportData), 'bitacora.xlsx');
+        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora.xlsx');
     }
+
+    public function exportSelected(Request $request)
+    {
+        $ids = $request->input('selected_logs', []);
+
+        $logs = AuditLog::with('user')->whereIn('id', $ids)->get();
+
+        $exportData = collect($logs)->map(function ($log) {
+            return [
+                $log->created_at->format('d/m/Y H:i'),
+                $log->user->name ?? 'Sistema',
+                $log->action,
+                $log->description,
+                $log->ip_address,
+            ];
+        })->toArray();
+
+        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora_seleccionada.xlsx');
+    }
+
 
 
     public function search(Request $request)
