@@ -3,10 +3,25 @@
 @section('content')
     <div class="container">
         @if(session('success'))
-            <div class="alert alert-success">
+            <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
                 {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            <script>
+                setTimeout(function () {
+                    var alert = document.getElementById('success-alert');
+                    if (alert) {
+                        alert.classList.remove('show');
+                        alert.classList.add('fade');
+                        // Esperamos que la animación de desvanecimiento termine antes de eliminarla
+                        setTimeout(function () {
+                            alert.remove();
+                        }, 150); // Espera el tiempo de la animación de desvanecimiento
+                    }
+                }, 5000); // 5000 milisegundos (5 segundos)
+            </script>
         @endif
+
 
         <div class="row">
             <div class="col-md-8">
@@ -259,14 +274,14 @@
 
             // Reemplazar el texto por un formulario
             commentText.outerHTML = `
-                                                            <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
-                                                                <div class="mb-2">
-                                                                    <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
-                                                                </div>
-                                                                <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
-                                                                <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
-                                                            </form>
-                                                        `;
+                                                                    <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
+                                                                        <div class="mb-2">
+                                                                            <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
+                                                                        </div>
+                                                                        <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
+                                                                        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
+                                                                    </form>
+                                                                `;
         }
 
         function cancelEdit(commentId, originalText) {

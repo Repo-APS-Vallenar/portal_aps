@@ -30,7 +30,7 @@ class AuditLogController extends Controller
 
         $logs = $query->get();
 
-        $pdf = Pdf::loadView('audit.partials.pdf', compact('logs'));
+        $pdf = PDF::loadView('audit.partials.pdf', compact('logs'));
         return $pdf->download('bitacora.pdf');
     }
 
