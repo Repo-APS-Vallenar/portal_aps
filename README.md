@@ -51,6 +51,7 @@ CSS
 PostgreSQL
 
 👥 Equipo
+Jorge Trigo Barrera
 
 Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
 =======
