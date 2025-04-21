@@ -59,7 +59,7 @@
 
                         <div class="mb-3">
                             <label for="status_id" class="form-label">Estado</label>
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                 <select class="form-select @error('status_id') is-invalid @enderror" 
                                     id="status_id" name="status_id" required>
                                     <option value="">Selecciona un estado</option>

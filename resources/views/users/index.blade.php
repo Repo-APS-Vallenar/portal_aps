@@ -3,11 +3,53 @@
 @section('content')
     <div class="container">
         <h2 class="mb-4">Gestión de Usuarios</h2>
-
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <script>
+                setTimeout(function () {
+                    var alert = document.getElementById('success-alert');
+                    if (alert) {
+                        alert.classList.remove('show');
+                        alert.classList.add('fade');
+                        // Esperamos que la animación de desvanecimiento termine antes de eliminarla
+                        setTimeout(function () {
+                            alert.remove();
+                        }, 150); // Espera el tiempo de la animación de desvanecimiento
+                    }
+                }, 5000); // 5000 milisegundos (5 segundos)
+            </script>
         @endif
-
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="row align-items-center g-2">
+                    <div class="col-md-6">
+                        <form method="GET" action="{{ route('users.index') }}" class="mb-3">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Buscar por nombre o correo..." value="{{ request('search') }}">
+                                <button class="btn btn-primary" type="submit">Buscar</button>
+                                @if(request('search'))
+                                    <a href="{{ route('users.index') }}" class="btn btn-secondary">Limpiar</a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-md-6 text-md-end d-flex justify-content-end gap-2">
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('users.export.excel', ['search' => request('search')]) }}"
+                                class="btn btn-success"><i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel</a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('users.exports.pdf', ['search' => request('search')]) }}"
+                                class="btn btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <table class="table table-bordered table-striped">
             
             <thead>
@@ -95,7 +137,8 @@
                                 @method('PUT')
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="changePasswordModalLabel{{ $user->id }}">Cambiar Contraseña
+                                        <h5 class="modal-title" id="changePasswordModalLabel{{ $user->id }}">Cambiar
+                                            Contraseña
                                             de {{ $user->name }}</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
@@ -138,7 +181,8 @@
                                         @method('PUT')
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Editar Usuario</h5>
+                                                <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Editar
+                                                    Usuario</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
                                                     aria-label="Cerrar"></button>
                                             </div>
@@ -158,7 +202,8 @@
                                                     <div class="mb-3">
                                                         <label for="role-{{ $user->id }}" class="form-label">Rol</label>
                                                         <select class="form-select" name="role" id="role-{{ $user->id }}">
-                                                            <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>Usuario
+                                                            <option value="user" {{ $user->role === 'user' ? 'selected' : '' }}>
+                                                                Usuario
                                                             </option>
                                                             <option value="admin" {{ $user->role === 'admin' ? 'selected' : '' }}>
                                                                 Administrador</option>

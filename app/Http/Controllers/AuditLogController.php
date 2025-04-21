@@ -30,7 +30,7 @@ class AuditLogController extends Controller
 
         $logs = $query->get();
 
-        $pdf = Pdf::loadView('audit.partials.pdf', compact('logs'));
+        $pdf = PDF::loadView('audit.partials.pdf', compact('logs'));
         return $pdf->download('bitacora.pdf');
     }
 
@@ -69,7 +69,7 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->to);
         }
 
-        $logs = $query->simplePaginate(10);
+        $logs = $query->simplePaginate(7);
 
         $usuarios = User::orderBy('name')->get();
         $accionesUnicas = AuditLog::select('action')->distinct()->pluck('action');

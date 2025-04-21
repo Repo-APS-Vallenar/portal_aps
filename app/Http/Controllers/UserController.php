@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AuditLog;
+use App\Exports\UsersExport;
+use Maatwebsite\Excel\Facades\Excel;
+use PDF;
 class UserController extends Controller
 {
     public function __construct()
@@ -50,13 +53,25 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        if (auth()->user()->role === 'superadmin') {
-            $users = User::all();
-        } else {
-            $users = User::where('role', '!=', 'superadmin')->get();
+        $query = User::query();
+
+        // Ocultar superadmin si no eres uno
+        if (auth()->user()->role !== 'superadmin') {
+            $query->where('role', '!=', 'superadmin');
         }
+
+        // Búsqueda general
+        if ($request->has('search') && $request->search !== null) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%$search%")
+                    ->orWhere('email', 'ilike', "%$search%");
+            });
+        }
+
+        $users = $query->get();
 
         return view('users.index', compact('users'));
     }
@@ -107,6 +122,32 @@ class UserController extends Controller
         );
 
         return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
+    }
+
+    public function exportExcel()
+    {
+        $usuarios = User::where('role', '!=', 'superadmin')->get();
+        return Excel::download(new UsersExport($usuarios), 'usuarios.xlsx');
+    }
+
+    public function exportUsersPdf(Request $request)
+    {
+        $query = User::query();
+
+        if ($request->has('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(role) LIKE ?', ['%' . strtolower($search) . '%']);
+            });
+        }
+
+        $users = $query->get();
+
+        $pdf = PDF::loadView('users.export.users_pdf', compact('users'));
+        return $pdf->download('usuarios_' . now()->format('Y-m-d_H-i-s') . '.pdf');
     }
 
 

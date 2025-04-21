@@ -15,16 +15,40 @@
                     </div>
                     <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                     <div class="card-body">
-                        @if (session('success'))
-                            <div class="alert alert-success" role="alert">
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
                                 {{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
+                            <script>
+                                setTimeout(function () {
+                                    var alert = document.getElementById('success-alert');
+                                    if (alert) {
+                                        alert.classList.remove('show');
+                                        alert.classList.add('fade');
+                                        // Esperamos que la animación de desvanecimiento termine antes de eliminarla
+                                        setTimeout(function () {
+                                            alert.remove();
+                                        }, 150); // Espera el tiempo de la animación de desvanecimiento
+                                    }
+                                }, 5000); // 5000 milisegundos (5 segundos)
+                            </script>
                         @endif
 
                         @if (session('error'))
-                            <div class="alert alert-danger" role="alert">
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
                                 {{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
+                            <script>
+                                setTimeout(function () {
+                                    var alert = document.querySelector('.alert');
+                                    if (alert) {
+                                        alert.classList.remove('show');
+                                        alert.classList.add('fade');
+                                    }
+                                }, 5000); // 5000 milisegundos (5 segundos)
+                            </script>
                         @endif
 
                         @if($tickets->isEmpty())
@@ -79,7 +103,7 @@
                                                                 <i class="fas fa-eye me-1"></i> Detalles
                                                             </a>
 
-                                                            @if(Auth::user()->isAdmin())
+                                                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                                                 <!-- Editar -->
                                                                 <a href="{{ route('tickets.edit', $ticket) }}"
                                                                     class="btn btn-outline-warning btn-sm">
