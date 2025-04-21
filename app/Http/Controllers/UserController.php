@@ -172,8 +172,8 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-
         $user = User::findOrFail($id);
+
         if (!$user->is_active) {
             return redirect()->route('users.index')->with('error', 'No se puede editar un usuario deshabilitado.');
         }
@@ -189,6 +189,10 @@ class UserController extends Controller
 
         $validated = $request->validate($rules);
 
+        // Guardamos copia para comparar después
+        $original = $user->replicate();
+
+        // Actualizamos datos
         $user->name = $validated['name'];
         $user->email = $validated['email'];
 
@@ -196,15 +200,74 @@ class UserController extends Controller
             $user->role = $validated['role'];
         }
 
+        // Desbloqueo manual por admin o superadmin
+        if (($request->user()->role === 'admin' || $request->user()->role === 'superadmin') && $request->has('unlock_account')) {
+            if ($user->locked_until && now()->lessThan($user->locked_until)) {
+                $user->locked_until = null;
+                $user->login_attempts = 0;
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'Desbloqueo de usuario',
+                    'description' => "El usuario {$user->name} (rol: {$user->role}) fue desbloqueado por " . auth()->user()->name . ".",
+                    'ip_address' => $request->ip(),
+                ]);
+            }
+        }
+
+        // Bloqueo manual solo por superadmin
+        $lockChanged = false;
+        if (auth()->user()->role === 'superadmin') {
+            if ($request->has('lock_user') && !$user->locked_until) {
+                $user->locked_until = now()->addMinutes(180);
+                $lockChanged = true;
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'Bloqueo manual',
+                    'description' => "El superadmin bloqueó manualmente al usuario {$user->name}.",
+                    'ip_address' => $request->ip(),
+                ]);
+            } elseif (!$request->has('lock_user') && $user->locked_until && now()->lessThan($user->locked_until)) {
+                $user->locked_until = null;
+                $lockChanged = true;
+
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'Desbloqueo manual',
+                    'description' => "El superadmin desbloqueó manualmente al usuario {$user->name}.",
+                    'ip_address' => $request->ip(),
+                ]);
+            }
+        }
+
         $user->save();
 
-        $this->logAudit(
-            'Actualizar Usuario',
-            'Se actualizó el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
-        );
+        // Registro de cambios generales (si hubo cambios)
+        $changes = [];
+
+        if ($original->name !== $user->name) {
+            $changes[] = "nombre: '{$original->name}' a '{$user->name}'";
+        }
+        if ($original->email !== $user->email) {
+            $changes[] = "email: '{$original->email}' a '{$user->email}'";
+        }
+        if ($original->role !== $user->role && auth()->user()->role === 'superadmin') {
+            $changes[] = "rol: '{$original->role}' a '{$user->role}'";
+        }
+
+        if (!empty($changes)) {
+            AuditLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'Edición de usuario',
+                'description' => "El usuario " . auth()->user()->name . " editó al usuario {$original->name}. Cambios: " . implode(', ', $changes),
+                'ip_address' => $request->ip(),
+            ]);
+        }
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -246,6 +309,8 @@ class UserController extends Controller
         return back()->with('success', 'Estado del usuario actualizado.');
     }
 
+
+
     public function updatePassword(Request $request, User $user)
     {
         $currentUser = auth()->user();
@@ -266,13 +331,44 @@ class UserController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
-        $this->logAudit(
-            'Actualizar Contraseña',
-            'Se actualizó la contraseña del usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
-        );
-
+        // Auditoría: distinguir entre cambio propio o ajeno
+        if ($currentUser->id === $user->id) {
+            $this->logAudit(
+                'Actualizar Contraseña',
+                'El usuario actualizó su propia contraseña.'
+            );
+        } else {
+            $this->logAudit(
+                'Actualizar Contraseña',
+                'El usuario ' . $currentUser->name . ' actualizó la contraseña de ' . $user->name . ' (Rol: ' . $user->role . ')'
+            );
+        }
 
         return redirect()->route('users.index')->with('success', 'Contraseña actualizada correctamente.');
+    }
+
+    public function toggleBlockUser($userId)
+    {
+        $user = User::find($userId);
+
+        if ($user) {
+            // Si el usuario está bloqueado, lo desbloqueamos
+            if ($user->locked_until && now()->lessThan($user->locked_until)) {
+                $user->locked_until = null;
+                $user->login_attempts = 0;
+                $this->logAudit('Desbloquear Usuario', "El usuario {$user->name} fue desbloqueado.", 'User', $user->id);
+            } else {
+                // Si no está bloqueado, lo bloqueamos
+                $user->locked_until = now()->addMinutes(180); // Bloqueo por 3 horas
+                $this->logAudit('Bloquear Usuario', "El usuario {$user->name} fue bloqueado.", 'User', $user->id);
+            }
+
+            $user->save();
+
+            return back()->with('success', 'Estado del usuario actualizado.');
+        }
+
+        return back()->with('error', 'Usuario no encontrado.');
     }
 
 

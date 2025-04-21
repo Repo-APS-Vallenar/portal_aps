@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\CuentaBloqueadaMail;
-use App\Models\User;
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
@@ -75,62 +73,74 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-        $user = User::where('email', $request->email)->first();
+        $user = \App\Models\User::where('email', $credentials['email'])->first();
 
         if ($user) {
-            // ¿Está bloqueado?
-            if ($user->locked_until && now()->lessThan($user->locked_until)) {
-                return back()->withErrors(['email' => 'Cuenta bloqueada hasta las ' . $user->locked_until->format('H:i:s')]);
+            // Si el usuario está bloqueado
+            if ($user->locked_until && Carbon::now()->lessThan($user->locked_until)) {
+                return back()->withErrors(['email' => 'Cuenta bloqueada hasta: ' . $user->locked_until->format('d/m/Y H:i:s')]);
             }
 
+            // Autenticación exitosa
             if (Auth::attempt($credentials)) {
-                // Éxito: Reiniciar contador
-                $user->update([
-                    'failed_attempts' => 0,
-                    'locked_until' => null,
-                ]);
-
+                // Bitácora de inicio exitoso
                 AuditLog::create([
                     'user_id' => $user->id,
                     'action' => 'Inicio de sesión',
-                    'description' => 'El usuario inició sesión exitosamente',
+                    'description' => "El usuario {$user->name} inició sesión exitosamente.",
                     'ip_address' => $request->ip(),
                 ]);
 
-                return redirect()->intended('/');
-            }
-
-            // Falla: Aumentar contador
-            $user->increment('failed_attempts');
-
-            if ($user->failed_attempts >= 3) {
                 $user->update([
-                    'locked_until' => now()->addMinutes(5),
+                    'login_attempts' => 0,
+                    'locked_until' => null,
                 ]);
 
-                // Enviar correo
-                Mail::to($user->email)->send(new CuentaBloqueadaMail($user));
-
-                AuditLog::create([
-                    'user_id' => $user->id,
-                    'action' => 'Bloqueo por intentos fallidos',
-                    'description' => 'Cuenta bloqueada por múltiples intentos fallidos de inicio de sesión',
-                    'ip_address' => $request->ip(),
-                ]);
-
-                return back()->withErrors(['email' => 'Demasiados intentos fallidos. Cuenta bloqueada por 5 minutos.']);
+                return redirect()->intended();
             }
 
+            // Autenticación fallida
+            $user->login_attempts++;
+
+            // Bitácora de intento fallido
             AuditLog::create([
                 'user_id' => $user->id,
-                'action' => 'Intento fallido de login',
-                'description' => 'Intento fallido de inicio de sesión',
+                'action' => 'Intento de inicio fallido',
+                'description' => "El usuario {$user->name} intentó iniciar sesión pero falló (intentos: {$user->login_attempts}).",
                 'ip_address' => $request->ip(),
             ]);
+
+            // Si excede los 3 intentos, bloquear
+            if ($user->login_attempts >= 3) {
+                $user->locked_until = now()->addMinutes(15);
+                $user->login_attempts = 0;
+
+                // Bitácora de bloqueo
+                AuditLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'Bloqueo automático',
+                    'description' => "El usuario {$user->name} fue bloqueado automáticamente tras múltiples intentos fallidos.",
+                    'ip_address' => $request->ip(),
+                ]);
+
+                // Enviar correo de bloqueo
+                Mail::to($user->email)->send(new UserLockedMail($user));
+
+                $user->save();
+
+                return back()->withErrors([
+                    'email' => 'Tu cuenta ha sido bloqueada por múltiples intentos fallidos. Revisa tu correo.'
+                ]);
+            }
+
+            $user->save();
+
+            return back()->withErrors(['email' => 'Credenciales incorrectas.']);
         }
 
-        return back()->withErrors(['email' => 'Credenciales incorrectas']);
+        return back()->withErrors(['email' => 'Usuario no encontrado.']);
     }
+
 
     /**
      * Log the user out of the application.

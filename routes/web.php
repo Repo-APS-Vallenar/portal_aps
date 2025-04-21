@@ -157,7 +157,3 @@ Route::get('/audit/export/pdf', [AuditLogController::class, 'exportPdf'])->name(
 Route::post('/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected');
 
 Route::get('/users/export/excel', [UserController::class, 'exportExcel'])->name('users.export.excel');
-
-//Route::get('/export/users/pdf', [UserController::class, 'exportUsersPdf'])->name('users.export.pdf');
-
-Route::get('usuarios/export/pdf', [UserController::class, 'exportUsersPdf'])->name('users.exports.pdf');
