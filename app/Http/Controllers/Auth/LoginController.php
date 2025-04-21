@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Auth;
-
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
@@ -11,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\CuentaBloqueadaMail;
-
+use App\Models\User;
 class LoginController extends Controller
 {
     use AuthenticatesUsers;

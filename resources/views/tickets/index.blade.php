@@ -103,7 +103,7 @@
                                                                 <i class="fas fa-eye me-1"></i> Detalles
                                                             </a>
 
-                                                            @if(Auth::user()->isAdmin())
+                                                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                                                 <!-- Editar -->
                                                                 <a href="{{ route('tickets.edit', $ticket) }}"
                                                                     class="btn btn-outline-warning btn-sm">

@@ -31,7 +31,7 @@
                         <h2 class="mb-0">Ticket #{{ $ticket->id }}</h2>
                         <div class="btn-group">
                             <div class="d-flex gap-2">
-                                @if(Auth::user()->isAdmin())
+                                @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                     <a href="{{ route('tickets.edit', $ticket) }}" class="btn btn-warning me-2">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
@@ -83,7 +83,7 @@
                             <p class="text-muted">No hay comentarios aún.</p>
                         @else
                             @foreach($ticket->comments as $comment)
-                                @if(!$comment->is_internal || (Auth::check() && Auth::user()->isAdmin()))
+                                @if(!$comment->is_internal || (Auth::check() && Auth::user()->isAdmin() || Auth::user()->isSuperadmin()))
                                     <div class="comment mb-4" id="comment-{{ $comment->id }}">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h6 class="mb-1">{{ $comment->user->name }}</h6>
@@ -193,7 +193,7 @@
                     </div>
                     <div class="card-body">
                         <dl class="row">
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                 @if($ticket->marca)
                                     <dt class="col-sm-4">Marca:</dt>
                                     <dd class="col-sm-8">{{ $ticket->marca }}</dd>
@@ -219,7 +219,7 @@
                                 <dt class="col-sm-4">IP Red WiFi:</dt>
                                 <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
                             @endif
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                 @if($ticket->cpu)
                                     <dt class="col-sm-4">CPU:</dt>
                                     <dd class="col-sm-8">{{ $ticket->cpu }}</dd>
@@ -244,7 +244,7 @@
                                 <dt class="col-sm-4">ID AnyDesk:</dt>
                                 <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
                             @endif
-                            @if(Auth::user()->isAdmin())
+                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                 @if($ticket->version_windows)
                                     <dt class="col-sm-4">Versión Windows:</dt>
                                     <dd class="col-sm-8">{{ $ticket->version_windows }}</dd>
