@@ -9,7 +9,7 @@ use App\Exports\FromCollectionExport;
 use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel as ExcelFacade;
 use App\Exports\AuditLogsExport;
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class AuditLogController extends Controller
 {

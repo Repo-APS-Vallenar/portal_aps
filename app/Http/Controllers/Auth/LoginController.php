@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
+use App\Mail\UserLockedMail;
+use App\Models\User;
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
@@ -73,7 +76,7 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-        $user = \App\Models\User::where('email', $credentials['email'])->first();
+        $user = User::where('email', $credentials['email'])->first();
 
         if ($user) {
             // Si el usuario está bloqueado

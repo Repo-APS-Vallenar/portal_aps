@@ -24,24 +24,24 @@
                         href="{{ route('platforms.index') }}">Plataformas</a>
                 </li>
                 @auth
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->is('tickets*') ? 'active' : '' }}"
-                            href="{{ route('tickets.index') }}">Tickets</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->is('documentos*') ? 'active' : '' }}" href="#">Documentos</a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('tickets*') ? 'active' : '' }}"
+                        href="{{ route('tickets.index') }}">Tickets</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('documentos*') ? 'active' : '' }}" href="#">Documentos</a>
+                </li>
                 @endauth
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}"
                         href="{{ route('contacto') }}">Contacto</a>
                 </li>
                 @auth
-                    @if (auth()->user()->role === 'superadmin')
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('audit.index') }}">Auditoría</a>
-                        </li>
-                    @endif
+                @if (auth()->user()->role === 'superadmin')
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('audit.index') }}">Auditoría</a>
+                </li>
+                @endif
                 @endauth
             </ul>
 
@@ -49,29 +49,35 @@
             <ul class="navbar-nav ms-auto">
                 @auth
 
-                    <li class="nav-item dropdown">
-                        <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
-                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                            {{ Auth::user()->name }}
+                <li class="nav-item dropdown">
+                    <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                        {{ Auth::user()->name }}
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                        @if (Auth::user()->role !== 'user')
+                        <a class="dropdown-item" href="{{ route('users.index') }}">
+                            🗒️👤 Lista de Usuarios
+                        </a>
+                        @endif
+
+                        @if (Auth::user()->role === 'superadmin' || Auth::user()->role === 'admin')
+                        <a class="dropdown-item" href="{{ route('users.create') }}">
+                            ➕👤 Registrar Usuario
+                        </a>
+                        @endif
+
+                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
+                             document.getElementById('logout-form').submit();">
+                            📤👋 Cerrar Sesión
                         </a>
 
-                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                            <a class="dropdown-item" href="{{ route('users.index') }}">
-                                🗒️👤 Lista de Usuarios
-                            </a>
-                            <a class="dropdown-item" href="{{ route('users.create') }}">
-                                ➕👤 Registrar Usuario
-                            </a>
-                            <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                                                                         document.getElementById('logout-form').submit();">
-                                📤👋 Cerrar Sesión
-                            </a>
-
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                @csrf
-                            </form>
-                        </div>
-                    </li>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </div>
+                </li>
                 @endauth
             </ul>
         </div>

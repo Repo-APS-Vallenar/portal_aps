@@ -9,6 +9,7 @@ class ExportController extends Controller
 {
     public function exportAuditLogs()
     {
-        return Excel::download(new AuditLogsExport, 'bitacora_auditoria.xlsx');
+        $logs = $this->getAuditLogs(); // Replace with the actual method or logic to retrieve $logs
+        return Excel::download(new AuditLogsExport($logs), 'bitacora_auditoria.xlsx');
     }
 }
