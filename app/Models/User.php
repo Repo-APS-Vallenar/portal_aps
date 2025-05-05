@@ -26,6 +26,22 @@ class User extends Authenticatable
         'is_blocked'
     ];
 
+
+    /**
+     * Verifica si el usuario es administrador
+     *
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isSuperadmin()
+    {
+        return $this->role === 'superadmin';
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -46,23 +62,6 @@ class User extends Authenticatable
         'password' => 'hashed',
         'locked_until' => 'datetime',
     ];
-
-    /**
-     * Verifica si el usuario es administrador
-     *
-     * @return bool
-     */
-    public function isAdmin()
-    {
-        return $this->role === 'admin';
-    }
-
-    
-    public function isSuperadmin()
-    {
-        return $this->role === 'superadmin';
-    }
-    
 
     /**
      * Verifica si el usuario es un usuario regular

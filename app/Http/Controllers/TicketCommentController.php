@@ -34,7 +34,7 @@ class TicketCommentController extends Controller
             'comment' => $request->comment,
             'is_internal' => $request->has('is_internal'),
         ]);
-        $this->logAudit('Editar Comentario', 'Comentario actualizado por: ' . Auth()->user()->name);
+        $this->logAudit('Editar Comentario', 'Comentario actualizado por: ' . Auth::user()->name);
         return redirect()->route('tickets.show', $comment->ticket_id)
                          ->with('success', 'Comentario actualizado correctamente.');
     }
@@ -44,7 +44,7 @@ class TicketCommentController extends Controller
         $this->authorizeAction($comment);
         $ticketId = $comment->ticket_id;
         $comment->delete();
-        $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth()->user()->name);
+        $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth::user()->name);
         return redirect()->route('tickets.show', $ticketId)
                          ->with('success', 'Comentario eliminado correctamente.');
     }

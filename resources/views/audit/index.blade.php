@@ -64,7 +64,7 @@
                                 class="btn btn-success"><i class="bi bi-file-earmark-excel me-1"></i>Exportar a Excel</a>
                         </div>
                         <div class="d-flex gap-2">
-                            <a href="{{ route('export.auditlogs.pdf', ['search' => request('search')]) }}"
+                            <a href="{{ route('audit.export.pdf', ['search' => request('search')]) }}"
                                 class="btn btn-danger"><i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF</a>
                         </div>
                     </div>
@@ -85,10 +85,10 @@
         $(document).ready(function () {
             $('#btn-search').on('click', function () {
                 let value = $('#search').val();
-                console.log("Buscando: ", value); // 👈 esto
+                console.log("Buscando: ", value); 
 
                 $.ajax({
-                    url: '{{ route('audit.index') }}',
+                    url: "{{ route('audit.index') }}",
                     data: { search: value },
                     success: function (data) {
                         console.log("Respuesta AJAX recibida");

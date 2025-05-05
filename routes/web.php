@@ -75,12 +75,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected'); // Ajustada URI para consistencia
 
 
-}); // --- FIN GRUPO AUTH ---
+}); 
 
-
-// --- RUTAS DE DEBUG / SEEDERS (ELIMINAR O PROTEGER ESTRICTAMENTE EN PRODUCCIÓN) ---
-// !! ADVERTENCIA: Estas rutas no deben estar accesibles en entornos de producción sin estricta seguridad !!
-// Ejemplo de protección: solo en entorno 'local'
 // Route::environment(['local'])->group(function () {
     Route::get('/run-admin-seeder', function () {
         Artisan::call('db:seed', [
@@ -126,12 +122,3 @@ Route::middleware(['auth'])->group(function () {
             return response('Error al ejecutar el seeder: ' . $e->getMessage(), 500);
         }
     });
-// }); // --- FIN RUTAS DE DEBUG ---
-
-// NOTA: Los métodos resource show(), edit(), update(), destroy() de UserController no están definidos en el controlador que proporcionaste previamente,
-// pero si los implementas más adelante, asegúrate de que tengan las protecciones de rol adecuadas dentro del controlador.
-
-// NOTA: Las rutas de comentarios duplicadas y confusas que apuntaban a TicketController para update/delete han sido eliminadas, manteniendo las del TicketCommentController.
-// Si updateComment/deleteComment en TicketController tienen lógica especial, deberás re-agregarlas con nombres y URIs distintas y con middleware auth.
-
-// NOTA: La ruta de auditoría /audit sin middleware ha sido eliminada. Solo /admin/audit y sus subrutas con middleware auth existen ahora.

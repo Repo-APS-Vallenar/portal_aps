@@ -11,6 +11,10 @@ use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AuditLog;
+use App\Mail\TicketCreatedMail;
+use App\Mail\TicketUpdatedMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class TicketController extends Controller
 {
@@ -20,12 +24,12 @@ class TicketController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        }
+    }
 
     function logAudit($action, $description)
     {
         AuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => $action,
             'description' => $description,
             'ip_address' => request()->ip(),
@@ -53,7 +57,7 @@ class TicketController extends Controller
     {
         $categories = TicketCategory::all();
         $locations = Location::all();
-        if (auth()->user()->role === 'user') {
+        if (Auth::user()->role === 'user') {
             $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
 
             if (!$statusSolicitado) {
@@ -71,7 +75,6 @@ class TicketController extends Controller
 
 
         return view('tickets.create', compact('categories', 'statuses', 'locations'));
-
     }
 
     public function location()
@@ -104,8 +107,8 @@ class TicketController extends Controller
             'password_cuenta' => 'nullable|string|max:255',
             'fecha_instalacion' => 'nullable|date',
             'comentarios' => 'nullable|string',
-            'contact_phone',
-            'contact_email',
+            'contact_phone' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
         ]);
 
         $ticket = new Ticket($validated);
@@ -131,8 +134,9 @@ class TicketController extends Controller
 
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
-        $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth()->user()->name);
 
+        $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth::user()->name);
+        Mail::to(Auth::user()->email)->send(new TicketCreatedMail($ticket));
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket creado exitosamente.');
     }
@@ -176,8 +180,10 @@ class TicketController extends Controller
      */
     public function update(Request $request, Ticket $ticket)
     {
+        // Autorización para editar el ticket
         $this->authorize('update', $ticket);
 
+        // Validación de los datos del request
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -204,17 +210,66 @@ class TicketController extends Controller
             'password_cuenta' => 'nullable|string|max:255',
             'fecha_instalacion' => 'nullable|date',
             'comentarios' => 'nullable|string',
-            'contact_phone',
-            'contact_email',
+            'contact_phone' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
         ]);
 
-        $ticket->update($validated);
-        $this->logAudit('Actualizar Ticket', 'Ticket actualizado por: ' . Auth()->user()->name);
+        // Clonamos el ticket antes de la actualización para detectar los cambios
+        $originalTicket = clone $ticket;
 
-        //dd($request->all());
+        // Actualizamos el ticket con los datos validados
+        $ticket->update($validated);
+
+        // Forzar actualización de `updated_at` si no hubo cambios
+        if (!$ticket->wasChanged()) {
+            $ticket->touch();
+        }
+
+        // Registro en bitácora
+        $this->logAudit('Actualizar Ticket', 'Ticket actualizado por: ' . Auth::user()->name);
+
+        // Detectar los cambios realizados
+        $changes = [];
+
+        // Comparar el título
+        if ($originalTicket->title !== $ticket->title) {
+            $changes[] = "Título: de '{$originalTicket->title}' a '{$ticket->title}'";
+        }
+
+        // Comparar la descripción
+        if ($originalTicket->description !== $ticket->description) {
+            $changes[] = "Descripción: de '{$originalTicket->description}' a '{$ticket->description}'";
+        }
+
+        // Comparar la prioridad
+        if ($originalTicket->priority !== $ticket->priority) {
+            $changes[] = "Prioridad: de '" . ucfirst($originalTicket->priority) . "' a '" . ucfirst($ticket->priority) . "'";
+        }
+
+        // Comparar el estado
+        if ($originalTicket->status_id !== $ticket->status_id) {
+            $changes[] = "Estado: de '{$originalTicket->status->name}' a '{$ticket->status->name}'";
+        }
+
+        // Otros campos que quieras comparar...
+
+        // Enviar correo si hay cambios
+        if (count($changes) > 0) {
+            // Verificar que el creador del ticket tenga un correo válido
+            if ($ticket->creator && $ticket->creator->email) {
+                // Enviar correo al creador del ticket
+                Mail::to($ticket->creator->email)->send(new TicketUpdatedMail($ticket, $changes));
+                Log::info('Correo de ticket actualizado enviado a ' . $ticket->creator->email);
+            } else {
+                Log::warning('No se pudo enviar el correo porque el creador del ticket no tiene un correo válido.');
+            }
+        }
+
+        // Redirigir a la vista del ticket actualizado
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket actualizado exitosamente.');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -224,7 +279,7 @@ class TicketController extends Controller
         $this->authorize('delete', $ticket);
 
         $ticket->delete();
-        $this->logAudit('Eliminar Ticket', 'Ticket eliminado por: ' . Auth()->user()->name);
+        $this->logAudit('Eliminar Ticket', 'Ticket eliminado por: ' . Auth::user()->name);
 
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado exitosamente.');
@@ -242,11 +297,11 @@ class TicketController extends Controller
 
         TicketComment::create([
             'ticket_id' => $ticket->id,
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'comment' => $request->comment,
             'is_internal' => $request->has('is_internal'),
         ]);
-        $this->logAudit('Añadir Comentario', 'Comentario añadido por: ' . Auth()->user()->name);
+        $this->logAudit('Añadir Comentario', 'Comentario añadido por: ' . Auth::user()->name);
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Comentario agregado exitosamente.');
@@ -261,13 +316,13 @@ class TicketController extends Controller
         $comment = TicketComment::findOrFail($id);
 
         // Solo el autor o admin puede editar
-        if (auth()->id() !== $comment->user_id && !auth()->user()->isAdmin()) {
+        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
             return response()->json(['success' => false], 403);
         }
 
         $comment->comment = $request->comment;
         $comment->save();
-        $this->logAudit('Actualizar Comentario', 'Comentario actualizado por: ' . Auth()->user()->name);
+        $this->logAudit('Actualizar Comentario', 'Comentario actualizado por: ' . Auth::user()->name);
 
 
         return response()->json(['success' => true, 'updated_comment' => e($comment->comment)]);
@@ -275,15 +330,14 @@ class TicketController extends Controller
 
     public function deleteComment(Ticket $ticket, TicketComment $comment)
     {
-        if (auth()->id() !== $comment->user_id && !auth()->user()->isAdmin()) {
+        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
+            // Solo el autor o admin puede eliminar
             return redirect()->back()->with('error', 'No tienes permiso para eliminar este comentario.');
         }
 
         $comment->delete();
-        $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth()->user()->name);
+        $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth::user()->name);
 
         return redirect()->back()->with('success', 'Comentario eliminado correctamente.');
     }
-
 }
-
