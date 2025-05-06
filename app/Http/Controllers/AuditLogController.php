@@ -31,7 +31,7 @@ class AuditLogController extends Controller
         $logs = $query->get();
 
         $pdf = PDF::loadView('audit.partials.pdf', compact('logs'));
-        return $pdf->download('bitacora.pdf'.now()->format('Y-m-d_H:i:s') . '.pdf');
+        return $pdf->download('bitacora'.now()->format('Y-m-d_H:i:s') . '.pdf');
     }
 
     public function index(Request $request)
@@ -108,7 +108,7 @@ class AuditLogController extends Controller
             ];
         })->toArray();
 
-        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora.xlsx'.now()->format('Y-m-d_H:i:s') . '.xlsx');
+        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora'.now()->format('Y-m-d_H:i:s') . '.xlsx');
     }
 
     public function exportSelected(Request $request)

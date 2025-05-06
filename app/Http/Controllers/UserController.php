@@ -142,7 +142,7 @@ class UserController extends Controller
     {
         // Asumiendo que UsersExport maneja el filtrado si es necesario
         $usuarios = User::where('role', '!=', 'superadmin')->get(); // Filtrando aquí también
-        return Excel::download(new UsersExport($usuarios), 'usuarios.xlsx'.now()->format('Y-m-d_H:i:s') . '.xlsx');
+        return Excel::download(new UsersExport($usuarios), 'usuarios'.now()->format('Y-m-d_H:i:s') . '.xlsx');
     }
 
     public function exportUsersPdf(Request $request)
