@@ -9,7 +9,7 @@ class TicketCommentController extends Controller
     function logAudit($action, $description)
     {
         AuditLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'action' => $action,
             'description' => $description,
             'ip_address' => request()->ip(),

@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
-use Illuminate\Http\Request;
-use Maatwebsite\Excel\Excel;
-use App\Exports\FromCollectionExport;
 use App\Models\User;
+use App\Models\Category;
+use App\Models\TicketCategory; // Ensure this is correctly imported
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel as ExcelFacade;
-use App\Exports\AuditLogsExport;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use App\Exports\AuditLogsExport;
+use Illuminate\Support\Facades\Auth;
 
 class AuditLogController extends Controller
 {
@@ -30,8 +32,18 @@ class AuditLogController extends Controller
 
         $logs = $query->get();
 
+        // Asegurarse de que los logs sean una colección de Laravel
+        $logs = collect($logs);
+
+        // Transformar los logs usando el método transform
+        $logs->transform(function ($log) {
+            // Usar la función generarMensajeAuditoria para traducir las acciones
+            $log->description = $this->generarMensajeAuditoria($log, [], []);
+            return $log;
+        });
+
         $pdf = PDF::loadView('audit.partials.pdf', compact('logs'));
-        return $pdf->download('bitacora_'.now()->format('Y-m-d_H:i:s') . '.pdf');
+        return $pdf->download('bitacora_' . now()->format('Y-m-d_H:i:s') . '.pdf');
     }
 
     public function index(Request $request)
@@ -81,7 +93,6 @@ class AuditLogController extends Controller
         return view('audit.index', compact('logs', 'usuarios', 'accionesUnicas'));
     }
 
-
     public function exportExcel(Request $request)
     {
         $query = AuditLog::with('user')->latest();
@@ -98,6 +109,16 @@ class AuditLogController extends Controller
 
         $logs = $query->get();
 
+        // Asegurarse de que los logs sean una colección de Laravel
+        $logs = collect($logs);
+
+        // Transformar los logs usando el método transform
+        $logs->transform(function ($log) {
+            // Usar la función generarMensajeAuditoria para traducir las acciones
+            $log->description = $this->generarMensajeAuditoria($log, [], []);
+            return $log;
+        });
+
         $exportData = collect($logs)->map(function ($log) {
             return [
                 $log->created_at->format('d/m/Y H:i'),
@@ -108,7 +129,7 @@ class AuditLogController extends Controller
             ];
         })->toArray();
 
-        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora_'.now()->format('Y-m-d_H:i:s') . '.xlsx');
+        return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora_' . now()->format('Y-m-d_H:i:s') . '.xlsx');
     }
 
     public function exportSelected(Request $request)
@@ -116,6 +137,16 @@ class AuditLogController extends Controller
         $ids = $request->input('selected_logs', []);
 
         $logs = AuditLog::with('user')->whereIn('id', $ids)->get();
+
+        // Asegurarse de que los logs sean una colección de Laravel
+        $logs = collect($logs);
+
+        // Transformar los logs usando el método transform
+        $logs->transform(function ($log) {
+            // Usar la función generarMensajeAuditoria para traducir las acciones
+            $log->description = $this->generarMensajeAuditoria($log, [], []);
+            return $log;
+        });
 
         $exportData = collect($logs)->map(function ($log) {
             return [
@@ -129,8 +160,6 @@ class AuditLogController extends Controller
 
         return ExcelFacade::download(new AuditLogsExport($exportData), 'bitacora_seleccionada.xlsx');
     }
-
-
 
     public function search(Request $request)
     {
@@ -146,6 +175,5 @@ class AuditLogController extends Controller
 
         return view('audit.partials.logs', compact('logs'));
     }
-
-
+    
 }

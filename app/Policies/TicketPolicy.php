@@ -46,7 +46,7 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isSuperadmin();
     }
 
     /**
@@ -54,7 +54,7 @@ class TicketPolicy
      */
     public function restore(User $user, Ticket $ticket): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isSuperadmin();
     }
 
     /**
@@ -62,6 +62,6 @@ class TicketPolicy
      */
     public function forceDelete(User $user, Ticket $ticket): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isSuperadmin();
     }
 }

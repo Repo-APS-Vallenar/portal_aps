@@ -267,13 +267,6 @@ class UserController extends Controller
             $changes[] = "rol: '{$original->role}' a '{$user->role}'";
         }
 
-        if (!empty($changes)) {
-            AuditLog::create([
-                'user_id' => Auth::id(), // Usando helper auth()
-                'description' => "El usuario " . (Auth::check() ? Auth::user()->name : 'desconocido') . " editó al usuario {$original->name}. Cambios: " . implode(', ', $changes), // Usando Auth facade
-                'ip_address' => $request->ip(),
-            ]);
-        }
 
         if ($changes) {
             $this->logAudit(

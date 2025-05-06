@@ -219,39 +219,33 @@ class TicketController extends Controller
 
         // Actualizamos el ticket con los datos validados
         $ticket->update($validated);
+        $oldValues      = $originalTicket->getAttributes();
+        $newValues      = $ticket->getAttributes();
+        $mensajeAuditoria = $this->generarMensajeAuditoria($ticket, $oldValues, $newValues);
+
+        AuditLog::create([
+            'user_id'     => Auth::id(),
+            'action'      => 'Actualización de ticket',
+            'description' => $mensajeAuditoria,
+            'ip_address'  => $request->ip(),
+        ]);
 
         // Forzar actualización de `updated_at` si no hubo cambios
         if (!$ticket->wasChanged()) {
             $ticket->touch();
         }
 
-        // Registro en bitácora
-        $this->logAudit('Actualizar Ticket', 'Ticket actualizado por: ' . Auth::user()->name);
-
         // Detectar los cambios realizados
         $changes = [];
+        foreach ($validated as $key => $newValue) {
+            $oldValue = $originalTicket->$key ?? null;
 
-        // Comparar el título
-        if ($originalTicket->title !== $ticket->title) {
-            $changes[] = "Título: de '{$originalTicket->title}' a '{$ticket->title}'";
+            if ($oldValue != $newValue) {
+                $changes[] = ucfirst($key) . ": de '{$oldValue}' a '{$newValue}'";
+            }
         }
 
-        // Comparar la descripción
-        if ($originalTicket->description !== $ticket->description) {
-            $changes[] = "Descripción: de '{$originalTicket->description}' a '{$ticket->description}'";
-        }
 
-        // Comparar la prioridad
-        if ($originalTicket->priority !== $ticket->priority) {
-            $changes[] = "Prioridad: de '" . ucfirst($originalTicket->priority) . "' a '" . ucfirst($ticket->priority) . "'";
-        }
-
-        // Comparar el estado
-        if ($originalTicket->status_id !== $ticket->status_id) {
-            $changes[] = "Estado: de '{$originalTicket->status->name}' a '{$ticket->status->name}'";
-        }
-
-        // Otros campos que quieras comparar...
 
         // Enviar correo si hay cambios
         if (count($changes) > 0) {
@@ -271,6 +265,7 @@ class TicketController extends Controller
     }
 
 
+
     /**
      * Remove the specified resource from storage.
      */
@@ -279,7 +274,7 @@ class TicketController extends Controller
         $this->authorize('delete', $ticket);
 
         $ticket->delete();
-        $this->logAudit('Eliminar Ticket', 'Ticket eliminado por: ' . Auth::user()->name);
+        $this->logAudit('Eliminar Ticket', 'Ticket #' . $ticket->id . ' eliminado por: ' . Auth::user()->name . ', enviado por: ' . ($ticket->creator ? $ticket->creator->name : 'Desconocido'));
 
         return redirect()->route('tickets.index')
             ->with('success', 'Ticket eliminado exitosamente.');
@@ -339,5 +334,80 @@ class TicketController extends Controller
         $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth::user()->name);
 
         return redirect()->back()->with('success', 'Comentario eliminado correctamente.');
+    }
+
+    /**
+     * Genera un mensaje de auditoría para los cambios realizados en un ticket.
+     *
+     * @param  \App\Models\Ticket  $ticket
+     * @param  array  $oldValues
+     * @param  array  $newValues
+     * @return string
+     */
+
+    protected function generarMensajeAuditoria($ticket, array $oldValues, array $newValues)
+    {
+        // Mapas de traducción locales y etiquetas para los campos
+        $fields = [
+            'title'        => ['label' => 'Título'],
+            'description'  => ['label' => 'Descripción'],
+            'category_id'  => [
+                'label' => 'Categoría',
+                'map'   => fn($v) => TicketCategory::find($v)?->name ?? 'Sin categoría'
+            ],
+            'status_id'    => [
+                'label' => 'Estado',
+                'map'   => fn($v) => [
+                    1 => 'Pendiente',
+                    2 => 'En Progreso',
+                    3 => 'Resuelto',
+                    4 => 'Cerrado',
+                ][$v] ?? 'Desconocido'
+            ],
+            'priority'     => [
+                'label' => 'Prioridad',
+                'map'   => fn($v) => [
+                    'baja'    => 'Baja',
+                    'media'   => 'Media',
+                    'alta'    => 'Alta',
+                    'urgente' => 'Urgente',
+                ][$v] ?? ucfirst($v)
+            ],
+            'assigned_to'  => [
+                'label' => 'Asignado a',
+                'map'   => fn($v) => $v ? User::find($v)?->name : 'No asignado'
+            ],
+            // Agrega aquí más campos si los necesitas
+        ];
+
+        $mensajes = [];
+
+        foreach ($fields as $campo => $config) {
+            // Saltar si el campo no está en los nuevos valores
+            if (!array_key_exists($campo, $newValues)) {
+                continue;
+            }
+
+            $old = $oldValues[$campo] ?? null;
+            $new = $newValues[$campo];
+
+            // Aplicar mapeo si existe
+            if (isset($config['map'])) {
+                $old = $config['map']($old);
+                $new = $config['map']($new);
+            }
+
+            // Registrar sólo si cambió el valor
+            if ((string)$old !== (string)$new) {
+                $mensajes[] = "{$config['label']}: de '{$old}' a '{$new}'";
+            }
+        }
+
+        if (empty($mensajes)) {
+            return "Ticket #{$ticket->id} actualizado por: " . Auth::user()->name . ". No hubo cambios.";
+        }
+
+        $lista = implode(', ', $mensajes);
+        return "Ticket #{$ticket->id} actualizado por: " . Auth::user()->name . ". Cambios: {$lista}";
     }
 }
