@@ -254,7 +254,7 @@ class UserController extends Controller
 
         $user->save();
 
-        // Registro de cambios generales (si hubo cambios)
+        // Registro de cambios generales (si solo si hubo cambios)
         $changes = [];
 
         if ($original->name !== $user->name) {

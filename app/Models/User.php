@@ -26,9 +26,8 @@ class User extends Authenticatable
         'is_blocked'
     ];
 
-
     /**
-     * Verifica si el usuario es administrador
+     * Verifica si el usuario es administrador.
      *
      * @return bool
      */
@@ -37,6 +36,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /**
+     * Verifica si el usuario es superadministrador.
+     *
+     * @return bool
+     */
     public function isSuperadmin()
     {
         return $this->role === 'superadmin';
