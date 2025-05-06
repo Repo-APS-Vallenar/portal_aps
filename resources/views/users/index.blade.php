@@ -76,11 +76,6 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($user->is_active)
-                                        <span class="badge bg-success">Activo</span>
-                                    @else
-                                        <span class="badge bg-danger">Deshabilitado</span>
-                                    @endif
                                     @if($user->locked_until && now()->lessThan($user->locked_until))
                                         <span class="badge bg-danger">Bloqueado</span>
                                     @else
@@ -92,22 +87,12 @@
                                     <div class="btn-group" role="group">
                                         <!-- Botón para editar solo si el usuario está activo -->
                                         @if($user->is_active)
-                                            <a href="#" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal"
+                                            <a href="#" class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                                 data-bs-target="#editUserModal{{ $user->id }}">
-                                                <i class="fas fa-edit"></i>
+                                                <i class="fas fa-edit"> </i>Modificar
                                             </a>
                                         @endif
 
-
-                                        <!-- Formulario para habilitar/deshabilitar -->
-                                        <form action="{{ route('users.toggle', $user) }}" method="POST">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit"
-                                                class="btn btn-sm  {{ $user->is_active ? 'btn-outline-danger btn-no-rounded' : 'btn-outline-success' }}">
-                                                {{ $user->is_active ? 'Deshabilitar' : 'Habilitar' }}
-                                            </button>
-                                        </form>
 
 
                                         <!-- Botón para abrir el modal de cambio de contraseña -->
@@ -119,6 +104,7 @@
                                                                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                                                     data-bs-target="#changePasswordModal{{ $user->id }}">
                                                                     Cambiar Contraseña
+                                                                    <i class="fas fa-key"></i>
                                                                 </button>
                                         @endif
                                     </div>

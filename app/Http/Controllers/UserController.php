@@ -24,7 +24,6 @@ class UserController extends Controller
                 return redirect()->route('login');
             }
 
-            // --- Líneas de Depuración ---
             $routeName = $request->route()->getName();
             $userRole = $user->role;
             $isUsersIndexRoute = ($routeName === 'users.index'); // Verifica si el nombre de la ruta es users.index
@@ -143,7 +142,7 @@ class UserController extends Controller
     {
         // Asumiendo que UsersExport maneja el filtrado si es necesario
         $usuarios = User::where('role', '!=', 'superadmin')->get(); // Filtrando aquí también
-        return Excel::download(new UsersExport($usuarios), 'usuarios.xlsx');
+        return Excel::download(new UsersExport($usuarios), 'usuarios.xlsx'.now()->format('Y-m-d_H:i:s') . '.xlsx');
     }
 
     public function exportUsersPdf(Request $request)
@@ -163,7 +162,7 @@ class UserController extends Controller
         $users = $query->get();
 
         $pdf = PDF::loadView('users.export.users_pdf', compact('users'));
-        return $pdf->download('usuarios_' . now()->format('Y-m-d_H-i-s') . '.pdf');
+        return $pdf->download('usuarios_' . now()->format('Y-m-d_H:i:s') . '.pdf');
     }
 
 
@@ -198,7 +197,6 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
         ];
-        // Lógica corregida de validación de rol (eliminada la línea duplicada)
         if (Auth::check() && Auth::user()->role === 'superadmin' && $request->has('role')) { // Usando Auth facade
             $rules['role'] = 'in:user,admin,superadmin';
         }
@@ -212,7 +210,6 @@ class UserController extends Controller
         $user->name = $validated['name'];
         $user->email = $validated['email'];
 
-        // Lógica corregida para actualizar rol (eliminada la línea duplicada)
         if (Auth::check() && Auth::user()->role === 'superadmin' && isset($validated['role'])) { // Usando helper auth()
             $user->role = $validated['role'];
         }
@@ -224,21 +221,18 @@ class UserController extends Controller
                 $user->login_attempts = 0;
 
                 AuditLog::create([
-                    // Lógica corregida para user_id en log (eliminada la línea duplicada)
-                    'user_id' => Auth::id(), // Usando helper auth() correctamente
-                    // Lógica corregida para descripción en log (eliminada la línea duplicada)
-                    'description' => "El usuario {$user->name} (rol: {$user->role}) fue desbloqueado por " . (Auth::check() ? Auth::user()->name : 'desconocido') . ".", // Usando Auth facade
-                    'ip_address' => $request->ip(),
+                    'user_id' => Auth::id(),
+                    'action' => 'Desbloqueo de usuario',
+                    'description' => 'El usuario Petter Parker (rol: user) fue desbloqueado por SuperAdmin.',
+                    'ip_address' => request()->ip(),
                 ]);
             }
         }
 
         // Bloqueo manual solo por superadmin
-        // Lógica corregida para check de superadmin (eliminada la línea duplicada)
         if (Auth::check() && Auth::user()->role === 'superadmin') { // Usando helper auth()
             if ($request->has('lock_user') && !$user->locked_until) {
                 $user->locked_until = now()->addMinutes(180); // Bloqueo por 3 horas
-                // $lockChanged = true; // Esta variable no se usa después
 
                 AuditLog::create([
                     'user_id' => Auth::id(), // Usando helper auth()
@@ -248,7 +242,6 @@ class UserController extends Controller
                 ]);
             } elseif (!$request->has('lock_user') && $user->locked_until && now()->lessThan($user->locked_until)) {
                 $user->locked_until = null;
-                // $lockChanged = true; // Esta variable no se usa después
 
                 AuditLog::create([
                     'user_id' => Auth::id(), // Usando helper auth()
@@ -270,7 +263,6 @@ class UserController extends Controller
         if ($original->email !== $user->email) {
             $changes[] = "email: '{$original->email}' a '{$user->email}'";
         }
-        // Lógica corregida para check de rol en log (eliminada la línea duplicada)
         if ($original->role !== $user->role && Auth::check() && Auth::user()->role === 'superadmin') { // Usando helper auth()
             $changes[] = "rol: '{$original->role}' a '{$user->role}'";
         }
@@ -278,10 +270,18 @@ class UserController extends Controller
         if (!empty($changes)) {
             AuditLog::create([
                 'user_id' => Auth::id(), // Usando helper auth()
-                // Lógica corregida para descripción en log (eliminada la línea duplicada)
                 'description' => "El usuario " . (Auth::check() ? Auth::user()->name : 'desconocido') . " editó al usuario {$original->name}. Cambios: " . implode(', ', $changes), // Usando Auth facade
                 'ip_address' => $request->ip(),
             ]);
+        }
+
+        if ($changes) {
+            $this->logAudit(
+                'Editar Usuario',
+                'Cambios: ' . implode(', ', $changes),
+                'User',
+                $user->id
+            );
         }
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
@@ -300,8 +300,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id); // Usar findOrFail es mejor aquí si esperas que el usuario exista
 
-        // Lógica corregida para check de auto-deshabilitación (eliminada la línea duplicada)
-        if ($user->id === Auth::id()) { // Usando helper auth()
+        if ($user->id === Auth::id()) {
             // NO cambiar el estado, solo redirigir con error
             return back()->with('modal_error', 'No puedes deshabilitar tu propio usuario por motivos de seguridad y accesibilidad a la plataforma.');
         }
@@ -332,7 +331,6 @@ class UserController extends Controller
 
     public function updatePassword(Request $request, User $user)
     {
-        // Lógica corregida para obtener usuario actual (eliminada la línea duplicada)
         $currentUser = Auth::user(); // Usando Auth directamente
 
         // Reglas de permisos
