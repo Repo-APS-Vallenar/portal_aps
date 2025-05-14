@@ -20,7 +20,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-
     <style>
     /* Estilos generales */
     body {
@@ -151,6 +150,24 @@
     .footer-logo:hover {
         transform: scale(1.05);
     }
+
+    .bell-floating {
+        position: fixed;
+        top: 55px;
+        left: 40px;
+        z-index: 99999;
+    }
+    @media (max-width: 1200px) {
+        .bell-floating {
+            left: 24px;
+        }
+    }
+    @media (max-width: 768px) {
+        .bell-floating {
+            left: 12px;
+            top: 24px;
+        }
+    }
     </style>
 
     @stack('styles')
@@ -162,6 +179,12 @@
     <main class="py-3" style="margin-top: 50px;">
         @yield('content')
     </main>
+
+    <!-- Campana de notificaciones flotante visible para todos los usuarios autenticados (prueba) -->
+    @auth
+        <x-notification-bell />
+    @endauth
+
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

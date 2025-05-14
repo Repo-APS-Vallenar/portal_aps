@@ -41,19 +41,14 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex flex-column flex-md-row justify-content-between">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-end gap-2 mt-2">
                                 <div class="col-md-6 mb-3">
                                     <input type="text" name="search" class="form-control" placeholder="Buscar..."
                                         value="{{ request('search') }}">
                                 </div>
-                                <div class="row col-md-6 text-end">
-                                    <div class="col-md-6 mb-3">
-                                        <button type="submit" class="btn btn-primary">Filtrar</button>
-                                    </div>
-                                    <div class="col-md-6">
-
-                                        <a href="{{ route('audit.index') }}" class="btn btn-secondary">Limpiar</a>
-                                    </div>
+                                <div class="col-md-6 d-flex gap-2 justify-content-md-end justify-content-center mb-3">
+                                    <button type="submit" class="btn btn-primary w-100 w-md-auto">Filtrar</button>
+                                    <a href="{{ route('audit.index') }}" class="btn btn-secondary w-100 w-md-auto">Limpiar</a>
                                 </div>
                             </div>
                         </form>

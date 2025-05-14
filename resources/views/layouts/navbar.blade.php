@@ -17,29 +17,41 @@
             <!-- Left Side Of Navbar -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">Inicio</a>
+                    <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">
+                        <i class="bi bi-house-door menu-icon"></i> Inicio
+                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('platforms*') ? 'active' : '' }}"
-                        href="{{ route('platforms.index') }}">Plataformas</a>
+                        href="{{ route('platforms.index') }}">
+                        <i class="bi bi-grid menu-icon"></i> Plataformas
+                    </a>
                 </li>
                 @auth
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('tickets*') ? 'active' : '' }}"
-                        href="{{ route('tickets.index') }}">Tickets</a>
+                        href="{{ route('tickets.index') }}">
+                        <i class="bi bi-ticket-detailed menu-icon"></i> Tickets
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('documentos*') ? 'active' : '' }}" href="#">Documentos</a>
+                    <a class="nav-link {{ request()->is('documentos*') ? 'active' : '' }}" href="#">
+                        <i class="bi bi-folder2-open menu-icon"></i> Documentos
+                    </a>
                 </li>
                 @endauth
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}"
-                        href="{{ route('contacto') }}">Contacto</a>
+                        href="{{ route('contacto') }}">
+                        <i class="bi bi-envelope menu-icon"></i> Contacto
+                    </a>
                 </li>
                 @auth
                 @if (auth()->user()->role === 'superadmin')
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('audit.index') }}">Auditoría</a>
+                    <a class="nav-link" href="{{ route('audit.index') }}">
+                        <i class="bi bi-shield-check menu-icon"></i> Auditoría
+                    </a>
                 </li>
                 @endif
                 @endauth
@@ -48,31 +60,34 @@
             <!-- Right Side Of Navbar -->
             <ul class="navbar-nav ms-auto">
                 @auth
-
+                    {{-- <x-notification-bell /> --}}
                 <li class="nav-item dropdown">
                     <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button"
                         data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                         {{ Auth::user()->name }}
                     </a>
-
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <div class="dropdown-menu dropdown-menu-end user-dropdown-menu" aria-labelledby="navbarDropdown">
+                        <div class="user-dropdown-header d-flex flex-column align-items-center p-3 mb-2">
+                            <div class="user-avatar mb-2">
+                                <i class="bi bi-person-circle" style="font-size:2.2rem;color:#01a3d5;"></i>
+                            </div>
+                            <div class="fw-bold" style="font-size:1.1rem;">{{ Auth::user()->name }}</div>
+                            <div class="text-secondary small">{{ Auth::user()->role === 'superadmin' ? 'Superadministrador' : (Auth::user()->role === 'admin' ? 'Administrador' : 'Usuario') }}</div>
+                        </div>
+                        <div class="dropdown-divider my-1"></div>
                         @if (Auth::user()->role !== 'user')
-                        <a class="dropdown-item" href="{{ route('users.index') }}">
-                            🗒️👤 Lista de Usuarios
+                        <a class="dropdown-item user-dropdown-item" href="{{ route('users.index') }}">
+                            <i class="bi bi-people-fill me-2 text-primary"></i> Lista de Usuarios
                         </a>
                         @endif
-
                         @if (Auth::user()->role === 'superadmin' || Auth::user()->role === 'admin')
-                        <a class="dropdown-item" href="{{ route('users.create') }}">
-                            ➕👤 Registrar Usuario
+                        <a class="dropdown-item user-dropdown-item" href="{{ route('users.create') }}">
+                            <i class="bi bi-person-plus-fill me-2 text-success"></i> Registrar Usuario
                         </a>
                         @endif
-
-                        <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
-                             document.getElementById('logout-form').submit();">
-                            📤👋 Cerrar Sesión
+                        <a class="dropdown-item user-dropdown-item user-logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <i class="bi bi-box-arrow-right me-2 text-danger"></i> <span class="text-danger">Cerrar Sesión</span>
                         </a>
-
                         <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                             @csrf
                         </form>

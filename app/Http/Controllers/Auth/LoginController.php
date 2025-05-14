@@ -126,6 +126,20 @@ class LoginController extends Controller
                     'ip_address' => $request->ip(),
                 ]);
 
+                // Notificar a todos los admins y superadmins
+                $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+                $notificationService = app(\App\Services\NotificationService::class);
+                foreach ($admins as $admin) {
+                    $mensaje = '🚫 El usuario ' . $user->name . ' ha sido bloqueado por múltiples intentos fallidos de inicio de sesión.';
+                    $noti = $notificationService->send(
+                        $admin,
+                        'usuario_bloqueado',
+                        'Usuario bloqueado: ' . $user->name,
+                        $mensaje,
+                        null
+                    );
+                }
+
                 // Enviar correo de bloqueo
                 Mail::to($user->email)->send(new UserLockedMail($user));
 

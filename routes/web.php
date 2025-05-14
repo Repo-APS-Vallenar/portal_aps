@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\NotificationController;
 
 
 // Rutas de autenticación
@@ -35,6 +36,8 @@ Route::middleware(['auth'])->group(function () {
     // Rutas de Tickets
     Route::resource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment');
+    Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
+    Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
 
     // Rutas de Comentarios de Tickets (usando TicketCommentController)
     Route::get('/comments/{comment}/edit', [TicketCommentController::class, 'edit'])->name('comments.edit');
@@ -67,6 +70,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/admin/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected'); // Ajustada URI para consistencia
 
+    // Rutas de notificaciones
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
 });
 
@@ -115,3 +123,20 @@ Route::get('/run-seederr', function () {
         return response('Error al ejecutar el seeder: ' . $e->getMessage(), 500);
     }
 });
+
+Route::get('/test-notification', function () {
+    event(new \App\Events\TestNotification('¡Esta es una notificación de prueba!'));
+    return 'Notificación enviada';
+})->middleware('auth');
+
+Route::get('/notificacion-prueba', function () {
+    $user = auth()->user();
+    \App\Models\Notification::create([
+        'user_id' => $user->id,
+        'title' => '¡Notificación de prueba!',
+        'message' => 'Esta es una notificación generada desde la web.',
+        'link' => '/tickets',
+        'is_read' => false
+    ]);
+    return 'Notificación de prueba creada para ' . $user->name;
+})->middleware('auth');
