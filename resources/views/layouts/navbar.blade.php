@@ -8,7 +8,7 @@
                 INTRANET APS
             </div>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
             aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -85,6 +85,14 @@
                             <i class="bi bi-person-plus-fill me-2 text-success"></i> Registrar Usuario
                         </a>
                         @endif
+                        @if(auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
+                            <a class="dropdown-item user-dropdown-item" href="{{ route('admin.parameters') }}">
+                                <i class="bi bi-gear me-2 text-warning"></i> Parámetros del sistema
+                            </a>
+                        @endif
+                        <a class="dropdown-item user-dropdown-item" href="{{ route('profile') }}">
+                            <i class="bi bi-person-lines-fill me-2 text-secondary"></i> Mi perfil
+                        </a>
                         <a class="dropdown-item user-dropdown-item user-logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             <i class="bi bi-box-arrow-right me-2 text-danger"></i> <span class="text-danger">Cerrar Sesión</span>
                         </a>

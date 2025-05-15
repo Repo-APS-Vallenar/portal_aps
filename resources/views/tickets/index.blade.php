@@ -139,15 +139,24 @@
                                         <div class="mb-1"><span class="ticket-card-label">Creado por:</span> <span>{{ $ticket->creator->name }}</span></div>
                                         <div class="mb-2"><span class="ticket-card-label">Asignado a:</span> <span>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</span></div>
                                         <div class="ticket-card-actions d-flex flex-column align-items-stretch mt-2" style="gap:0.4em;">
-                                            <a href="{{ route('tickets.show', $ticket) }}" class="ticket-pill-btn ticket-pill-details" style="width:100%; border-radius:999px; font-size:1em; height:40px; display:flex; align-items:center; justify-content:center; gap:0.4em; background:#01a3d5; color:#fff; border:1.5px solid #01a3d5; font-weight:600; margin-bottom:0;">
+                                            <a href="{{ route('tickets.show', $ticket) }}"
+                                               class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-details flex-fill"
+                                               aria-label="Ver detalles del ticket">
                                                 <i class="fas fa-eye"></i>
                                                 <span>Detalles</span>
                                             </a>
-                                            <a href="{{ route('tickets.edit', $ticket) }}" class="ticket-pill-btn ticket-pill-edit" style="width:100%; border-radius:999px; font-size:1em; height:40px; display:flex; align-items:center; justify-content:center; gap:0.4em; background:#ff9800; color:#fff; border:1.5px solid #ff9800; font-weight:600; margin-bottom:0;">
+                                            <a href="{{ route('tickets.edit', $ticket) }}"
+                                               class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-edit flex-fill"
+                                               aria-label="Editar ticket">
                                                 <i class="fas fa-edit"></i>
                                                 <span>Editar</span>
                                             </a>
-                                            <button type="button" class="ticket-pill-btn ticket-pill-delete" style="width:100%; border-radius:999px; font-size:1em; height:40px; display:flex; align-items:center; justify-content:center; gap:0.4em; background:#e74c3c; color:#fff; border:1.5px solid #e74c3c; font-weight:600; margin-bottom:0;" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-form="delete-ticket-mobile-{{ $ticket->id }}">
+                                            <button type="button"
+                                                    class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-delete flex-fill"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#confirmDeleteModal"
+                                                    data-form="delete-ticket-mobile-{{ $ticket->id }}"
+                                                    aria-label="Eliminar ticket">
                                                 <i class="fas fa-trash"></i>
                                                 <span>Eliminar</span>
                                             </button>

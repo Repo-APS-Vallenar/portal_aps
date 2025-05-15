@@ -381,4 +381,63 @@ class UserController extends Controller
 
         return back()->with('error', 'Usuario no encontrado.');
     }
+
+    public function profile()
+    {
+        $user = auth()->user();
+        return view('users.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+        $cambios = [];
+        if ($user->name !== $request->name) {
+            $cambios[] = "nombre: '{$user->name}' a '{$request->name}'";
+        }
+        if ($user->email !== $request->email) {
+            $cambios[] = "email: '{$user->email}' a '{$request->email}'";
+        }
+        if ($user->phone !== $request->phone) {
+            $cambios[] = "teléfono: '{$user->phone}' a '{$request->phone}'";
+        }
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->save();
+        if ($cambios) {
+            $this->logAudit('Editar Perfil', 'Cambios: ' . implode(', ', $cambios), 'User', $user->id);
+        }
+        return back()->with('success', 'Perfil actualizado correctamente.');
+    }
+
+    public function updatePasswordFromProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'regex:/[A-Z]/',         // Al menos una mayúscula
+                'regex:/[a-z]/',         // Al menos una minúscula
+                'regex:/[0-9]/',         // Al menos un número
+                'regex:/[@$!%*#?&]/',    // Al menos un símbolo especial
+                'confirmed'
+            ],
+        ], [
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un símbolo especial (@$!%*#?&).',
+            'password.confirmed' => 'Las contraseñas no coinciden.'
+        ]);
+        $user->password = bcrypt($request->password);
+        $user->save();
+        $this->logAudit('Actualizar Contraseña', 'El usuario actualizó su propia contraseña.', 'User', $user->id);
+        return back()->with('success', 'Contraseña actualizada correctamente.');
+    }
 }

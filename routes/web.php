@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Admin\ParameterController;
 
 
 // Rutas de autenticación
@@ -76,67 +77,43 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
+    Route::get('/mi-bitacora', [AuditLogController::class, 'myProfile'])->name('audit.myprofile');
+
+    Route::get('/perfil', [UserController::class, 'profile'])->name('profile');
+    Route::post('/perfil', [UserController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/perfil/password', [UserController::class, 'updatePasswordFromProfile'])->name('profile.password');
+
 });
 
-// Route::environment(['local'])->group(function () {
-Route::get('/run-admin-seeder', function () {
-    Artisan::call('db:seed', [
-        '--class' => 'AdminUserSeeder',
-        '--force' => true,
-    ]);
-    return 'Seeder AdminUserSeeder ejecutado correctamente';
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/audit/profile/{userId}', [AuditLogController::class, 'showProfile'])->name('audit.profile');
+    Route::get('/admin/parameters', [ParameterController::class, 'index'])->name('admin.parameters');
+    Route::post('/admin/parameters/locations', [ParameterController::class, 'storeLocation'])->name('admin.parameters.locations.store');
+    Route::put('/admin/parameters/locations/{location}', [ParameterController::class, 'updateLocation'])->name('admin.parameters.locations.update');
+    Route::delete('/admin/parameters/locations/{location}', [ParameterController::class, 'destroyLocation'])->name('admin.parameters.locations.destroy');
+    Route::post('/admin/parameters/categories', [ParameterController::class, 'storeCategory'])->name('admin.parameters.categories.store');
+    Route::put('/admin/parameters/categories/{category}', [ParameterController::class, 'updateCategory'])->name('admin.parameters.categories.update');
+    Route::delete('/admin/parameters/categories/{category}', [ParameterController::class, 'destroyCategory'])->name('admin.parameters.categories.destroy');
+    Route::post('/admin/parameters/statuses', [ParameterController::class, 'storeStatus'])->name('admin.parameters.statuses.store');
+    Route::put('/admin/parameters/statuses/{status}', [ParameterController::class, 'updateStatus'])->name('admin.parameters.statuses.update');
+    Route::delete('/admin/parameters/statuses/{status}', [ParameterController::class, 'destroyStatus'])->name('admin.parameters.statuses.destroy');
 });
 
-Route::get('/verificar-usuario', function () {
-    $user = User::where('email', 'admin@admin.com')->first();
-    if (!$user) {
-        return 'Usuario no encontrado.';
-    }
-    return [
-        'email' => $user->email,
-        'role' => $user->role,
-        'is_active' => $user->is_active,
-        'password_encriptada' => Hash::needsRehash($user->password) ? 'No' : 'Sí',
-    ];
+// Rutas de desarrollo - solo accesibles en entorno local
+Route::middleware(['auth'])->group(function () {
+    Route::get('/verificar-usuario', function () {
+        if (!app()->environment('local')) {
+            abort(404);
+        }
+        $user = User::where('email', 'admin@admin.com')->first();
+        if (!$user) {
+            return 'Usuario no encontrado.';
+        }
+        return [
+            'email' => $user->email,
+            'role' => $user->role,
+            'is_active' => $user->is_active,
+            'password_encriptada' => Hash::needsRehash($user->password) ? 'No' : 'Sí',
+        ];
+    });
 });
-
-Route::get('/crear-superadmin', function () {
-    $user = User::where('email', 'admin@admin.com')->first();
-    if ($user) {
-        return 'El usuario ya existe.';
-    }
-    User::create([
-        'name' => 'Superadmin',
-        'email' => 'admin@admin.com',
-        'password' => Hash::make('password123'),
-        'role' => 'superadmin',
-        'is_active' => true,
-    ]);
-    return 'Superadmin creado exitosamente.';
-});
-
-Route::get('/run-seederr', function () {
-    try {
-        Artisan::call('db:seed', ['--force' => true]);
-        return 'Seeder ejecutado correctamente.';
-    } catch (\Throwable $e) {
-        return response('Error al ejecutar el seeder: ' . $e->getMessage(), 500);
-    }
-});
-
-Route::get('/test-notification', function () {
-    event(new \App\Events\TestNotification('¡Esta es una notificación de prueba!'));
-    return 'Notificación enviada';
-})->middleware('auth');
-
-Route::get('/notificacion-prueba', function () {
-    $user = auth()->user();
-    \App\Models\Notification::create([
-        'user_id' => $user->id,
-        'title' => '¡Notificación de prueba!',
-        'message' => 'Esta es una notificación generada desde la web.',
-        'link' => '/tickets',
-        'is_read' => false
-    ]);
-    return 'Notificación de prueba creada para ' . $user->name;
-})->middleware('auth');

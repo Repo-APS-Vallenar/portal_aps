@@ -176,4 +176,71 @@ class AuditLogController extends Controller
         return view('audit.partials.logs', compact('logs'));
     }
     
+    /**
+     * Genera un mensaje legible para la auditoría.
+     * Puedes personalizar la lógica según los campos de AuditLog.
+     */
+    protected function generarMensajeAuditoria($log, $oldValues = [], $newValues = [])
+    {
+        // Si ya tienes la descripción, simplemente la devuelves
+        if (!empty($log->description)) {
+            return $log->description;
+        }
+
+        // Si quieres traducir o mejorar el mensaje, hazlo aquí
+        return "Acción: {$log->action} realizada por " . ($log->user->name ?? 'Sistema') . " el " . $log->created_at->format('d/m/Y H:i');
+    }
+
+    /**
+     * Muestra la auditoría de un usuario específico (perfil).
+     */
+    public function showProfile($userId, Request $request)
+    {
+        $user = User::findOrFail($userId);
+        $query = AuditLog::with('user')->where('user_id', $userId)->latest();
+
+        // Filtros adicionales si se requieren
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
+        $logs = $query->paginate(10);
+        $accionesUnicas = AuditLog::select('action')->distinct()->pluck('action');
+
+        return view('audit.profile', compact('user', 'logs', 'accionesUnicas'));
+    }
+
+    /**
+     * Muestra la auditoría personal del usuario autenticado.
+     */
+    public function myProfile(Request $request)
+    {
+        $user = Auth::user();
+        $query = AuditLog::with('user')->where('user_id', $user->id)->latest();
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('created_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('created_at', '<=', $request->to);
+        }
+
+        $logs = $query->paginate(10);
+        $accionesUnicas = AuditLog::select('action')->distinct()->pluck('action');
+
+        return view('audit.profile', [
+            'user' => $user,
+            'logs' => $logs,
+            'accionesUnicas' => $accionesUnicas
+        ]);
+    }
 }
