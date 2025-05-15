@@ -26,20 +26,11 @@ class UserController extends Controller
 
             $routeName = $request->route()->getName();
             $userRole = $user->role;
-            $isUsersIndexRoute = ($routeName === 'users.index'); // Verifica si el nombre de la ruta es users.index
-            $isRoleToBlock = !in_array($userRole, ['superadmin', 'admin']); // Verifica si el rol no es superadmin/admin
+            $isUsersIndexRoute = ($routeName === 'users.index');
+            $isRoleToBlock = !in_array($userRole, ['superadmin', 'admin']);
             $shouldBlockAccess = $isUsersIndexRoute && $isRoleToBlock;
 
-            Log::info("Ruta intentada: " . ($routeName ?? 'N/A') .
-                " | Rol del usuario: " . ($userRole ?? 'Invitado') .
-                " | ¿Es 'users.index'?: " . ($isUsersIndexRoute ? 'Sí' : 'No') .
-                " | ¿Es rol a bloquear?: " . ($isRoleToBlock ? 'Sí' : 'No') .
-                " | ¿Debería bloquearse?: " . ($shouldBlockAccess ? 'SÍ' : 'No'));
-            // --- Fin Líneas de Depuración ---
-
-
-            // La condición que bloquea si es la ruta users.index Y el rol no es superadmin/admin
-            if ($shouldBlockAccess) { // Usamos la variable que calculamos
+            if ($shouldBlockAccess) {
                 return redirect()->route('home')->with('error', 'No tienes permisos para acceder a esta sección.');
             }
 
@@ -49,7 +40,7 @@ class UserController extends Controller
 
     function logAudit($action, $description, $model = null, $recordId = null, $data = null)
     {
-        $user = Auth::user(); // Usando Auth::user() para obtener el usuario autenticado
+        $user = Auth::user();
         $role = $user?->role ?? 'sistema';
 
         AuditLog::create([
@@ -70,12 +61,10 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Ocultar superadmin si no eres uno
-        if (Auth::check() && Auth::user()->role !== 'superadmin') { // Usando Auth::check()
+        if (Auth::check() && Auth::user()->role !== 'superadmin') {
             $query->where('role', '!=', 'superadmin');
         }
 
-        // Búsqueda general
         if ($request->has('search') && $request->search !== null) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -85,7 +74,6 @@ class UserController extends Controller
         }
 
         $users = $query->get();
-
         return view('users.index', compact('users'));
     }
 

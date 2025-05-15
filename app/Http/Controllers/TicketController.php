@@ -71,10 +71,6 @@ class TicketController extends Controller
         // Si es admin, puedes pasarle todos los estados
         $statuses = TicketStatus::all();
 
-
-
-
-
         return view('tickets.create', compact('categories', 'statuses', 'locations'));
     }
 
@@ -184,8 +180,6 @@ class TicketController extends Controller
             ->distinct()
             ->get();
         $users = User::all();
-
-
 
         return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users', 'locations'));
     }
@@ -327,8 +321,6 @@ class TicketController extends Controller
             ->with('success', 'Ticket actualizado exitosamente.');
     }
 
-
-
     /**
      * Remove the specified resource from storage.
      */
@@ -414,7 +406,6 @@ class TicketController extends Controller
         $comment->save();
         $this->logAudit('Actualizar Comentario', 'Comentario actualizado por: ' . Auth::user()->name);
 
-
         return response()->json(['success' => true, 'updated_comment' => e($comment->comment)]);
     }
 
@@ -439,7 +430,6 @@ class TicketController extends Controller
      * @param  array  $newValues
      * @return string
      */
-
     protected function generarMensajeAuditoria($ticket, array $oldValues, array $newValues)
     {
         // Mapas de traducción locales y etiquetas para los campos
