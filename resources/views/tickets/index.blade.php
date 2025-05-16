@@ -61,7 +61,7 @@
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Título</th>
+                                            <th>Usuario</th>
                                             <th>Categoría</th>
                                             <th>Estado</th>
                                             <th>Prioridad</th>

@@ -23,6 +23,10 @@ class LoginController extends Controller
      */
     protected $redirectTo = RouteServiceProvider::TICKETS;
 
+    // Constantes para intentos y tiempo de bloqueo
+    const MAX_ATTEMPTS = 3;
+    const BLOCK_MINUTES = 15;
+
     /**
      * Create a new controller instance.
      *
@@ -75,89 +79,94 @@ class LoginController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
-        $user = User::where('email', $credentials['email'])->first();
+        $credentials = $this->credentials($request);
+        $user = User::where('email', $request->email)->first();
 
         if ($user) {
+            // Reiniciar intentos si han pasado más de 15 minutos desde el último intento fallido
+            if ($user->last_login_attempt_at && now()->diffInMinutes($user->last_login_attempt_at) >= self::BLOCK_MINUTES) {
+                $user->login_attempts = 0;
+                $user->last_login_attempt_at = null;
+                $user->save();
+            }
             // Si el usuario está bloqueado
             if ($user->locked_until && Carbon::now()->lessThan($user->locked_until)) {
                 return back()->withErrors(['email' => 'Cuenta bloqueada hasta: ' . $user->locked_until->format('d/m/Y H:i:s')]);
             }
-
             // Autenticación exitosa
             if (Auth::attempt($credentials)) {
-                // Bitácora de inicio exitoso
-                AuditLog::create([
-                    'user_id' => $user->id,
-                    'action' => 'Inicio de sesión',
-                    'description' => "El usuario {$user->name} inició sesión exitosamente.",
-                    'ip_address' => $request->ip(),
-                ]);
-
-                $user->update([
-                    'login_attempts' => 0,
-                    'locked_until' => null,
-                ]);
-
+                $this->logLoginSuccess($user, $request);
                 return redirect()->intended();
             }
-
             // Autenticación fallida
-            $user->login_attempts++;
-
-            // Bitácora de intento fallido
-            AuditLog::create([
-                'user_id' => $user->id,
-                'action' => 'Intento de inicio fallido',
-                'description' => "El usuario {$user->name} intentó iniciar sesión pero falló (intentos: {$user->login_attempts}).",
-                'ip_address' => $request->ip(),
-            ]);
-
-            // Si excede los 3 intentos, bloquear
-            if ($user->login_attempts >= 3) {
-                $user->locked_until = now()->addMinutes(15);
-                $user->login_attempts = 0;
-
-                // Bitácora de bloqueo
-                AuditLog::create([
-                    'user_id' => $user->id,
-                    'action' => 'Bloqueo automático',
-                    'description' => "El usuario {$user->name} fue bloqueado automáticamente tras múltiples intentos fallidos.",
-                    'ip_address' => $request->ip(),
-                ]);
-
-                // Notificar a todos los admins y superadmins
-                $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-                $notificationService = app(\App\Services\NotificationService::class);
-                foreach ($admins as $admin) {
-                    $mensaje = '🚫 El usuario ' . $user->name . ' ha sido bloqueado por múltiples intentos fallidos de inicio de sesión.';
-                    $noti = $notificationService->send(
-                        $admin,
-                        'usuario_bloqueado',
-                        'Usuario bloqueado: ' . $user->name,
-                        $mensaje,
-                        null
-                    );
-                }
-
-                // Enviar correo de bloqueo
-                Mail::to($user->email)->send(new UserLockedMail($user));
-
-                $user->save();
-
-                return back()->withErrors([
-                    'email' => 'Tu cuenta ha sido bloqueada por múltiples intentos fallidos. Revisa tu correo.'
-                ]);
-            }
-
-            $user->save();
-
-            return back()->withErrors(['email' => 'Credenciales incorrectas.']);
+            $this->handleFailedLogin($user, $request);
+            $intentosRestantes = self::MAX_ATTEMPTS - $user->login_attempts;
+            return back()->withErrors(['email' => 'Credenciales incorrectas. Te quedan ' . $intentosRestantes . ' intento(s) antes de que tu cuenta sea bloqueada.']);
         }
-
-        return back()->withErrors(['email' => 'Usuario no encontrado.']);
+        // Mensaje genérico para usuario no encontrado
+        return back()->withErrors(['email' => 'Credenciales incorrectas.']);
     }
 
+    private function logLoginSuccess($user, $request)
+    {
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'Inicio de sesión',
+            'description' => "El usuario {$user->name} inició sesión exitosamente.",
+            'ip_address' => $request->ip(),
+        ]);
+        $user->update([
+            'login_attempts' => 0,
+            'locked_until' => null,
+        ]);
+    }
+
+    private function handleFailedLogin($user, $request)
+    {
+        $user->login_attempts++;
+        $user->last_login_attempt_at = now();
+        AuditLog::create([
+            'user_id' => $user->id,
+            'action' => 'Intento de inicio fallido',
+            'description' => "El usuario {$user->name} intentó iniciar sesión pero falló (intentos: {$user->login_attempts}).",
+            'ip_address' => $request->ip(),
+        ]);
+        if ($user->login_attempts >= self::MAX_ATTEMPTS) {
+            $user->locked_until = now()->addMinutes(self::BLOCK_MINUTES);
+            $user->login_attempts = 0;
+            $user->last_login_attempt_at = null;
+            AuditLog::create([
+                'user_id' => $user->id,
+                'action' => 'Bloqueo automático',
+                'description' => "El usuario {$user->name} fue bloqueado automáticamente tras múltiples intentos fallidos.",
+                'ip_address' => $request->ip(),
+            ]);
+            $this->notifySuperadminsOfBlock($user, $request);
+            Mail::to($user->email)->send(new UserLockedMail($user));
+            $user->save();
+            // Mensaje de bloqueo
+            abort(back()->withErrors([
+                'email' => 'Tu cuenta ha sido bloqueada por múltiples intentos fallidos. Revisa tu correo.'
+            ]));
+        }
+        $user->save();
+    }
+
+    private function notifySuperadminsOfBlock($user, $request)
+    {
+        $superadmins = \App\Models\User::where('role', 'superadmin')->get();
+        $notificationService = app(\App\Services\NotificationService::class);
+        foreach ($superadmins as $admin) {
+            $mensaje = '🚫 El usuario ' . $user->name . ' ha sido bloqueado por múltiples intentos fallidos de inicio de sesión.';
+            $noti = $notificationService->send(
+                $admin,
+                'usuario_bloqueado',
+                'Usuario bloqueado: ' . $user->name,
+                $mensaje,
+                null
+            );
+        }
+    }
 
     /**
      * Log the user out of the application.

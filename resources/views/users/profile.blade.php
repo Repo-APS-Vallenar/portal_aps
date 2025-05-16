@@ -53,6 +53,9 @@
                             <div class="card border border-2 shadow-sm profile-wide-card" style="background:#fff; padding: 0rem 0rem; border-radius: 1.5rem; width: 100%; max-width: 100%;">
                                 <div class="card-body" style="width: 100%; max-width: 100%;">
                                     <h5 class="card-title mb-3"><i class="bi bi-key me-2"></i>Cambiar Contraseña</h5>
+                                    @if(session('error'))
+                                        <div class="alert alert-danger">{{ session('error') }}</div>
+                                    @endif
                                     <form method="POST" action="{{ route('profile.password') }}">
                                         @csrf
                                         <div class="mb-3">

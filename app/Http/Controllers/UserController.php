@@ -406,26 +406,33 @@ class UserController extends Controller
 
     public function updatePasswordFromProfile(Request $request)
     {
-        $user = auth()->user();
-        $request->validate([
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'regex:/[A-Z]/',         // Al menos una mayúscula
-                'regex:/[a-z]/',         // Al menos una minúscula
-                'regex:/[0-9]/',         // Al menos un número
-                'regex:/[@$!%*#?&]/',    // Al menos un símbolo especial
-                'confirmed'
-            ],
-        ], [
-            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
-            'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un símbolo especial (@$!%*#?&).',
-            'password.confirmed' => 'Las contraseñas no coinciden.'
-        ]);
-        $user->password = bcrypt($request->password);
-        $user->save();
-        $this->logAudit('Actualizar Contraseña', 'El usuario actualizó su propia contraseña.', 'User', $user->id);
-        return back()->with('success', 'Contraseña actualizada correctamente.');
+        try {
+            $user = auth()->user();
+            $request->validate([
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/[A-Z]/',         // Al menos una mayúscula
+                    'regex:/[a-z]/',         // Al menos una minúscula
+                    'regex:/[0-9]/',         // Al menos un número
+                    'regex:/[@$!%*#?&]/',    // Al menos un símbolo especial
+                    'confirmed'
+                ],
+            ], [
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un símbolo especial (@$!%*#?&).',
+                'password.confirmed' => 'Las contraseñas no coinciden.'
+            ]);
+
+            $user->password = bcrypt($request->password);
+            $user->save();
+
+            $this->logAudit('Actualizar Contraseña', 'El usuario actualizó su propia contraseña.', 'User', $user->id);
+            
+            return redirect()->route('profile')->with('success', 'Contraseña actualizada correctamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('profile')->with('error', 'Error al actualizar la contraseña: ' . $e->getMessage());
+        }
     }
 }

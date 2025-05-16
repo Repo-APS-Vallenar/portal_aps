@@ -12,11 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['admin', 'user'])->default('user');
             $table->timestamp('last_login_attempt_at')->nullable();
         });
     }
-    
 
     /**
      * Reverse the migrations.
@@ -24,7 +22,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
             $table->dropColumn('last_login_attempt_at');
         });
     }
