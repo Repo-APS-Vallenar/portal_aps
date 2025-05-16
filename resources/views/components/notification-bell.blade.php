@@ -110,17 +110,19 @@
                 const btn = e.target.closest('.btn-eliminar-noti');
                 const id = btn.getAttribute('data-id');
                 const notiItem = btn.closest('.noti-item');
+                // Animación fade-out (opcional)
                 notiItem.classList.add('fade-out');
                 setTimeout(() => {
-                    fetch(`/notifications/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(() => fetchNotificaciones());
-                }, 300);
+                    notiItem.remove();
+                }, 300); // Quitar del DOM tras la animación
+                // Llamada al backend, pero no esperamos la respuesta para quitar del DOM
+                fetch(`/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                }).then(() => fetchNotificaciones());
             }
         });
         // Marcar todas como leídas

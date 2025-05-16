@@ -118,6 +118,20 @@ class UserController extends Controller
 
         $user->save();
 
+        // Notificar a admin y superadmin sobre la creación de usuario
+        $notificationService = app(\App\Services\NotificationService::class);
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $mensaje = 'Se ha creado un nuevo usuario: ' . $user->name . ' (' . $user->email . ') con rol ' . $user->role . '.';
+            $notificationService->send(
+                $admin,
+                'nuevo_usuario',
+                'Nuevo usuario registrado',
+                $mensaje,
+                null
+            );
+        }
+
         $this->logAudit(
             'Crear Usuario',
             'Se creó el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
@@ -253,8 +267,20 @@ class UserController extends Controller
         }
         if ($original->role !== $user->role && Auth::check() && Auth::user()->role === 'superadmin') { // Usando helper auth()
             $changes[] = "rol: '{$original->role}' a '{$user->role}'";
+            // Notificar a admin y superadmin sobre el cambio de rol
+            $notificationService = app(\App\Services\NotificationService::class);
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $mensaje = 'El usuario ' . $user->name . ' (' . $user->email . ') ha cambiado de rol: ' . $original->role . ' → ' . $user->role . '.';
+                $notificationService->send(
+                    $admin,
+                    'cambio_rol',
+                    'Cambio de rol de usuario',
+                    $mensaje,
+                    null
+                );
+            }
         }
-
 
         if ($changes) {
             $this->logAudit(
@@ -263,6 +289,45 @@ class UserController extends Controller
                 'User',
                 $user->id
             );
+        }
+
+        // Notificar a admin y superadmin sobre el desbloqueo o bloqueo
+        if ($user->is_active) {
+            $this->logAudit(
+                'Habilitar Usuario',
+                'Se habilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+            );
+            // Notificar a admin y superadmin sobre el desbloqueo
+            $notificationService = app(\App\Services\NotificationService::class);
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $mensaje = 'El usuario ' . $user->name . ' ha sido habilitado.';
+                $notificationService->send(
+                    $admin,
+                    'desbloqueo_usuario',
+                    'Usuario habilitado',
+                    $mensaje,
+                    null
+                );
+            }
+        } else {
+            $this->logAudit(
+                'Deshabilitar Usuario',
+                'Se deshabilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
+            );
+            // Notificar a admin y superadmin sobre el bloqueo
+            $notificationService = app(\App\Services\NotificationService::class);
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $mensaje = 'El usuario ' . $user->name . ' ha sido deshabilitado.';
+                $notificationService->send(
+                    $admin,
+                    'bloqueo_usuario',
+                    'Usuario deshabilitado',
+                    $mensaje,
+                    null
+                );
+            }
         }
 
         return redirect()->route('users.index')->with('success', 'Usuario actualizado correctamente.');
@@ -343,6 +408,20 @@ class UserController extends Controller
             );
         }
 
+        // Notificar a admin y superadmin
+        $notificationService = app(\App\Services\NotificationService::class);
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+        foreach ($admins as $admin) {
+            $mensaje = 'El usuario ' . $user->name . ' ha cambiado su contraseña.';
+            $notificationService->send(
+                $admin,
+                'cambio_contraseña',
+                'Cambio de contraseña de usuario',
+                $mensaje,
+                null
+            );
+        }
+
         return redirect()->route('users.index')->with('success', 'Contraseña actualizada correctamente.');
     }
 
@@ -356,6 +435,20 @@ class UserController extends Controller
                 $user->locked_until = null;
                 $user->login_attempts = 0;
                 $this->logAudit('Desbloquear Usuario', "El usuario {$user->name} fue desbloqueado.", 'User', $user->id);
+                // Notificar a admin y superadmin sobre el desbloqueo
+                $notificationService = app(\App\Services\NotificationService::class);
+                $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+                foreach ($admins as $admin) {
+                    $mensaje = 'El usuario ' . $user->name . ' ha sido habilitado.';
+                    $notificationService->send(
+                        $admin,
+                        'desbloqueo_usuario',
+                        'Usuario habilitado',
+                        $mensaje,
+                        null
+                    );
+                }
+                // Notificar al propio usuario
             } else {
                 // Si no está bloqueado, lo bloqueamos
                 $user->locked_until = now()->addMinutes(180); // Bloqueo por 3 horas
@@ -429,6 +522,20 @@ class UserController extends Controller
             $user->save();
 
             $this->logAudit('Actualizar Contraseña', 'El usuario actualizó su propia contraseña.', 'User', $user->id);
+
+            // Notificar a admin y superadmin
+            $notificationService = app(\App\Services\NotificationService::class);
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $mensaje = 'El usuario ' . $user->name . ' ha cambiado su contraseña.';
+                $notificationService->send(
+                    $admin,
+                    'cambio_contraseña',
+                    'Cambio de contraseña de usuario',
+                    $mensaje,
+                    null
+                );
+            }
             
             return redirect()->route('profile')->with('success', 'Contraseña actualizada correctamente.');
         } catch (\Exception $e) {

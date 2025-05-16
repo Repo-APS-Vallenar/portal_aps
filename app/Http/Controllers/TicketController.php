@@ -298,7 +298,7 @@ class TicketController extends Controller
                 $mensaje,
                 route('tickets.show', $ticket)
             );
-            $noti->title = 'Notificación de actualización de ticket #' . $noti->id;
+            $noti->title = 'Actualización de ticket #' . $noti->id;
             $noti->save();
         }
         // Notificación especial si se modificó la solución aplicada
@@ -356,12 +356,12 @@ class TicketController extends Controller
         // Notificar solo si el comentario NO es interno
         if (!$comentario->is_internal) {
             $notificationService = app(\App\Services\NotificationService::class);
-            $mensaje = '💬 Nuevo comentario en el ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
+            $mensaje = '💬 Nuevo comentario ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
             if (Auth::user()->role === 'user') {
                 // Notificar a todos los admins y superadmins
                 $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
                 foreach ($admins as $admin) {
-                    $titulo = 'Nuevo comentario en Ticket #' . $ticket->id;
+                    $titulo = 'Nuevo comentario Ticket #' . $ticket->id;
                     $noti = $notificationService->send(
                         $admin,
                         'nuevo_comentario',
@@ -373,7 +373,7 @@ class TicketController extends Controller
                 }
             } else {
                 // Notificar al usuario creador del ticket
-                $titulo = 'Nuevo comentario en tu ticket #' . $ticket->id;
+                $titulo = 'Nuevo comentario ticket #' . $ticket->id;
                 $noti = $notificationService->send(
                     $ticket->creator,
                     'ticket_update',
@@ -383,6 +383,20 @@ class TicketController extends Controller
                     ['remitente' => Auth::user()->name]
                 );
             }
+        }
+
+        // Si la petición es AJAX, devolver el HTML del comentario
+        if ($request->ajax()) {
+            $view = view('tickets.partials.comment', [
+                'comment' => $comentario,
+                'ticket' => $ticket
+            ])->render();
+            
+            return response()->json([
+                'success' => true,
+                'html' => $view,
+                'message' => 'Comentario agregado exitosamente.'
+            ]);
         }
 
         return redirect()->route('tickets.show', $ticket)

@@ -72,43 +72,15 @@
                     @if($ticket->comments->isEmpty())
                     <p class="text-muted">No hay comentarios aún.</p>
                     @else
+                    <div id="comments-list">
                     @foreach($ticket->comments as $comment)
-                    @if(!$comment->is_internal || (Auth::check() && Auth::user()->isAdmin() || Auth::user()->isSuperadmin()))
-                    <div class="comment mb-4" id="comment-{{ $comment->id }}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-1">{{ $comment->user->name }}</h6>
-                            <small class="text-muted">{{ $comment->created_at->format('d/m/Y H:i') }}</small>
-                        </div>
-
-                        <!-- Texto del comentario -->
-                        <p class="mb-1" id="comment-text-{{ $comment->id }}">{{ $comment->comment }}</p>
-
-                        @if($comment->is_internal)
-                        <span class="badge bg-warning">Interno</span>
-                        @endif
-
-                        <!-- Botones para eliminar (solo si es admin o el autor del comentario) -->
-                        @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
-                        <div class="mt-2">
-                            <form action="{{ route('tickets.deleteComment', [$ticket->id, $comment->id]) }}"
-                                method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('¿Estás seguro de eliminar este comentario?')">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </div>
-                        @endif
-                    </div>
-                    @endif
+                        @include('tickets.partials.comment', ['comment' => $comment, 'ticket' => $ticket])
                     @endforeach
-
+                    </div>
                     @endif
 
                     <!-- Formulario para nuevo comentario -->
-                    <form action="{{ route('tickets.addComment', $ticket) }}" method="POST" class="mt-4">
+                    <form action="{{ route('tickets.addComment', $ticket) }}" method="POST" class="mt-4" id="commentForm">
                         @csrf
                         <div class="mb-3">
                             <label for="content" class="form-label">Nuevo Comentario</label>
@@ -127,7 +99,7 @@
                                 </label>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Agregar Comentario</button>
+                        <button type="submit" class="btn btn-primary" id="submitComment">Agregar Comentario</button>
                     </form>
                 </div>
             </div>
@@ -278,10 +250,33 @@
     </div>
 </div>
 
+{{-- Modal de confirmación de eliminación de comentario --}}
+<div class="modal fade" id="confirmDeleteCommentModal" tabindex="-1" aria-labelledby="confirmDeleteCommentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteCommentModalLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar este comentario?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteCommentBtn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     let formToSubmit = null;
+    let commentToDelete = null;
+    let ticketId = null;
+
     document.addEventListener('DOMContentLoaded', function () {
+        // Modal de eliminación de ticket
         var confirmDeleteModal = document.getElementById('confirmDeleteModal');
         confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
             var button = event.relatedTarget;
@@ -290,6 +285,122 @@
         });
         document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
             if (formToSubmit) formToSubmit.submit();
+        });
+
+        // Modal de eliminación de comentario
+        var confirmDeleteCommentModal = document.getElementById('confirmDeleteCommentModal');
+        confirmDeleteCommentModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            commentToDelete = button.getAttribute('data-comment-id');
+            ticketId = button.getAttribute('data-ticket-id');
+        });
+
+        document.getElementById('confirmDeleteCommentBtn').addEventListener('click', function () {
+            if (commentToDelete && ticketId) {
+                // Crear el formulario dinámicamente
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/tickets/${ticketId}/comments/${commentToDelete}`;
+                
+                // Agregar el token CSRF
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+                form.appendChild(csrfInput);
+                
+                // Agregar el método DELETE
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+                
+                // Agregar el formulario al documento y enviarlo
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const commentForm = document.getElementById('commentForm');
+        const commentTextarea = document.getElementById('comment');
+        const submitButton = document.getElementById('submitComment');
+        const commentsContainer = document.querySelector('.card-body');
+        const commentsList = document.getElementById('comments-list');
+
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Deshabilitar el botón y mostrar loading
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+
+            // Obtener los datos del formulario
+            const formData = new FormData(commentForm);
+
+            // Enviar la petición AJAX
+            fetch(commentForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Insertar el nuevo comentario al principio de la lista
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = data.html;
+                    const newComment = tempDiv.firstElementChild;
+                    
+                    // Si no hay comentarios, eliminar el mensaje de "No hay comentarios"
+                    const noCommentsMsg = commentsContainer.querySelector('.text-muted');
+                    if (noCommentsMsg && noCommentsMsg.textContent.includes('No hay comentarios')) {
+                        noCommentsMsg.remove();
+                    }
+                    
+                    // Insertar el nuevo comentario en el contenedor correcto
+                    if (commentsList) {
+                        commentsList.insertBefore(newComment, commentsList.firstChild);
+                    }
+                    
+                    // Limpiar el formulario
+                    commentForm.reset();
+                    
+                    // Mostrar mensaje de éxito
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                    alert.innerHTML = `
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    commentsContainer.insertBefore(alert, commentForm);
+                    
+                    // Eliminar el mensaje después de 3 segundos
+                    setTimeout(() => {
+                        alert.remove();
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Mostrar mensaje de error
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    Error al enviar el comentario. Por favor, intente nuevamente.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                commentsContainer.insertBefore(alert, commentForm);
+            })
+            .finally(() => {
+                // Restaurar el botón
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Agregar Comentario';
+            });
         });
     });
 </script>
