@@ -145,25 +145,27 @@
                                                 <i class="fas fa-eye"></i>
                                                 <span>Detalles</span>
                                             </a>
-                                            <a href="{{ route('tickets.edit', $ticket) }}"
-                                               class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-edit flex-fill"
-                                               aria-label="Editar ticket">
-                                                <i class="fas fa-edit"></i>
-                                                <span>Editar</span>
-                                            </a>
-                                            <button type="button"
-                                                    class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-delete flex-fill"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#confirmDeleteModal"
-                                                    data-form="delete-ticket-mobile-{{ $ticket->id }}"
-                                                    aria-label="Eliminar ticket">
-                                                <i class="fas fa-trash"></i>
-                                                <span>Eliminar</span>
-                                            </button>
-                                            <form id="delete-ticket-mobile-{{ $ticket->id }}" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
-                                                @csrf
-                                                @method('DELETE')
-                                            </form>
+                                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                                                <a href="{{ route('tickets.edit', $ticket) }}"
+                                                   class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-edit flex-fill"
+                                                   aria-label="Editar ticket">
+                                                    <i class="fas fa-edit"></i>
+                                                    <span>Editar</span>
+                                                </a>
+                                                <button type="button"
+                                                        class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-delete flex-fill"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#confirmDeleteModal"
+                                                        data-form="delete-ticket-mobile-{{ $ticket->id }}"
+                                                        aria-label="Eliminar ticket">
+                                                    <i class="fas fa-trash"></i>
+                                                    <span>Eliminar</span>
+                                                </button>
+                                                <form id="delete-ticket-mobile-{{ $ticket->id }}" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 @endforeach
