@@ -13,7 +13,7 @@ class HomeController extends Controller
             'clinicos' => [
                 [
                     'nombre' => 'IZY TIMECONTROL',
-                    'descripcion' => 'AutoConsultaSistema de Control de Asistencia',
+                    'descripcion' => 'AutoConsulta | Sistema de Control de Asistencia',
                     'url' => 'https://deptodesalud.izytimecontrol.com/#/auto-consulta/login',
                     'icono' => '',
                     'imagen' => 'izy-timecontrol.png'
@@ -26,14 +26,14 @@ class HomeController extends Controller
                     'imagen' => 'rayen-aps.png'
                 ],
                 [
-                    'nombre' => 'IMED (Usar lector de huellas)',
-                    'descripcion' => 'Licencia medica electronica',
+                    'nombre' => 'IMED ',
+                    'descripcion' => 'Licencia medica electronica | ¡Usar lector de huellas!',
                     'url' => 'https://www.licencia.cl/sesiones/nueva/rol.profesional',
                     'icono' => '',
                     'imagen' => 'imed.png'
                 ],
                 [
-                    'nombre' => 'FixSalud',
+                    'nombre' => 'TicketGo',
                     'descripcion' => 'Sistema de tickets para reportes técnicos en centros de salud.',
                     'url' => '/tickets',
                     'icono' => '',

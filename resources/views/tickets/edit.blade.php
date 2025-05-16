@@ -261,7 +261,7 @@
                             </div>
 
                             <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">Actualizar Ticket</button>
+                                <button type="submit" class="btn btn-gradient">Actualizar Ticket</button>
                                 <a href="{{ route('tickets.show', $ticket) }}" class="btn btn-secondary">Cancelar</a>
                             </div>
                     </form>

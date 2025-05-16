@@ -1,0 +1,1 @@
+{{-- Vista vacía para evitar error 500 en /notifications --}} 

@@ -17,13 +17,16 @@ return new class extends Migration {
             if (!Schema::hasColumn('users', 'locked_until')) {
                 $table->timestamp('locked_until')->nullable();
             }
+            if (!Schema::hasColumn('users', 'last_login_attempt_at')) {
+                $table->timestamp('last_login_attempt_at')->nullable();
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['login_attempts', 'locked_until']);
+            $table->dropColumn(['login_attempts', 'locked_until', 'last_login_attempt_at']);
         });
     }
 };

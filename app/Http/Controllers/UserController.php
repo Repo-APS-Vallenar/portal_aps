@@ -26,20 +26,11 @@ class UserController extends Controller
 
             $routeName = $request->route()->getName();
             $userRole = $user->role;
-            $isUsersIndexRoute = ($routeName === 'users.index'); // Verifica si el nombre de la ruta es users.index
-            $isRoleToBlock = !in_array($userRole, ['superadmin', 'admin']); // Verifica si el rol no es superadmin/admin
+            $isUsersIndexRoute = ($routeName === 'users.index');
+            $isRoleToBlock = !in_array($userRole, ['superadmin', 'admin']);
             $shouldBlockAccess = $isUsersIndexRoute && $isRoleToBlock;
 
-            Log::info("Ruta intentada: " . ($routeName ?? 'N/A') .
-                " | Rol del usuario: " . ($userRole ?? 'Invitado') .
-                " | ¿Es 'users.index'?: " . ($isUsersIndexRoute ? 'Sí' : 'No') .
-                " | ¿Es rol a bloquear?: " . ($isRoleToBlock ? 'Sí' : 'No') .
-                " | ¿Debería bloquearse?: " . ($shouldBlockAccess ? 'SÍ' : 'No'));
-            // --- Fin Líneas de Depuración ---
-
-
-            // La condición que bloquea si es la ruta users.index Y el rol no es superadmin/admin
-            if ($shouldBlockAccess) { // Usamos la variable que calculamos
+            if ($shouldBlockAccess) {
                 return redirect()->route('home')->with('error', 'No tienes permisos para acceder a esta sección.');
             }
 
@@ -49,7 +40,7 @@ class UserController extends Controller
 
     function logAudit($action, $description, $model = null, $recordId = null, $data = null)
     {
-        $user = Auth::user(); // Usando Auth::user() para obtener el usuario autenticado
+        $user = Auth::user();
         $role = $user?->role ?? 'sistema';
 
         AuditLog::create([
@@ -70,12 +61,10 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Ocultar superadmin si no eres uno
-        if (Auth::check() && Auth::user()->role !== 'superadmin') { // Usando Auth::check()
+        if (Auth::check() && Auth::user()->role !== 'superadmin') {
             $query->where('role', '!=', 'superadmin');
         }
 
-        // Búsqueda general
         if ($request->has('search') && $request->search !== null) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -85,7 +74,6 @@ class UserController extends Controller
         }
 
         $users = $query->get();
-
         return view('users.index', compact('users'));
     }
 
@@ -380,5 +368,71 @@ class UserController extends Controller
         }
 
         return back()->with('error', 'Usuario no encontrado.');
+    }
+
+    public function profile()
+    {
+        $user = auth()->user();
+        return view('users.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+        $cambios = [];
+        if ($user->name !== $request->name) {
+            $cambios[] = "nombre: '{$user->name}' a '{$request->name}'";
+        }
+        if ($user->email !== $request->email) {
+            $cambios[] = "email: '{$user->email}' a '{$request->email}'";
+        }
+        if ($user->phone !== $request->phone) {
+            $cambios[] = "teléfono: '{$user->phone}' a '{$request->phone}'";
+        }
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->save();
+        if ($cambios) {
+            $this->logAudit('Editar Perfil', 'Cambios: ' . implode(', ', $cambios), 'User', $user->id);
+        }
+        return back()->with('success', 'Perfil actualizado correctamente.');
+    }
+
+    public function updatePasswordFromProfile(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $request->validate([
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/[A-Z]/',         // Al menos una mayúscula
+                    'regex:/[a-z]/',         // Al menos una minúscula
+                    'regex:/[0-9]/',         // Al menos un número
+                    'regex:/[@$!%*#?&]/',    // Al menos un símbolo especial
+                    'confirmed'
+                ],
+            ], [
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'password.regex' => 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un símbolo especial (@$!%*#?&).',
+                'password.confirmed' => 'Las contraseñas no coinciden.'
+            ]);
+
+            $user->password = bcrypt($request->password);
+            $user->save();
+
+            $this->logAudit('Actualizar Contraseña', 'El usuario actualizó su propia contraseña.', 'User', $user->id);
+            
+            return redirect()->route('profile')->with('success', 'Contraseña actualizada correctamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('profile')->with('error', 'Error al actualizar la contraseña: ' . $e->getMessage());
+        }
     }
 }

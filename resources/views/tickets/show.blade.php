@@ -26,49 +26,39 @@
     <div class="row">
         <div class="col-md-8">
             <!-- Detalles del Ticket -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h2 class="mb-0">Ticket #{{ $ticket->id }}</h2>
-                    <div class="btn-group">
-                        <div class="d-flex gap-2">
-                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                            <a href="{{ route('tickets.edit', $ticket) }}" class="btn btn-warning me-2">
-                                <i class="fas fa-edit"></i> Editar
-                            </a>
-
-                            <form action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger"
-                                    onclick="return confirm('¿Estás seguro de eliminar este ticket?')">
-                                    <i class="fas fa-trash"></i> Eliminar
-                                </button>
-                            </form>
-                            @endif
-                        </div>
-
-                    </div>
+            <div class="card mb-4 ticket-card" style="box-shadow: 0 2px 12px rgba(1,163,213,0.07), 0 1.5px 4px rgba(0,0,0,0.03); border-radius: 18px; border: 1px solid #e3e8ee; padding: 1.2rem 1.1rem 1.5rem 1.1rem;">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background: none; border: none; padding-bottom: 0;">
+                    <h2 class="mb-0" style="font-size: 2rem; color: #222;">Ticket #{{ $ticket->id }}</h2>
                 </div>
-                <div class="card-body">
-                    <h3>{{ $ticket->title }}</h3>
-                    <p class="text-muted">
+                <div class="card-body" style="padding-top: 0.7rem;">
+                    <h3 style="color: #01a3d5; font-weight: 700;">{{ $ticket->title }}</h3>
+                    <p class="text-muted" style="margin-bottom: 0.7rem;">
                         Creado por {{ $ticket->creator->name }} el {{ $ticket->created_at->format('d/m/Y H:i') }}
                     </p>
-                    <div class="mb-3">
-                        <span class="badge" style="background-color: {{ $ticket->category->color }}">
-                            {{ $ticket->category->name }}
-                        </span>
-                        <span class="badge"
-                            style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }};">
-                            {{ $ticket->status->name }}
-                        </span>
-                        <span class="badge bg-{{ $ticket->getPriorityColor() }}">
-                            {{ $ticket->getPriorityText() }}
-                        </span>
+                    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+                        <span class="badge" style="background-color: {{ $ticket->category->color }}; font-size: 1em; padding: 0.22rem 1.1rem; border-radius: 12px;">{{ $ticket->category->name }}</span>
+                        <span class="badge" style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }}; font-size: 1em; padding: 0.22rem 1.1rem; border-radius: 12px;">{{ $ticket->status->name }}</span>
+                        <span class="badge bg-{{ $ticket->getPriorityColor() }}" style="font-size: 1em; padding: 0.22rem 1.1rem; border-radius: 12px;">{{ $ticket->getPriorityText() }}</span>
                     </div>
                     <div class="mb-3">
-                        <h5>Descripción:</h5>
-                        <p>{{ $ticket->description }}</p>
+                        <h5 style="color: #222; font-weight: 600;">Descripción:</h5>
+                        <p style="color: #444;">{{ $ticket->description }}</p>
+                    </div>
+                    <div class="ticket-card-actions d-flex flex-row gap-2 align-items-center flex-wrap flex-md-nowrap justify-content-end mt-3" style="margin-left: 0;">
+                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                            <a href="{{ route('tickets.edit', $ticket) }}" class="ticket-pill-btn ticket-pill-edit btn-action-responsive" style="font-size:0.97em; min-width:80px; max-width:120px; padding:0.35em 1em;">
+                                <i class="fas fa-edit"></i>
+                                <span>Editar</span>
+                            </a>
+                            <button type="button" class="ticket-pill-btn ticket-pill-delete btn-action-responsive" style="font-size:0.97em; min-width:80px; max-width:120px; padding:0.35em 1em;" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-form="delete-ticket-show">
+                                <i class="fas fa-trash"></i>
+                                <span>Eliminar</span>
+                            </button>
+                            <form id="delete-ticket-show" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
+                                @csrf
+                                @method('DELETE')
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -97,14 +87,9 @@
                         <span class="badge bg-warning">Interno</span>
                         @endif
 
-                        <!-- Botones para editar y eliminar (solo si es admin o el autor del comentario) -->
+                        <!-- Botones para eliminar (solo si es admin o el autor del comentario) -->
                         @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
                         <div class="mt-2">
-                            <button class="btn btn-sm btn-outline-secondary me-1"
-                                onclick="editComment({{ $comment->id }}, {!! json_encode($comment->comment) !!})">
-                                Editar
-                            </button>
-
                             <form action="{{ route('tickets.deleteComment', [$ticket->id, $comment->id]) }}"
                                 method="POST" class="d-inline">
                                 @csrf
@@ -273,52 +258,40 @@
         </div>
     </div>
 </div>
+
+{{-- Modal de confirmación de eliminación de ticket --}}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar este ticket?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
 <script>
-    function editComment(commentId, oldText) {
-        const commentDiv = document.getElementById('comment-' + commentId);
-        const commentText = document.getElementById('comment-text-' + commentId);
-
-        // Reemplazar el texto por un formulario
-        commentText.outerHTML = `
-                                                                    <form onsubmit="submitEditComment(event, ${commentId})" id="edit-form-${commentId}">
-                                                                        <div class="mb-2">
-                                                                            <textarea name="comment" class="form-control" rows="2" required>${oldText}</textarea>
-                                                                        </div>
-                                                                        <button type="submit" class="btn btn-sm btn-primary me-1">Guardar</button>
-                                                                        <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(${commentId}, \`${oldText}\`)">Cancelar</button>
-                                                                    </form>
-                                                                `;
-    }
-
-    function cancelEdit(commentId, originalText) {
-        document.getElementById('edit-form-' + commentId).outerHTML =
-            `<p class="mb-1" id="comment-text-${commentId}">${originalText}</p>`;
-    }
-
-    function submitEditComment(event, commentId) {
-        event.preventDefault();
-        const form = event.target;
-        const commentValue = form.comment.value;
-        const token = '{{ csrf_token() }}';
-
-        fetch(`/tickets/comments/${commentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token
-                },
-                body: JSON.stringify({
-                    comment: commentValue
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    form.outerHTML = `<p class="mb-1" id="comment-text-${commentId}">${data.updated_comment}</p>`;
-                } else {
-                    alert("Error al actualizar el comentario.");
-                }
-            });
-    }
+    let formToSubmit = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        var confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var formId = button.getAttribute('data-form');
+            formToSubmit = document.getElementById(formId);
+        });
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+            if (formToSubmit) formToSubmit.submit();
+        });
+    });
 </script>
+@endpush
 @endsection

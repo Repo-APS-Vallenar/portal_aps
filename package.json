@@ -14,6 +14,9 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
-        "bootstrap-icons": "^1.11.3"
+        "alpinejs": "^3.14.9",
+        "bootstrap-icons": "^1.11.3",
+        "laravel-echo": "^2.1.0",
+        "pusher-js": "^8.4.0"
     }
 }

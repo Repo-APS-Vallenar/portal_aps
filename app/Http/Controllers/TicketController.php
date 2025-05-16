@@ -15,6 +15,7 @@ use App\Mail\TicketCreatedMail;
 use App\Mail\TicketUpdatedMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use App\Services\NotificationService;
 
 class TicketController extends Controller
 {
@@ -69,10 +70,6 @@ class TicketController extends Controller
 
         // Si es admin, puedes pasarle todos los estados
         $statuses = TicketStatus::all();
-
-
-
-
 
         return view('tickets.create', compact('categories', 'statuses', 'locations'));
     }
@@ -135,6 +132,20 @@ class TicketController extends Controller
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
 
+        // Notificar a todos los admins y superadmins
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+        $notificationService = app(\App\Services\NotificationService::class);
+        foreach ($admins as $admin) {
+            $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
+            $noti = $notificationService->send(
+                $admin,
+                'nuevo_ticket',
+                'Nuevo Ticket #' . $ticket->id,
+                $mensaje,
+                route('tickets.show', $ticket)
+            );
+        }
+
         $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth::user()->name);
         Mail::to(Auth::user()->email)->send(new TicketCreatedMail($ticket));
         return redirect()->route('tickets.show', $ticket)
@@ -169,8 +180,6 @@ class TicketController extends Controller
             ->distinct()
             ->get();
         $users = User::all();
-
-
 
         return view('tickets.edit', compact('ticket', 'categories', 'statuses', 'users', 'locations'));
     }
@@ -235,36 +244,82 @@ class TicketController extends Controller
             $ticket->touch();
         }
 
-        // Detectar los cambios realizados
-        $changes = [];
+        // Detectar los cambios relevantes para el usuario
+        $camposUsuario = [
+            'priority' => 'Prioridad',
+            'status_id' => 'Estado',
+        ];
+        $cambiosUsuario = [];
+        $estadoCambiado = false;
+        $nuevoEstado = null;
+        $nombreEstado = null;
+        $solucionAplicadaCambiada = false;
+        $textoSolucion = null;
         foreach ($validated as $key => $newValue) {
             $oldValue = $originalTicket->$key ?? null;
-
             if ($oldValue != $newValue) {
-                $changes[] = ucfirst($key) . ": de '{$oldValue}' a '{$newValue}'";
+                if ($key === 'status_id') {
+                    $estadoCambiado = true;
+                    $nuevoEstado = $newValue;
+                    $nombreEstado = optional(\App\Models\TicketStatus::find($newValue))->name;
+                }
+                if ($key === 'comentarios') {
+                    $solucionAplicadaCambiada = true;
+                    $textoSolucion = $newValue;
+                }
+                if (array_key_exists($key, $camposUsuario)) {
+                    $cambiosUsuario[] = $camposUsuario[$key];
+                }
             }
         }
-
-
-
-        // Enviar correo si hay cambios
-        if (count($changes) > 0) {
-            // Verificar que el creador del ticket tenga un correo válido
-            if ($ticket->creator && $ticket->creator->email) {
-                // Enviar correo al creador del ticket
-                Mail::to($ticket->creator->email)->send(new TicketUpdatedMail($ticket, $changes));
-                Log::info('Correo de ticket actualizado enviado a ' . $ticket->creator->email);
-            } else {
-                Log::warning('No se pudo enviar el correo porque el creador del ticket no tiene un correo válido.');
+        // Detectar si se agregó un comentario público
+        $comentarioAgregado = false;
+        $textoComentario = null;
+        if (request()->has('comment') && !request()->has('is_internal')) {
+            $comentarioAgregado = true;
+            $cambiosUsuario[] = 'Comentarios';
+            $textoComentario = request('comment');
+        }
+        // Enviar notificación solo si hay cambios relevantes
+        if (count($cambiosUsuario) > 0) {
+            $notificationService = app(\App\Services\NotificationService::class);
+            $mensaje = '📝 ¡Tu ticket ha sido actualizado!<br>Se realizaron cambios en los siguientes campos:<ul>';
+            foreach ($cambiosUsuario as $campo) {
+                $mensaje .= '<li>' . $campo . '</li>';
             }
+            $mensaje .= '</ul>';
+            if ($comentarioAgregado && $textoComentario) {
+                $mensaje .= '<b>Nuevo comentario del staff:</b><br>"' . e($textoComentario) . '"';
+            }
+            $noti = $notificationService->send(
+                $ticket->creator,
+                'ticket_update',
+                '', // Título se actualizará luego
+                $mensaje,
+                route('tickets.show', $ticket)
+            );
+            $noti->title = 'Notificación de actualización de ticket #' . $noti->id;
+            $noti->save();
+        }
+        // Notificación especial si se modificó la solución aplicada
+        if ($solucionAplicadaCambiada && $textoSolucion) {
+            $notificationService = app(\App\Services\NotificationService::class);
+            $mensaje = '✅ ¡Tu ticket ya tiene una solución aplicada!<br>Solución: "' . e($textoSolucion) . '"<br>El ticket está listo para el retiro y recepción conforme por parte del usuario una vez finalice sus pruebas.';
+            $noti = $notificationService->send(
+                $ticket->creator,
+                'ticket_update',
+                '',
+                $mensaje,
+                route('tickets.show', $ticket)
+            );
+            $noti->title = 'Notificación #' . $noti->id . ' Ticket #' . $ticket->id;
+            $noti->save();
         }
 
         // Redirigir a la vista del ticket actualizado
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket actualizado exitosamente.');
     }
-
-
 
     /**
      * Remove the specified resource from storage.
@@ -290,13 +345,45 @@ class TicketController extends Controller
             'is_internal' => 'boolean'
         ]);
 
-        TicketComment::create([
+        $comentario = TicketComment::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'comment' => $request->comment,
             'is_internal' => $request->has('is_internal'),
         ]);
         $this->logAudit('Añadir Comentario', 'Comentario añadido por: ' . Auth::user()->name);
+
+        // Notificar solo si el comentario NO es interno
+        if (!$comentario->is_internal) {
+            $notificationService = app(\App\Services\NotificationService::class);
+            $mensaje = '💬 Nuevo comentario en el ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
+            if (Auth::user()->role === 'user') {
+                // Notificar a todos los admins y superadmins
+                $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+                foreach ($admins as $admin) {
+                    $titulo = 'Nuevo comentario en Ticket #' . $ticket->id;
+                    $noti = $notificationService->send(
+                        $admin,
+                        'nuevo_comentario',
+                        $titulo,
+                        $mensaje,
+                        route('tickets.show', $ticket),
+                        ['remitente' => Auth::user()->name]
+                    );
+                }
+            } else {
+                // Notificar al usuario creador del ticket
+                $titulo = 'Nuevo comentario en tu ticket #' . $ticket->id;
+                $noti = $notificationService->send(
+                    $ticket->creator,
+                    'ticket_update',
+                    $titulo,
+                    $mensaje,
+                    route('tickets.show', $ticket),
+                    ['remitente' => Auth::user()->name]
+                );
+            }
+        }
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Comentario agregado exitosamente.');
@@ -318,7 +405,6 @@ class TicketController extends Controller
         $comment->comment = $request->comment;
         $comment->save();
         $this->logAudit('Actualizar Comentario', 'Comentario actualizado por: ' . Auth::user()->name);
-
 
         return response()->json(['success' => true, 'updated_comment' => e($comment->comment)]);
     }
@@ -344,7 +430,6 @@ class TicketController extends Controller
      * @param  array  $newValues
      * @return string
      */
-
     protected function generarMensajeAuditoria($ticket, array $oldValues, array $newValues)
     {
         // Mapas de traducción locales y etiquetas para los campos

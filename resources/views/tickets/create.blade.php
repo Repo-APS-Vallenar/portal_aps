@@ -275,7 +275,7 @@
                             @endif
                             <div class="d-flex justify-content-between">
                                 <a href="{{ route('tickets.index') }}" class="btn btn-secondary">Cancelar</a>
-                                <button type="submit" class="btn btn-primary">Crear Ticket</button>
+                                <button type="submit" class="btn btn-gradient">Crear Ticket</button>
                             </div>
                     </form>
                 </div>
