@@ -82,10 +82,12 @@ class NotificationController extends Controller
     public function destroy(Notification $notification)
     {
         $this->authorize('delete', $notification);
-        // Marcar como leída antes de eliminar
-        if (is_null($notification->read_at)) {
-            $notification->read_at = now();
-            $notification->save();
+        // Solo permitir eliminar si está leída
+        if (is_null($notification->read_at) && !$notification->is_read) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debes marcar la notificación como leída antes de poder eliminarla.'
+            ], 403);
         }
         $notification->delete();
         return response()->json(['success' => true]);

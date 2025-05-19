@@ -274,6 +274,26 @@
     let formToSubmit = null;
     let commentToDelete = null;
     let ticketId = null;
+    let lastCommentId = null;
+
+    // Función para actualizar los comentarios
+    function updateComments() {
+        const commentsList = document.getElementById('comments-list');
+        if (!commentsList) return;
+
+        fetch(`/tickets/{{ $ticket->id }}/comments`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                commentsList.innerHTML = data.html;
+            }
+        })
+        .catch(error => console.error('Error al actualizar comentarios:', error));
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         // Modal de eliminación de ticket
@@ -297,6 +317,15 @@
 
         document.getElementById('confirmDeleteCommentBtn').addEventListener('click', function () {
             if (commentToDelete && ticketId) {
+                // Eliminar el comentario del DOM inmediatamente
+                const commentElement = document.querySelector(`[data-comment-id="${commentToDelete}"]`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+                // Cerrar el modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteCommentModal'));
+                modal.hide();
+
                 // Crear el formulario dinámicamente
                 const form = document.createElement('form');
                 form.method = 'POST';
@@ -315,12 +344,55 @@
                 methodInput.name = '_method';
                 methodInput.value = 'DELETE';
                 form.appendChild(methodInput);
-                
-                // Agregar el formulario al documento y enviarlo
-                document.body.appendChild(form);
-                form.submit();
+
+                // Enviar la petición AJAX
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mostrar mensaje de éxito
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                        alert.innerHTML = `
+                            ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        `;
+                        document.querySelector('.card-body').insertBefore(alert, document.getElementById('commentForm'));
+                        setTimeout(() => { alert.remove(); }, 1500);
+                        // Actualizar la lista completa de comentarios
+                        updateComments();
+                    } else {
+                        throw new Error(data.message || 'Error al eliminar el comentario');
+                    }
+                })
+                .catch(error => {
+                    // Si hay error, recargar la lista de comentarios para restaurar el DOM
+                    updateComments();
+                    // Mostrar mensaje de error
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                    alert.innerHTML = `
+                        ${error.message || 'Error al eliminar el comentario. Por favor, intente nuevamente.'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    `;
+                    const formNode = document.getElementById('commentForm');
+                    if (formNode) {
+                        commentsContainer.insertBefore(alert, formNode);
+                    } else {
+                        commentsContainer.appendChild(alert);
+                    }
+                });
             }
         });
+
+        // Actualizar comentarios cada 30 segundos
+        setInterval(updateComments, 30000);
     });
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -377,12 +449,19 @@
                         ${data.message}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     `;
-                    commentsContainer.insertBefore(alert, commentForm);
+                    const formNode = document.getElementById('commentForm');
+                    if (formNode && formNode.parentNode) {
+                        formNode.parentNode.insertBefore(alert, formNode);
+                    } else if (commentsContainer) {
+                        commentsContainer.appendChild(alert);
+                    }
                     
-                    // Eliminar el mensaje después de 3 segundos
+                    // Eliminar el mensaje después de 1.5 segundos
                     setTimeout(() => {
                         alert.remove();
-                    }, 3000);
+                    }, 1500);
+
+                    // Ya NO llamamos a updateComments() aquí para evitar que desaparezca el comentario
                 }
             })
             .catch(error => {
@@ -394,7 +473,12 @@
                     Error al enviar el comentario. Por favor, intente nuevamente.
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 `;
-                commentsContainer.insertBefore(alert, commentForm);
+                const formNode = document.getElementById('commentForm');
+                if (formNode) {
+                    commentsContainer.insertBefore(alert, formNode);
+                } else {
+                    commentsContainer.appendChild(alert);
+                }
             })
             .finally(() => {
                 // Restaurar el botón

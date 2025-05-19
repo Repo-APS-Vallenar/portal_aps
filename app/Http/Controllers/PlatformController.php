@@ -51,7 +51,7 @@ class PlatformController extends Controller
             ],
             'tecnicos' => [
                 [
-                    'nombre' => 'FixSalud',
+                    'nombre' => 'TicketGo',
                     'descripcion' => 'Sistema de Tickets de Soporte Informático',
                     'url' => '/login',
                     'imagen' => 'fixsalud.png',
