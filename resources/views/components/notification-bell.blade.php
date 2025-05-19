@@ -75,7 +75,7 @@
                         </div>
                         <div class='text-secondary small mb-1' style='margin-left:auto; margin-right:0; width:100%; text-align:right;'>${noti.data && noti.data.remitente ? 'Por: ' + noti.data.remitente : ''}</div>
                         <div class='noti-message mb-2'>${noti.message}</div>
-                        <button class='btn btn-outline-danger btn-sm btn-eliminar-noti' data-id='${noti.id}' title='Eliminar notificación'><i class='bi bi-trash'></i></button>
+                        <button class='btn btn-outline-danger btn-sm btn-eliminar-noti' data-id='${noti.id}' title='${!noti.is_read ? 'Debes marcar como leída antes de eliminar' : 'Eliminar notificación'}' ${!noti.is_read ? 'disabled' : ''}><i class='bi bi-trash'></i></button>
                     </li>`;
                     });
                     if (data.notifications.length === 0 || data.notifications.filter(n => !n.is_read).length === 0) {
