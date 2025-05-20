@@ -298,7 +298,7 @@ class TicketController extends Controller
                 $mensaje,
                 route('tickets.show', $ticket)
             );
-            $noti->title = 'Notificación de actualización de ticket #' . $noti->id;
+            $noti->title = 'Actualización de ticket #' . $noti->id;
             $noti->save();
         }
         // Notificación especial si se modificó la solución aplicada
@@ -345,23 +345,35 @@ class TicketController extends Controller
             'is_internal' => 'boolean'
         ]);
 
+        // Asegurarnos que is_internal sea booleano
+        $isInternal = $request->has('is_internal') ? true : false;
+
         $comentario = TicketComment::create([
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'comment' => $request->comment,
-            'is_internal' => $request->has('is_internal'),
+            'is_internal' => $isInternal,
         ]);
+
+        // Log para debug
+        \Log::info('Nuevo comentario creado', [
+            'ticket_id' => $ticket->id,
+            'user_id' => Auth::id(),
+            'is_internal' => $isInternal,
+            'comment' => $request->comment
+        ]);
+
         $this->logAudit('Añadir Comentario', 'Comentario añadido por: ' . Auth::user()->name);
 
         // Notificar solo si el comentario NO es interno
         if (!$comentario->is_internal) {
             $notificationService = app(\App\Services\NotificationService::class);
-            $mensaje = '💬 Nuevo comentario en el ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
+            $mensaje = '💬 Nuevo comentario ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
             if (Auth::user()->role === 'user') {
                 // Notificar a todos los admins y superadmins
                 $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
                 foreach ($admins as $admin) {
-                    $titulo = 'Nuevo comentario en Ticket #' . $ticket->id;
+                    $titulo = 'Nuevo comentario Ticket #' . $ticket->id;
                     $noti = $notificationService->send(
                         $admin,
                         'nuevo_comentario',
@@ -373,7 +385,7 @@ class TicketController extends Controller
                 }
             } else {
                 // Notificar al usuario creador del ticket
-                $titulo = 'Nuevo comentario en tu ticket #' . $ticket->id;
+                $titulo = 'Nuevo comentario ticket #' . $ticket->id;
                 $noti = $notificationService->send(
                     $ticket->creator,
                     'ticket_update',
@@ -383,6 +395,20 @@ class TicketController extends Controller
                     ['remitente' => Auth::user()->name]
                 );
             }
+        }
+
+        // Si la petición es AJAX, devolver el HTML del comentario
+        if ($request->ajax()) {
+            $view = view('tickets.partials.comment', [
+                'comment' => $comentario,
+                'ticket' => $ticket
+            ])->render();
+            
+            return response()->json([
+                'success' => true,
+                'html' => $view,
+                'message' => 'Comentario agregado exitosamente.'
+            ]);
         }
 
         return redirect()->route('tickets.show', $ticket)
@@ -413,11 +439,21 @@ class TicketController extends Controller
     {
         if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
             // Solo el autor o admin puede eliminar
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este comentario.'], 403);
+            }
             return redirect()->back()->with('error', 'No tienes permiso para eliminar este comentario.');
         }
 
         $comment->delete();
         $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth::user()->name);
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Comentario eliminado correctamente.'
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Comentario eliminado correctamente.');
     }
@@ -494,5 +530,28 @@ class TicketController extends Controller
 
         $lista = implode(', ', $mensajes);
         return "Ticket #{$ticket->id} actualizado por: " . Auth::user()->name . ". Cambios: {$lista}";
+    }
+
+    public function getComments(Ticket $ticket)
+    {
+        $this->authorize('view', $ticket);
+        
+        $comments = $ticket->comments()
+            ->with('user')
+            ->latest()
+            ->get();
+
+        $html = '';
+        foreach ($comments as $comment) {
+            $html .= view('tickets.partials.comment', [
+                'comment' => $comment,
+                'ticket' => $ticket
+            ])->render();
+        }
+
+        return response()->json([
+            'success' => true,
+            'html' => $html
+        ]);
     }
 }

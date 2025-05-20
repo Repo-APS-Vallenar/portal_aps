@@ -49,7 +49,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6 d-flex flex-column gap-4">
+                        <div class="col-12 col-md-6 profile-col-right">
                             <div class="card border border-2 shadow-sm profile-wide-card" style="background:#fff; padding: 0rem 0rem; border-radius: 1.5rem; width: 100%; max-width: 100%;">
                                 <div class="card-body" style="width: 100%; max-width: 100%;">
                                     <h5 class="card-title mb-3"><i class="bi bi-key me-2"></i>Cambiar Contraseña</h5>
@@ -118,9 +118,19 @@
 <style>
     @media (min-width: 768px) {
         .profile-wide-card {
-            max-width: 500px !important;
+            max-width: 650px !important;
             margin-left: auto;
             margin-right: auto;
+        }
+        .profile-col-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.7rem;
+        }
+        .profile-col-right .card {
+            width: 100%;
+            margin-bottom: 0;
         }
     }
     @media (max-width: 767.98px) {

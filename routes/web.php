@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     // Tickets
     Route::resource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment');
+    Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments');
     Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
     Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
 

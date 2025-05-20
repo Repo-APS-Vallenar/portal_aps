@@ -75,7 +75,7 @@
                         </div>
                         <div class='text-secondary small mb-1' style='margin-left:auto; margin-right:0; width:100%; text-align:right;'>${noti.data && noti.data.remitente ? 'Por: ' + noti.data.remitente : ''}</div>
                         <div class='noti-message mb-2'>${noti.message}</div>
-                        <button class='btn btn-outline-danger btn-sm btn-eliminar-noti' data-id='${noti.id}' title='Eliminar notificación'><i class='bi bi-trash'></i></button>
+                        <button class='btn btn-outline-danger btn-sm btn-eliminar-noti' data-id='${noti.id}' title='${!noti.is_read ? 'Debes marcar como leída antes de eliminar' : 'Eliminar notificación'}' ${!noti.is_read ? 'disabled' : ''}><i class='bi bi-trash'></i></button>
                     </li>`;
                     });
                     if (data.notifications.length === 0 || data.notifications.filter(n => !n.is_read).length === 0) {
@@ -110,17 +110,19 @@
                 const btn = e.target.closest('.btn-eliminar-noti');
                 const id = btn.getAttribute('data-id');
                 const notiItem = btn.closest('.noti-item');
+                // Animación fade-out (opcional)
                 notiItem.classList.add('fade-out');
                 setTimeout(() => {
-                    fetch(`/notifications/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(() => fetchNotificaciones());
-                }, 300);
+                    notiItem.remove();
+                }, 300); // Quitar del DOM tras la animación
+                // Llamada al backend, pero no esperamos la respuesta para quitar del DOM
+                fetch(`/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    }
+                }).then(() => fetchNotificaciones());
             }
         });
         // Marcar todas como leídas
@@ -236,7 +238,7 @@
         left: auto !important;
         padding: 0 5px;
     }
-    body, .container, .main, main {
+    body, .main, main {
         display: flex !important;
         flex-direction: column;
         align-items: center !important;
