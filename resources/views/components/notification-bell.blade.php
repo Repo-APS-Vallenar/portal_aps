@@ -238,7 +238,7 @@
         left: auto !important;
         padding: 0 5px;
     }
-    body, .container, .main, main {
+    body, .main, main {
         display: flex !important;
         flex-direction: column;
         align-items: center !important;

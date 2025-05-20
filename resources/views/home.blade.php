@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    @include('layouts.navbar')
     <!-- Contenido principal con padding-top para compensar el navbar fijo -->
     <div class="container" style="padding-top: 20px;">
         <!-- Título del Portal con animación -->
@@ -38,8 +37,8 @@
                         <div class="carousel-item">
                             <div
                                 class="carousel-content bg-success text-white p-5 rounded-3 shadow-lg animate__animated animate__zoomIn">
-                                <h3><i class="fas fa-file-alt me-2 fa-bounce"></i>Documentación</h3>
-                                <p>Encuentra manuales y guías de uso en la sección de Documentos</p>
+                                <h3><i class="fas fa-ticket-alt me-2 fa-bounce"></i>Plataforma de Tickets | TicketGo</h3>
+                                <p>Accede a la plataforma de tickets para reportar y resolver incidencias</p>
                             </div>
                         </div>
                     </div>
@@ -118,7 +117,7 @@
             @endforeach
         </div>
     </div>
-    @include('layouts.footer')
+    {{-- @include('layouts.footer') --}}
 
 
 

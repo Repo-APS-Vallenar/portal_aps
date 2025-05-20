@@ -96,7 +96,6 @@
             @endforeach
         </div>
     </div>
-    @include('layouts.footer')
 
     @push('styles')
         <style>
@@ -175,20 +174,35 @@
             }
 
             .platform-image-container {
+                width: 150px;
                 height: 150px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background-color: #f8f9fa;
+                background-color: #fff;
                 border-radius: 10px;
-                padding: 1rem;
+                padding: 0;
+                overflow: hidden;
+                margin: 0 auto 10px auto;
             }
 
             .platform-image {
-                max-height: 100%;
-                max-width: 100%;
-                object-fit: contain;
-                transition: transform 0.3s ease;
+                width: 150px;
+                height: 150px;
+                object-fit: cover;
+                border-radius: 10px;
+                background: #fff;
+                display: block;
+                margin: 0;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            }
+
+            @media (max-width: 600px) {
+                .platform-image-container,
+                .platform-image {
+                    width: 90px;
+                    height: 90px;
+                }
             }
 
             .platform-card:hover .platform-image {

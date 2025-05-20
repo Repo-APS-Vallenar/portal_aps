@@ -21,22 +21,26 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
     <style>
-    /* Estilos generales */
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8f9fa;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+    html, body {
+        height: 100%;
         margin: 0;
         padding: 0;
     }
-
+    body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    main {
+        flex: 1 0 auto;
+    }
+    .footer-institucional {
+        flex-shrink: 0;
+    }
     .container {
         flex: 1 0 auto;
-        padding-bottom: 120px;
+        padding-bottom: 0;
     }
-
     /* Estilos del Navbar */
     .navbar {
         transition: all 0.3s ease;
@@ -44,6 +48,7 @@
         backdrop-filter: blur(10px);
         min-height: 50px !important;
         padding: 0 !important;
+        margin-top: 0 !important;
     }
 
     .navbar .container-fluid {
@@ -108,7 +113,7 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         border-radius: 10px;
     }
-
+ 
     .dropdown-item {
         padding: 0.7rem 1.5rem;
         transition: all 0.3s ease;
@@ -119,36 +124,6 @@
         background-color: #f8f9fa;
         color: #28a745;
         transform: translateX(5px);
-    }
-
-    /* Footer */
-    .footer {
-        background-color: rgb(255, 255, 255);
-        border-top: 1px solid #e0e0e0;
-        padding: 15px 0;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 100;
-    }
-
-    .footer p {
-        color: #2c3e50;
-        font-size: 0.9rem;
-        margin: 0;
-        line-height: 1.5;
-    }
-
-    .footer-logo {
-        max-height: 80px;
-        max-width: 100%;
-        transition: transform 0.3s ease;
-        margin: 10px 0;
-    }
-
-    .footer-logo:hover {
-        transform: scale(1.05);
     }
 
     .bell-floating {
@@ -167,6 +142,12 @@
             left: 12px;
             top: 24px;
         }
+    }
+
+    /* Ajuste para evitar que .container afecte al navbar */
+    body > .container {
+        flex: 1 0 auto;
+        padding-bottom: 0;
     }
     </style>
 
@@ -191,5 +172,7 @@
     @vite('resources/js/app.js')
     @stack('scripts')
     @yield('scripts')
+
+    @include('layouts.footer')
 </body>
 </html> 
