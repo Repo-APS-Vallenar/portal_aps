@@ -1,6 +1,6 @@
 <!-- Navbar fijo -->
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
-    <div class="container-fluid px-5">
+    <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center">
             <img src="{{ asset('images/logo_vallenar.png') }}" alt="Logo" class="img-fluid me-2"
                 style="max-height: 50px;">
@@ -18,33 +18,33 @@
             <!-- Left Side Of Navbar -->
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">
+                    <a aria-current="page" class="nav-link {{ request()->is('/') ? 'active' : '' }}" href="{{ url('/') }}">
                         <i class="bi bi-house-door menu-icon"></i> Inicio
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('platforms*') ? 'active' : '' }}"
+                    <a aria-current="page" class="nav-link {{ request()->is('platforms*') ? 'active' : '' }}"
                         href="{{ route('platforms.index') }}">
                         <i class="bi bi-grid menu-icon"></i> Plataformas
                     </a>
                 </li>
                 @auth
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->is('tickets*') ? 'active' : '' }}"
+                        <a aria-current="page" class="nav-link {{ request()->is('tickets*') ? 'active' : '' }}"
                             href="{{ route('tickets.index') }}">
                             <i class="bi bi-ticket-detailed menu-icon"></i> Tickets
                         </a>
                     </li>
                 @endauth
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}" href="{{ route('contacto') }}">
+                    <a aria-current="page" class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}" href="{{ route('contacto') }}">
                         <i class="bi bi-envelope menu-icon"></i> Contacto
                     </a>
                 </li>
                 @auth
                     @if (auth()->user()->role === 'superadmin')
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('audit.index') }}">
+                            <a aria-current="page" class="nav-link" href="{{ route('audit.index') }}">
                                 <i class="bi bi-shield-check menu-icon"></i> Auditoría
                             </a>
                         </li>
@@ -112,40 +112,54 @@
 @push('styles')
     <style>
         @media (max-width: 991.98px) {
+            .navbar,
+            .container-fluid {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            .navbar-brand {
+                margin-left: 0 !important;
+            }
+            .navbar-collapse {
+                max-width: 380px !important;
+                width: 95vw !important;
+                min-width: 220px !important;
+                margin: 0 auto !important;
+                border-radius: 22px !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.10) !important;
+            }
+            .navbar-nav {
+                max-width: 380px !important;
+                width: 95vw !important;
+                margin: 0 auto !important;
+            }
             .user-dropdown-menu {
-                position: fixed !important;
-                top: 50% !important;
-                left: 50% !important;
-                transform: translate(-50%, -50%) !important;
-                width: 90% !important;
-                max-width: 320px !important;
+                position: absolute !important;
+                top: 100% !important;
+                left: 0 !important;
+                right: auto !important;
+                transform: none !important;
+                max-width: 380px !important;
+                width: 95vw !important;
+                min-width: 220px !important;
                 height: auto !important;
                 max-height: 80vh !important;
-                border-radius: 12px !important;
+                border-radius: 18px !important;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
                 background: white !important;
-                margin: 0 !important;
+                margin: 0 auto !important;
                 padding: 1rem !important;
                 z-index: 1050 !important;
-                display: block !important;
             }
-
             .user-dropdown-menu::before {
-                content: '';
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: -1;
+                display: none !important;
             }
-
             .user-dropdown-scrollable {
                 max-height: 50vh;
                 overflow-y: auto;
             }
-
             .user-dropdown-logout-fixed {
                 border-top: 1px solid #eee;
                 padding-top: 0.7rem;

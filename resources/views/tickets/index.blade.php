@@ -132,36 +132,45 @@
                                             <span class="badge bg-primary">#{{ $ticket->id }}</span>
                                             <span class="small text-muted">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
                                         </div>
-                                        <div class="mb-1"><span class="ticket-card-label">Título:</span> <span>{{ $ticket->title }}</span></div>
-                                        <div class="mb-1"><span class="ticket-card-label">Categoría:</span> <span class="badge" style="background-color: {{ $ticket->category->color }}; white-space: normal; word-break: break-word;">{{ $ticket->category->name }}</span></div>
-                                        <div class="mb-1"><span class="ticket-card-label">Estado:</span> <span class="badge" style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }};">{{ $ticket->status->name }}</span></div>
-                                        <div class="mb-1"><span class="ticket-card-label">Prioridad:</span> <span class="badge bg-{{ $ticket->getPriorityColor() }}">{{ $ticket->getPriorityText() }}</span></div>
-                                        <div class="mb-1"><span class="ticket-card-label">Creado por:</span> <span>{{ $ticket->creator->name }}</span></div>
-                                        <div class="mb-2"><span class="ticket-card-label">Asignado a:</span> <span>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</span></div>
-                                        <div class="ticket-card-actions d-flex flex-column align-items-stretch mt-2" style="gap:0.4em;">
+                                        <div class="mb-1"><span class="ticket-card-label">Título:</span>
+                                            <span>{{ $ticket->title }}</span></div>
+                                        <div class="mb-1"><span class="ticket-card-label">Categoría:</span> <span class="badge"
+                                                style="background-color: {{ $ticket->category->color }}; white-space: normal; word-break: break-word;">{{ $ticket->category->name }}</span>
+                                        </div>
+                                        <div class="mb-1"><span class="ticket-card-label">Estado:</span> <span class="badge"
+                                                style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }};">{{ $ticket->status->name }}</span>
+                                        </div>
+                                        <div class="mb-1"><span class="ticket-card-label">Prioridad:</span> <span
+                                                class="badge bg-{{ $ticket->getPriorityColor() }}">{{ $ticket->getPriorityText() }}</span>
+                                        </div>
+                                        <div class="mb-1"><span class="ticket-card-label">Creado por:</span>
+                                            <span>{{ $ticket->creator->name }}</span></div>
+                                        <div class="mb-2"><span class="ticket-card-label">Asignado a:</span>
+                                            <span>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</span></div>
+                                        <div class="ticket-card-actions d-flex flex-column align-items-stretch mt-2"
+                                            style="gap:0.4em;">
                                             <a href="{{ route('tickets.show', $ticket) }}"
-                                               class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-details flex-fill"
-                                               aria-label="Ver detalles del ticket">
+                                                class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-details flex-fill"
+                                                aria-label="Ver detalles del ticket">
                                                 <i class="fas fa-eye"></i>
                                                 <span>Detalles</span>
                                             </a>
                                             @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
                                                 <a href="{{ route('tickets.edit', $ticket) }}"
-                                                   class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-edit flex-fill"
-                                                   aria-label="Editar ticket">
+                                                    class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-edit flex-fill"
+                                                    aria-label="Editar ticket">
                                                     <i class="fas fa-edit"></i>
                                                     <span>Editar</span>
                                                 </a>
                                                 <button type="button"
-                                                        class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-delete flex-fill"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#confirmDeleteModal"
-                                                        data-form="delete-ticket-mobile-{{ $ticket->id }}"
-                                                        aria-label="Eliminar ticket">
+                                                    class="ticket-pill-btn ticket-pill-btn-custom ticket-pill-btn-delete flex-fill"
+                                                    data-bs-toggle="modal" data-bs-target="#confirmDeleteModal"
+                                                    data-form="delete-ticket-mobile-{{ $ticket->id }}" aria-label="Eliminar ticket">
                                                     <i class="fas fa-trash"></i>
                                                     <span>Eliminar</span>
                                                 </button>
-                                                <form id="delete-ticket-mobile-{{ $ticket->id }}" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
+                                                <form id="delete-ticket-mobile-{{ $ticket->id }}"
+                                                    action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
                                                     @csrf
                                                     @method('DELETE')
                                                 </form>
@@ -181,7 +190,8 @@
     </div>
 
     {{-- Modal de confirmación de eliminación --}}
-    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
@@ -199,21 +209,24 @@
         </div>
     </div>
 
-@endsection
 
-@push('scripts')
-<script>
-    let formToSubmit = null;
-    document.addEventListener('DOMContentLoaded', function () {
-        var confirmDeleteModal = document.getElementById('confirmDeleteModal');
-        confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget;
-            var formId = button.getAttribute('data-form');
-            formToSubmit = document.getElementById(formId);
-        });
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-            if (formToSubmit) formToSubmit.submit();
-        });
-    });
-</script>
-@endpush
+    @push('scripts')
+        <script>
+            let formToSubmit = null;
+            document.addEventListener('DOMContentLoaded', function () {
+                var confirmDeleteModal = document.getElementById('confirmDeleteModal');
+                confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var formId = button.getAttribute('data-form');
+                    formToSubmit = document.getElementById(formId);
+                });
+                document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+                    if (formToSubmit) formToSubmit.submit();
+                });
+            });
+        </script>
+    @endpush
+
+  
+
+@endsection
