@@ -99,6 +99,11 @@ class Ticket extends Model
         return $this->hasMany(TicketComment::class);
     }
 
+    public function documents()
+    {
+        return $this->hasMany(TicketDocument::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

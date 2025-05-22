@@ -132,7 +132,7 @@
                                             <span class="badge bg-primary">#{{ $ticket->id }}</span>
                                             <span class="small text-muted">{{ $ticket->created_at->format('d/m/Y H:i') }}</span>
                                         </div>
-                                        <div class="mb-1"><span class="ticket-card-label">Título:</span>
+                                        <div class="mb-1"><span class="ticket-card-label">Solicitado por:</span>
                                             <span>{{ $ticket->title }}</span></div>
                                         <div class="mb-1"><span class="ticket-card-label">Categoría:</span> <span class="badge"
                                                 style="background-color: {{ $ticket->category->color }}; white-space: normal; word-break: break-word;">{{ $ticket->category->name }}</span>

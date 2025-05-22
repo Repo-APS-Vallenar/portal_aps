@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\ParameterController;
+use App\Http\Controllers\TicketDocumentController;
 
 // Autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -35,6 +36,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments');
     Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
     Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
+
+    // Rutas para documentos de tickets
+    Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
+    Route::delete('/tickets/documents/{document}', [TicketDocumentController::class, 'destroy'])->name('tickets.documents.destroy');
+    Route::get('/tickets/documents/{document}/download', [TicketDocumentController::class, 'download'])->name('tickets.documents.download');
 
     // Comentarios
     Route::get('/comments/{comment}/edit', [TicketCommentController::class, 'edit'])->name('comments.edit');

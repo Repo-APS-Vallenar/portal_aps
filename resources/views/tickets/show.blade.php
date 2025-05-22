@@ -227,6 +227,37 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <h4>Documentos Adjuntos</h4>
+                @if($ticket->documents->count() > 0)
+                    <div class="list-group">
+                        @foreach($ticket->documents as $document)
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file me-2"></i>
+                                    <strong>{{ $document->file_name }}</strong>
+                                    @if($document->description)
+                                        <small class="text-muted d-block">{{ $document->description }}</small>
+                                    @endif
+                                    @if(Str::startsWith($document->file_type, 'image/'))
+                                        <div class="mt-2">
+                                            <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" style="max-width: 180px; max-height: 120px; border-radius: 8px; border: 1px solid #eee;">
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="btn-group">
+                                    <a href="{{ route('tickets.documents.download', $document) }}" class="btn btn-sm btn-outline-primary" title="Descargar">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted">No hay documentos adjuntos.</p>
+                @endif
+            </div>
+
         </div>
     </div>
 </div>

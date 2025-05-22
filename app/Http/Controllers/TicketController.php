@@ -132,18 +132,50 @@ class TicketController extends Controller
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
 
-        // Notificar a todos los admins y superadmins
-        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-        $notificationService = app(\App\Services\NotificationService::class);
-        foreach ($admins as $admin) {
-            $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
-            $noti = $notificationService->send(
-                $admin,
-                'nuevo_ticket',
-                'Nuevo Ticket #' . $ticket->id,
-                $mensaje,
-                route('tickets.show', $ticket)
-            );
+        // Guardar archivos adjuntos si existen
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('ticket-documents/' . $ticket->id);
+                \App\Models\TicketDocument::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => Auth::id(),
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_type' => $file->getClientMimeType(),
+                    'file_size' => $file->getSize(),
+                    'description' => null
+                ]);
+            }
+        }
+
+        // Notificar solo a superadmins si el creador es admin
+        if (Auth::user()->isAdmin()) {
+            $superadmins = \App\Models\User::where('role', 'superadmin')->get();
+            $notificationService = app(\App\Services\NotificationService::class);
+            foreach ($superadmins as $superadmin) {
+                $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
+                $noti = $notificationService->send(
+                    $superadmin,
+                    'nuevo_ticket',
+                    'Nuevo Ticket #' . $ticket->id,
+                    $mensaje,
+                    route('tickets.show', $ticket)
+                );
+            }
+        } else {
+            // Si el creador no es admin, notificar a todos los admins y superadmins
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            $notificationService = app(\App\Services\NotificationService::class);
+            foreach ($admins as $admin) {
+                $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
+                $noti = $notificationService->send(
+                    $admin,
+                    'nuevo_ticket',
+                    'Nuevo Ticket #' . $ticket->id,
+                    $mensaje,
+                    route('tickets.show', $ticket)
+                );
+            }
         }
 
         $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth::user()->name);
@@ -159,7 +191,7 @@ class TicketController extends Controller
     {
         $this->authorize('view', $ticket);
 
-        $ticket->load(['category', 'status', 'creator', 'location', 'assignee', 'comments.user']);
+        $ticket->load(['category', 'status', 'creator', 'location', 'assignee', 'comments.user', 'documents.user']);
         return view('tickets.show', compact('ticket'));
     }
 
