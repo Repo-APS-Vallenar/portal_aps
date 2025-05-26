@@ -274,11 +274,27 @@ footer {
 
 /* Estilos de las tarjetas de plataforma */
 .platform-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: none;
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 420px;
+}
+
+.platform-card .card-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.platform-card .card-title,
+.platform-card .card-text {
+    margin-bottom: 12px;
+    word-break: break-word;
+}
+
+.platform-card .platform-actions {
+    margin-top: auto;
 }
 
 .platform-card:hover {
@@ -287,20 +303,30 @@ footer {
 }
 
 .platform-image-container {
-    height: 150px;
+    width: 140px;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f8f9fa;
-    border-radius: 10px;
-    padding: 1rem;
+    background: #f5f6fa;
+    border-radius: 16px;
+    margin: 32px auto 0 auto;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    padding: 0;
+    border: 1.5px solid #e3e8ee;
 }
 
 .platform-image {
-    max-height: 100%;
-    max-width: 100%;
+    width: 100px;
+    height: 100px;
+    max-width: 100px;
+    max-height: 100px;
+    min-width: 100px;
+    min-height: 100px;
     object-fit: contain;
-    transition: transform 0.3s ease;
+    display: block;
+    margin: 0 auto;
 }
 
 .platform-card:hover .platform-image {

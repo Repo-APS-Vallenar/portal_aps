@@ -46,21 +46,16 @@
             @foreach($platforms as $categoria => $plataformas)
                 @foreach($plataformas as $platform)
                     <div class="col-md-6 col-lg-4 mb-4 platform-item" data-category="{{ $categoria }}">
-                        <div class="card h-100 platform-card">
-                            <div class="card-body">
-                                <div class="platform-header mb-3">
-                                    <div class="platform-image-container">
-                                        <img src="{{ asset('images/' . $platform['imagen']) }}" class="platform-image"
-                                            alt="{{ $platform['nombre'] }}">
-                                    </div>
-                                    <h5 class="card-title mt-3">{{ $platform['nombre'] }}</h5>
-                                    <span class="badge bg-primary">{{ $platform['categoria'] }}</span>
-                                </div>
-
-                                <p class="card-text">{{ $platform['descripcion'] }}</p>
-
-                                @if($platform['url'] != '/login')
-                                    <div class="platform-actions">
+                        <div class="card h-100 platform-card d-flex flex-column align-items-center justify-content-between">
+                            <div class="platform-image-container mt-4">
+                                <img src="{{ asset('images/' . $platform['imagen']) }}" class="platform-image" alt="{{ $platform['nombre'] }}">
+                            </div>
+                            <div class="card-body d-flex flex-column align-items-center w-100">
+                                <h5 class="card-title text-center mt-3">{{ $platform['nombre'] }}</h5>
+                                <span class="badge bg-primary mb-2">{{ $platform['categoria'] }}</span>
+                                <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
+                                <div class="platform-actions mt-auto w-100">
+                                    @if($platform['url'] != '/login')
                                         <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2" target="_blank">
                                             <i class="fas fa-external-link-alt me-2"></i>Acceder
                                         </a>
@@ -68,9 +63,7 @@
                                             data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
                                             <i class="fas fa-info-circle me-2"></i>Más Información
                                         </button>
-                                    </div>
-                                @else
-                                    <div class="platform-actions">
+                                    @else
                                         <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2">
                                             <i class="fas fa-play me-1"></i>Acceder
                                         </a>
@@ -78,13 +71,12 @@
                                             data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
                                             <i class="fas fa-info-circle me-2"></i>Más Información
                                         </button>
-                                    </div>
-                                @endif
-                                <div class="collapse mt-3" id="platformInfo{{ $loop->index }}">
+                                    @endif
+                                </div>
+                                <div class="collapse mt-3 w-100" id="platformInfo{{ $loop->index }}">
                                     <div class="card card-body bg-light">
                                         <h6 class="mb-2"><i class="fas fa-key me-2"></i>Guía de Acceso</h6>
                                         <p class="small mb-3">{{ $platform['guia_acceso'] }}</p>
-
                                         <h6 class="mb-2"><i class="fas fa-headset me-2"></i>Soporte</h6>
                                         <p class="small mb-0">{{ $platform['contacto_soporte'] }}</p>
                                     </div>

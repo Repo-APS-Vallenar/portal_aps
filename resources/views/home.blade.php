@@ -71,46 +71,24 @@
 
         <div class="row mb-4">
             @foreach($platforms['clinicos'] as $platform)
-                <div class="col-md-4 mb-4">
-                    <div class="card h-100 platform-card">
-                        <div class="row g-0">
-                            <div class="col-md-4">
-                                <div class="platform-image-container">
-                                    <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                        class="platform-image lazy" loading="lazy"
-                                        data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                        alt="{{ $platform['nombre'] }}">
-                                </div>
-                            </div>
-                            @if($platform['url'] != '/tickets')
-                                <div class="col-md-8">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas {{ $platform['icono'] }} me-2"></i>
-                                            {{ $platform['nombre'] }}
-                                        </h5>
-                                        <p class="card-text">{{ $platform['descripcion'] }}</p>
-                                        <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button" target="_blank"
-                                            rel="noopener noreferrer">
-                                            <i class="fas fa-external-link-alt me-1"></i> Acceder
-                                        </a>
-                                    </div>
-                                </div>
-                            @else
-                                <div class="col-md-8">
-                                    <div class="card-body">
-                                        <h5 class="card-title">
-                                            <i class="fas {{ $platform['icono'] }} me-2"></i>
-                                            {{ $platform['nombre'] }}
-                                        </h5>
-                                        <p class="card-text">{{ $platform['descripcion'] }}</p>
-                                        <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button"
-                                            rel="noopener noreferrer">
-                                            <i class="fas fa-play me-1"></i> Acceder
-                                        </a>
-                                    </div>
-                                </div>
-                            @endif
+                <div class="col-md-3 mb-4 h-100">
+                    <div class="card h-100 platform-card d-flex flex-column align-items-center justify-content-between">
+                        <div class="platform-image-container mt-4">
+                            <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                class="platform-image lazy" loading="lazy"
+                                data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                alt="{{ $platform['nombre'] }}">
+                        </div>
+                        <div class="card-body d-flex flex-column align-items-center w-100">
+                            <h5 class="card-title text-center">
+                                <i class="fas {{ $platform['icono'] }} me-2"></i>
+                                {{ $platform['nombre'] }}
+                            </h5>
+                            <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
+                            <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button mt-auto" target="_blank"
+                                rel="noopener noreferrer">
+                                <i class="fas {{ $platform['url'] != '/tickets' ? 'fa-external-link-alt' : 'fa-play' }} me-1"></i> Acceder
+                            </a>
                         </div>
                     </div>
                 </div>
