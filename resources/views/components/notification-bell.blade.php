@@ -294,17 +294,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar
     fetchNotificaciones();
-    setInterval(fetchNotificaciones, 15000);
+    setInterval(fetchNotificaciones, 60000);
 
     // Al abrir el modal, marcar todas como leídas automáticamente
     const notificacionesModal = document.getElementById('notificacionesModal');
     notificacionesModal.addEventListener('shown.bs.modal', function () {
-        fetch('/notifications/mark-all-read', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
-            }
+            fetch('/notifications/mark-all-read', { 
+                method: 'POST', 
+                headers: { 
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                } 
         }).then(() => fetchNotificaciones());
     });
 
@@ -366,28 +366,28 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .noti-meta span {
-    display: flex;
-    align-items: center;
+        display: flex;
+        align-items: center;
     gap: 4px;
-}
+    }
 
 .noti-actions {
     display: flex;
     gap: 8px;
     margin-top: 8px;
-}
+    }
 
 .noti-empty {
     text-align: center;
     padding: 32px;
     color: #6c757d;
-}
+    }
 
 .noti-empty i {
     font-size: 2.5em;
     margin-bottom: 16px;
     color: #dee2e6;
-}
+    }
 
 .noti-filters {
     display: flex;

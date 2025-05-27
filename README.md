@@ -144,14 +144,37 @@ CSS
 PostgreSQL
 
 👥 Equipo
-<<<<<<< HEAD
-Jorge Trigo Barrera
 
 Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
 
-(Versión inicial del Portal APS)
-=======
+## 📡 Tiempo Real y Broadcasting (Pusher)
 
-Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
-=======
+Este sistema utiliza **Pusher** y Laravel Echo para funcionalidades en tiempo real, mejorando la colaboración y la experiencia de usuario.
+
+### Canales privados utilizados
+- `private-ticket.{ticketId}`: Canal privado para comentarios en tiempo real de cada ticket. Solo usuarios con acceso al ticket pueden suscribirse.
+- `private-user.{userId}`: Canal privado para notificaciones personales en tiempo real.
+
+### Eventos broadcast principales
+- `.comment-added`: Se emite cuando se agrega un comentario a un ticket. Todos los usuarios suscritos al canal del ticket reciben el nuevo comentario en tiempo real.
+- `.comment-deleted`: Se emite cuando se elimina un comentario. Todos los usuarios ven la actualización al instante.
+- `.new-notification`: Se emite cuando un usuario recibe una notificación (nuevo ticket, actualización, comentario, etc.).
+
+### Flujo de comentarios en tiempo real
+1. El usuario envía un comentario desde el formulario.
+2. El backend guarda el comentario y emite el evento `.comment-added` por Pusher.
+3. Todos los usuarios conectados al canal del ticket reciben el evento y actualizan la lista de comentarios automáticamente.
+4. Al eliminar un comentario, se emite `.comment-deleted` y se actualiza la lista en todas las ventanas.
+
+### Flujo de notificaciones en tiempo real
+1. Cuando ocurre una acción relevante (nuevo ticket, comentario, cambio de estado), se crea una notificación y se emite el evento `.new-notification` al canal privado del usuario.
+2. El frontend actualiza el badge y la lista de notificaciones sin recargar la página.
+
+### Buenas prácticas y recomendaciones
+- **Seguridad:** Los canales privados usan lógica de autorización en `routes/channels.php` para asegurar que solo usuarios autorizados reciban los eventos.
+- **Optimización:** El polling (setInterval) para respaldo se ejecuta cada 5 minutos, pero la actualización principal es en tiempo real vía Pusher.
+- **Feedback visual:** Los mensajes de éxito y error se muestran de forma clara y se eliminan automáticamente tras unos segundos.
+- **Escalabilidad:** El sistema está preparado para usar colas (`QUEUE_CONNECTION=database` o Redis) para manejar eventos de broadcasting en producción.
+
+---
 

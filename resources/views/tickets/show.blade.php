@@ -68,16 +68,14 @@
                 <div class="card-header">
                     <h4 class="mb-0">Comentarios</h4>
                 </div>
-                <div class="card-body">
-                    @if($ticket->comments->isEmpty())
-                    <p class="text-muted">No hay comentarios aún.</p>
-                    @else
+                <div class="card-body" id="comments-card-body">
                     <div id="comments-list">
-                    @foreach($ticket->comments as $comment)
-                        @include('tickets.partials.comment', ['comment' => $comment, 'ticket' => $ticket])
-                    @endforeach
+                        @forelse($ticket->comments as $comment)
+                            @include('tickets.partials.comment', ['comment' => $comment, 'ticket' => $ticket])
+                        @empty
+                            <p class="text-muted no-comments-msg">No hay comentarios aún.</p>
+                        @endforelse
                     </div>
-                    @endif
 
                     <!-- Formulario para nuevo comentario -->
                     <form action="{{ route('tickets.addComment', $ticket) }}" method="POST" class="mt-4" id="commentForm">
@@ -307,11 +305,15 @@
     let ticketId = null;
     let lastCommentId = null;
 
+    window.authUserName = @json(Auth::user()->name);
+    window.authUserRole = @json(Auth::user()->role);
+    window.ticketId = {{ $ticket->id }};
+
     // Función para actualizar los comentarios
     function updateComments() {
-        const commentsList = document.getElementById('comments-list');
-        if (!commentsList) return;
-
+        let commentsContainer = document.getElementById('comments-card-body');
+        let commentsList = document.getElementById('comments-list');
+        if (!commentsContainer) return;
         fetch(`/tickets/{{ $ticket->id }}/comments`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -319,11 +321,20 @@
         })
         .then(response => response.json())
         .then(data => {
+            if (!commentsList) {
+                commentsList = document.createElement('div');
+                commentsList.id = 'comments-list';
+                let commentForm = document.getElementById('commentForm');
+                if (commentForm && commentForm.parentNode) {
+                    commentForm.parentNode.insertBefore(commentsList, commentForm);
+                } else {
+                    commentsContainer.appendChild(commentsList);
+                }
+            }
             if (data.success) {
                 commentsList.innerHTML = data.html;
-                // Si no hay comentarios, mostrar el mensaje vacío
                 if (!data.html.trim()) {
-                    commentsList.innerHTML = '<p class="text-muted">No hay comentarios aún.</p>';
+                    commentsList.innerHTML = '<p class="text-muted no-comments-msg">No hay comentarios aún.</p>';
                 }
             }
         })
@@ -353,6 +364,8 @@
         document.getElementById('confirmDeleteCommentBtn').addEventListener('click', function () {
             if (commentToDelete && ticketId) {
                 // Eliminar el comentario del DOM inmediatamente
+                let commentsContainer = document.getElementById('comments-card-body');
+                if (!commentsContainer) return;
                 const commentElement = document.querySelector(`[data-comment-id="${commentToDelete}"]`);
                 if (commentElement) {
                     commentElement.remove();
@@ -365,21 +378,18 @@
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `/tickets/${ticketId}/comments/${commentToDelete}`;
-                
                 // Agregar el token CSRF
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = '_token';
                 csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
                 form.appendChild(csrfInput);
-                
                 // Agregar el método DELETE
                 const methodInput = document.createElement('input');
                 methodInput.type = 'hidden';
                 methodInput.name = '_method';
                 methodInput.value = 'DELETE';
                 form.appendChild(methodInput);
-
                 // Enviar la petición AJAX
                 fetch(form.action, {
                     method: 'POST',
@@ -393,13 +403,15 @@
                     if (data.success) {
                         // Mostrar mensaje de éxito
                         const alert = document.createElement('div');
-                        alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                        alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
                         alert.innerHTML = `
                             ${data.message}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         `;
-                        document.querySelector('.card-body').insertBefore(alert, document.getElementById('commentForm'));
-                        setTimeout(() => { alert.remove(); }, 1500);
+                        if (commentsContainer) {
+                            commentsContainer.insertBefore(alert, document.getElementById('commentForm'));
+                            setTimeout(() => { alert.remove(); }, 1500);
+                        }
                         // Actualizar la lista completa de comentarios
                         updateComments();
                     } else {
@@ -410,6 +422,8 @@
                     // Si hay error, recargar la lista de comentarios para restaurar el DOM
                     updateComments();
                     // Mostrar mensaje de error
+                    let commentsContainer = document.getElementById('comments-card-body');
+                    if (!commentsContainer) return;
                     const alert = document.createElement('div');
                     alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
                     alert.innerHTML = `
@@ -426,21 +440,33 @@
             }
         });
 
-        // Actualizar comentarios cada 30 segundos
-        setInterval(updateComments, 30000);
+        // Actualizar comentarios cada 5 minutos como respaldo
+        setInterval(updateComments, 300000);
+
+        // --- Pusher tiempo real ---
+        if (window.ticketId && window.Echo) {
+            window.Echo.private('ticket.' + window.ticketId)
+                .listen('.comment-added', (e) => {
+                    updateComments();
+                })
+                .listen('.comment-deleted', (e) => {
+                    updateComments();
+                });
+        }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
         const commentForm = document.getElementById('commentForm');
         const commentTextarea = document.getElementById('comment');
         const submitButton = document.getElementById('submitComment');
-        const commentsContainer = document.querySelector('.card-body');
+        let commentsContainer = document.getElementById('comments-card-body');
+        if (!commentsContainer) return;
         const commentsList = document.getElementById('comments-list');
 
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // Eliminar TODOS los mensajes de "No hay comentarios" inmediatamente
+            // Eliminar TODOS los mensajes de "No hay comentarios" inmediatamente (antes de AJAX)
             let noCommentsMsgs = commentsContainer.querySelectorAll('.text-muted');
             noCommentsMsgs.forEach(function(msg) {
                 if (msg.textContent.includes('No hay comentarios')) {
@@ -453,8 +479,12 @@
             if (!commentsListDynamic) {
                 commentsListDynamic = document.createElement('div');
                 commentsListDynamic.id = 'comments-list';
-                // Insertar antes del formulario
-                commentsContainer.insertBefore(commentsListDynamic, commentForm);
+                // Insertar antes del formulario si es posible
+                if (commentForm && commentForm.parentNode) {
+                    commentForm.parentNode.insertBefore(commentsListDynamic, commentForm);
+                } else if (commentsContainer) {
+                    commentsContainer.appendChild(commentsListDynamic);
+                }
             }
 
             // Mostrar loader temporal
@@ -480,57 +510,41 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Eliminar loader
-                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
-                    if (loaderEl) loaderEl.remove();
+                // Eliminar loader
+                let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                if (loaderEl) loaderEl.remove();
 
-                    // Eliminar TODOS los mensajes de "No hay comentarios" (refuerzo)
-                    let noCommentsMsgs2 = commentsContainer.querySelectorAll('.text-muted');
-                    noCommentsMsgs2.forEach(function(msg) {
-                        if (msg.textContent.includes('No hay comentarios')) {
-                            msg.remove();
-                        }
-                    });
+                // Limpiar el textarea y restaurar el botón
+                commentTextarea.value = '';
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Agregar Comentario';
 
-                    // Insertar el nuevo comentario al principio de la lista
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.html;
-                    const newComment = tempDiv.firstElementChild;
-                    commentsListDynamic.insertBefore(newComment, commentsListDynamic.firstChild);
+                // Refrescar la lista de comentarios (deja que updateComments y Pusher hagan el trabajo)
+                updateComments();
 
-                    // Limpiar el formulario
-                    commentForm.reset();
-
-                    // Mostrar mensaje de éxito
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-success alert-dismissible fade show mt-3';
-                    alert.innerHTML = `
-                        ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    const formNode = document.getElementById('commentForm');
-                    if (formNode && formNode.parentNode) {
-                        formNode.parentNode.insertBefore(alert, formNode);
-                    } else if (commentsContainer) {
-                        commentsContainer.appendChild(alert);
-                    }
-
-                    // Eliminar el mensaje después de 1.5 segundos
-                    setTimeout(() => {
-                        alert.remove();
-                    }, 1500);
-                } else {
-                    // Eliminar loader si hay error
-                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
-                    if (loaderEl) loaderEl.remove();
+                // Mostrar mensaje de éxito
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                const formNode = document.getElementById('commentForm');
+                if (formNode && formNode.parentNode) {
+                    formNode.parentNode.insertBefore(alert, formNode);
+                } else if (commentsContainer) {
+                    commentsContainer.appendChild(alert);
                 }
+                setTimeout(() => { alert.remove(); }, 1500);
             })
             .catch(error => {
                 // Eliminar loader si hay error
                 let loaderEl = commentsListDynamic.querySelector('.comment-loader');
                 if (loaderEl) loaderEl.remove();
-                console.error('Error:', error);
+                // Limpiar el textarea y restaurar el botón
+                commentTextarea.value = '';
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Agregar Comentario';
                 // Mostrar mensaje de error
                 const alert = document.createElement('div');
                 alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
@@ -544,11 +558,17 @@
                 } else {
                     commentsContainer.appendChild(alert);
                 }
-            })
-            .finally(() => {
-                // Restaurar el botón
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Agregar Comentario';
+                setTimeout(() => { alert.remove(); }, 2000);
+            });
+        });
+
+        // Eliminar mensaje de 'No hay comentarios' al escribir en el textarea
+        commentTextarea.addEventListener('input', function() {
+            let noCommentsMsgs = commentsContainer.querySelectorAll('.text-muted');
+            noCommentsMsgs.forEach(function(msg) {
+                if (msg.textContent.includes('No hay comentarios')) {
+                    msg.remove();
+                }
             });
         });
     });

@@ -52,8 +52,8 @@ class TicketController extends Controller
         } else {
             $tickets = Ticket::with(['category', 'status', 'creator', 'assignedTo'])
                 ->where('created_by', $user->id)
-                ->latest()
-                ->paginate(10);
+            ->latest()
+            ->paginate(10);
         }
 
         if (request()->ajax()) {
@@ -144,6 +144,9 @@ class TicketController extends Controller
         $ticket->status_id = $solicitadoStatus->id;
         $ticket->save();
 
+        // Cargar relaciones necesarias para evitar nulls
+        $ticket->load(['category', 'creator', 'assignedTo']);
+
         // Guardar archivos adjuntos si existen
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
@@ -165,6 +168,7 @@ class TicketController extends Controller
             $superadmins = \App\Models\User::where('role', 'superadmin')->get();
             $notificationService = app(\App\Services\NotificationService::class);
             foreach ($superadmins as $superadmin) {
+                \Log::info('Notificando a superadmin', ['ticket_id' => $ticket->id, 'superadmin_id' => $superadmin->id]);
                 $notificationService->send(
                     $superadmin,
                     new \App\Notifications\TicketCreatedNotification($ticket)
@@ -175,6 +179,7 @@ class TicketController extends Controller
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             $notificationService = app(\App\Services\NotificationService::class);
             foreach ($admins as $admin) {
+                \Log::info('Notificando a admin/superadmin', ['ticket_id' => $ticket->id, 'admin_id' => $admin->id]);
                 $notificationService->send(
                     $admin,
                     new \App\Notifications\TicketCreatedNotification($ticket)
@@ -240,27 +245,27 @@ class TicketController extends Controller
         if ($user->isAdmin() || $user->isSuperadmin()) {
             $rules = array_merge($rules, [
                 'location_id' => 'nullable|exists:locations,id',
-                'marca' => 'nullable|string|max:255',
-                'modelo' => 'nullable|string|max:255',
-                'numero_serie' => 'nullable|string|max:255',
-                'usuario' => 'nullable|string|max:255',
-                'ip_red_wifi' => 'nullable|string|max:255',
-                'cpu' => 'nullable|string|max:255',
-                'ram' => 'nullable|string|max:255',
-                'capacidad_almacenamiento' => 'nullable|string|max:255',
-                'tarjeta_video' => 'nullable|string|max:255',
-                'id_anydesk' => 'nullable|string|max:255',
-                'pass_anydesk' => 'nullable|string|max:255',
-                'version_windows' => 'nullable|string|max:255',
-                'licencia_windows' => 'nullable|string|max:255',
-                'version_office' => 'nullable|string|max:255',
-                'licencia_office' => 'nullable|string|max:255',
-                'password_cuenta' => 'nullable|string|max:255',
-                'fecha_instalacion' => 'nullable|date',
-                'comentarios' => 'nullable|string',
-                'contact_phone' => 'nullable|string|max:255',
-                'contact_email' => 'nullable|email|max:255',
-            ]);
+            'marca' => 'nullable|string|max:255',
+            'modelo' => 'nullable|string|max:255',
+            'numero_serie' => 'nullable|string|max:255',
+            'usuario' => 'nullable|string|max:255',
+            'ip_red_wifi' => 'nullable|string|max:255',
+            'cpu' => 'nullable|string|max:255',
+            'ram' => 'nullable|string|max:255',
+            'capacidad_almacenamiento' => 'nullable|string|max:255',
+            'tarjeta_video' => 'nullable|string|max:255',
+            'id_anydesk' => 'nullable|string|max:255',
+            'pass_anydesk' => 'nullable|string|max:255',
+            'version_windows' => 'nullable|string|max:255',
+            'licencia_windows' => 'nullable|string|max:255',
+            'version_office' => 'nullable|string|max:255',
+            'licencia_office' => 'nullable|string|max:255',
+            'password_cuenta' => 'nullable|string|max:255',
+            'fecha_instalacion' => 'nullable|date',
+            'comentarios' => 'nullable|string',
+            'contact_phone' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+        ]);
         }
         $validated = $request->validate($rules);
 
@@ -273,7 +278,7 @@ class TicketController extends Controller
             }
             if (empty($validated['solucion_aplicada'])) {
                 return redirect()->back()->with('error', 'Debe ingresar la solución aplicada para resolver el ticket.');
-            }
+        }
             // Cambiar automáticamente a Cerrado
             $validated['status_id'] = optional($statusCerrado)->id ?? $request->status_id;
         }
@@ -289,16 +294,41 @@ class TicketController extends Controller
             }
         }
 
+        // Detectar cambio de prioridad a urgente
+        $prioridadAnterior = $ticket->priority;
         $ticket->update($validated);
+
+        // Cargar relaciones necesarias para evitar nulls
+        $ticket->load(['category', 'creator', 'assignedTo']);
 
         // Notificar involucrados si se resolvió/cerró
         if (isset($changes['status_id']) && $validated['status_id'] == optional($statusCerrado)->id) {
             if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                \Log::info('Notificando al creador del ticket', ['ticket_id' => $ticket->id, 'creator_id' => $ticket->creator->id]);
                 $ticket->creator->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
             }
             if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                \Log::info('Notificando al asignado del ticket', ['ticket_id' => $ticket->id, 'assigned_to_id' => $ticket->assignedTo->id]);
                 $ticket->assignedTo->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
+        }
+        }
+
+        // Notificar si la prioridad cambió a urgente
+        if (
+            isset($changes['priority']) &&
+            $changes['priority']['new'] === 'urgente' &&
+            $changes['priority']['old'] !== 'urgente'
+        ) {
+            $notificacion = new \App\Notifications\TicketPriorityUrgentNotification($ticket, auth()->user());
+            // Notificar al asignado
+            if ($ticket->assignedTo) {
+                $ticket->assignedTo->notify($notificacion);
             }
+            // Notificar a todos los admins y superadmins
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $admin->notify($notificacion);
+        }
         }
 
         return redirect()->route('tickets.show', $ticket)
@@ -338,6 +368,9 @@ class TicketController extends Controller
             'comment' => $request->comment,
             'is_internal' => $isInternal,
         ]);
+
+        // Emitir evento broadcast para comentarios en tiempo real
+        event(new \App\Events\CommentAdded($ticket, $comentario));
 
         \Log::info('Nuevo comentario creado', [
             'ticket_id' => $ticket->id,
@@ -436,6 +469,11 @@ class TicketController extends Controller
 
         $comment->delete();
         $this->logAudit('Eliminar Comentario', 'Comentario eliminado por: ' . Auth::user()->name);
+
+        // Emitir evento de eliminación en tiempo real
+        if (request()->ajax()) {
+            event(new \App\Events\CommentDeleted($ticket->id, $comment->id));
+        }
 
         if (request()->ajax()) {
             return response()->json([

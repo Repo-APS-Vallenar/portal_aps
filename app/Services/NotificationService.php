@@ -26,11 +26,20 @@ class NotificationService
             if (is_int($user)) {
                 $user = \App\Models\User::findOrFail($user);
             }
-            $user->notify($notificationInstance);
-            return true;
+            // Validar que el usuario y la notificación sean válidos
+            if ($user && $notificationInstance instanceof \Illuminate\Notifications\Notification) {
+                $user->notify($notificationInstance);
+                return true;
+            } else {
+                \Log::error('Intento de notificar con datos inválidos', [
+                    'user' => $user,
+                    'notification' => $notificationInstance
+            ]);
+                return false;
+            }
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación: ' . $e->getMessage(), [
-                'user_id' => is_int($user) ? $user : $user->id,
+                'user_id' => is_int($user) ? $user : ($user ? $user->id : null),
             ]);
             throw $e;
         }
