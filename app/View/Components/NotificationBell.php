@@ -15,14 +15,8 @@ class NotificationBell extends Component
      */
     public function __construct()
     {
-        $this->unreadCount = Notification::where('user_id', auth()->id())
-            ->where('is_read', false)
-            ->count();
-
-        $this->notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->take(5)
-            ->get();
+        $this->unreadCount = auth()->user()->unreadNotifications->count();
+        $this->notifications = auth()->user()->notifications()->latest()->take(5)->get();
     }
 
     /**

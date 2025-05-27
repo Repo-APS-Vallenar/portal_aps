@@ -132,7 +132,7 @@
 
                         <dt class="col-sm-4">Asignado a:</dt>
                         <dd class="col-sm-8">
-                            {{ $ticket->assignee->name ?? 'No asignado' }}
+                            {{ $ticket->assignedTo->name ?? 'No asignado' }}
                         </dd>
 
 
@@ -143,7 +143,7 @@
 
 
                         <dt class="col-sm-4">Solución Aplicada:</dt>
-                        <dd class="col-sm-8">{{ $ticket->comentarios ?? 'No hay solución aplicada aún' }}</dd>
+                        <dd class="col-sm-8">{{ $ticket->solucion_aplicada ?? 'No hay solución aplicada aún' }}</dd>
                     </dl>
                 </div>
             </div>
@@ -321,6 +321,10 @@
         .then(data => {
             if (data.success) {
                 commentsList.innerHTML = data.html;
+                // Si no hay comentarios, mostrar el mensaje vacío
+                if (!data.html.trim()) {
+                    commentsList.innerHTML = '<p class="text-muted">No hay comentarios aún.</p>';
+                }
             }
         })
         .catch(error => console.error('Error al actualizar comentarios:', error));
@@ -436,6 +440,29 @@
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            // Eliminar TODOS los mensajes de "No hay comentarios" inmediatamente
+            let noCommentsMsgs = commentsContainer.querySelectorAll('.text-muted');
+            noCommentsMsgs.forEach(function(msg) {
+                if (msg.textContent.includes('No hay comentarios')) {
+                    msg.remove();
+                }
+            });
+
+            // Si no existe el contenedor, crearlo
+            let commentsListDynamic = document.getElementById('comments-list');
+            if (!commentsListDynamic) {
+                commentsListDynamic = document.createElement('div');
+                commentsListDynamic.id = 'comments-list';
+                // Insertar antes del formulario
+                commentsContainer.insertBefore(commentsListDynamic, commentForm);
+            }
+
+            // Mostrar loader temporal
+            let loader = document.createElement('div');
+            loader.className = 'text-center text-secondary my-2 comment-loader';
+            loader.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Agregando comentario...';
+            commentsListDynamic.insertBefore(loader, commentsListDynamic.firstChild);
+
             // Deshabilitar el botón y mostrar loading
             submitButton.disabled = true;
             submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
@@ -454,25 +481,27 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Eliminar loader
+                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                    if (loaderEl) loaderEl.remove();
+
+                    // Eliminar TODOS los mensajes de "No hay comentarios" (refuerzo)
+                    let noCommentsMsgs2 = commentsContainer.querySelectorAll('.text-muted');
+                    noCommentsMsgs2.forEach(function(msg) {
+                        if (msg.textContent.includes('No hay comentarios')) {
+                            msg.remove();
+                        }
+                    });
+
                     // Insertar el nuevo comentario al principio de la lista
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = data.html;
                     const newComment = tempDiv.firstElementChild;
-                    
-                    // Si no hay comentarios, eliminar el mensaje de "No hay comentarios"
-                    const noCommentsMsg = commentsContainer.querySelector('.text-muted');
-                    if (noCommentsMsg && noCommentsMsg.textContent.includes('No hay comentarios')) {
-                        noCommentsMsg.remove();
-                    }
-                    
-                    // Insertar el nuevo comentario en el contenedor correcto
-                    if (commentsList) {
-                        commentsList.insertBefore(newComment, commentsList.firstChild);
-                    }
-                    
+                    commentsListDynamic.insertBefore(newComment, commentsListDynamic.firstChild);
+
                     // Limpiar el formulario
                     commentForm.reset();
-                    
+
                     // Mostrar mensaje de éxito
                     const alert = document.createElement('div');
                     alert.className = 'alert alert-success alert-dismissible fade show mt-3';
@@ -486,16 +515,21 @@
                     } else if (commentsContainer) {
                         commentsContainer.appendChild(alert);
                     }
-                    
+
                     // Eliminar el mensaje después de 1.5 segundos
                     setTimeout(() => {
                         alert.remove();
                     }, 1500);
-
-                    // Ya NO llamamos a updateComments() aquí para evitar que desaparezca el comentario
+                } else {
+                    // Eliminar loader si hay error
+                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                    if (loaderEl) loaderEl.remove();
                 }
             })
             .catch(error => {
+                // Eliminar loader si hay error
+                let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                if (loaderEl) loaderEl.remove();
                 console.error('Error:', error);
                 // Mostrar mensaje de error
                 const alert = document.createElement('div');

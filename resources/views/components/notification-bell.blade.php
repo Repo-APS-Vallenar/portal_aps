@@ -2,7 +2,8 @@
 <div id="noti-bell-bootstrap" class="bell-floating">
     <button type="button"
         class="btn position-relative shadow rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
-        style="width: 56px; height: 56px; background: #e3f0ff; transition: box-shadow 0.2s;" data-bs-toggle="modal"
+        style="width: 56px; height: 56px; background: #e3f0ff; transition: all 0.3s ease;" 
+        data-bs-toggle="modal"
         data-bs-target="#notificacionesModal"
         onmouseover="this.style.background='#d0e7ff'; this.classList.add('shadow-lg')"
         onmouseout="this.style.background='#e3f0ff'; this.classList.remove('shadow-lg')">
@@ -20,102 +21,266 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="notificacionesModalLabel"><i class="bi bi-bell"></i> Notificaciones</h5>
+                <h5 class="modal-title" id="notificacionesModalLabel">
+                    <i class="bi bi-bell me-2"></i> Notificaciones
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                     aria-label="Cerrar"></button>
             </div>
             <div class="modal-body p-0">
-                <ul class="list-group list-group-flush" id="notificaciones-lista">
-                    <li class="list-group-item d-flex flex-column align-items-center justify-content-center text-center text-muted py-5"
-                        id="noti-vacio" style="min-height: 180px;">
-                        <i class="bi bi-bell fs-1 mb-2"></i>
-                        <div>¡No tienes notificaciones nuevas!</div>
-                    </li>
-                </ul>
+                <div class="noti-header p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="noti-filters">
+                            <button class="btn btn-sm btn-outline-primary active" data-filter="all">
+                                Todas
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" data-filter="unread">
+                                No leídas
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="marcar-todas-leidas" disabled>
+                            <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
+                        </button>
+                    </div>
+                </div>
+                <div class="noti-container" id="notificaciones-lista" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                </div>
             </div>
             <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-primary btn-sm" id="marcar-todas-leidas" disabled>Marcar
-                    todas como leídas</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="limpiar-notificaciones">
+                    <i class="bi bi-trash me-1"></i>Limpiar notificaciones leídas
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para limpiar notificaciones -->
+<div class="modal fade" id="confirmLimpiarNotificacionesModal" tabindex="-1" aria-labelledby="confirmLimpiarNotificacionesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmLimpiarNotificacionesLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar todas las notificaciones leídas?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmLimpiarNotificacionesBtn">Eliminar</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // Polling cada 15 segundos
+document.addEventListener('DOMContentLoaded', function() {
+    const notiContainer = document.getElementById('notificaciones-lista');
+    const notiBadge = document.getElementById('noti-badge');
+    const btnTodas = document.getElementById('marcar-todas-leidas');
+    const btnLimpiar = document.getElementById('limpiar-notificaciones');
+    let currentFilter = 'all';
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        
+        // Si es de hoy, mostrar la hora
+        if (diff < 24 * 60 * 60 * 1000) {
+            return `Hoy ${date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        // Si es de ayer
+        if (diff < 48 * 60 * 60 * 1000) {
+            return `Ayer ${date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        // Si es de esta semana
+        if (diff < 7 * 24 * 60 * 60 * 1000) {
+            return date.toLocaleDateString('es-CL', { weekday: 'long', hour: '2-digit', minute: '2-digit' });
+        }
+        // Para fechas más antiguas
+        return date.toLocaleDateString('es-CL', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function renderNotification(noti) {
+        const isUnread = !noti.is_read;
+        let icon = '<i class="bi bi-bell"></i>';
+        let color = 'primary';
+        let typeLabel = 'Notificación';
+        let extraInfo = '';
+        if (noti.type === 'ticket_created') {
+            icon = '<i class="bi bi-ticket-detailed-fill text-success"></i>';
+            color = 'success';
+            typeLabel = 'Ticket';
+        } else if (noti.type === 'ticket_updated') {
+            icon = '<i class="bi bi-pencil-square text-warning"></i>';
+            color = 'warning';
+            typeLabel = 'Actualización';
+        } else if (noti.type === 'ticket_commented') {
+            icon = '<i class="bi bi-chat-dots-fill text-info"></i>';
+            color = 'info';
+            typeLabel = 'Comentario';
+        }
+        // Badge de nuevo
+        const newBadge = isUnread ? '<span class="badge bg-danger ms-2">Nuevo</span>' : '';
+        // Mostrar cambios si es actualización
+        if (noti.type === 'ticket_updated' && noti.data && noti.data.changes) {
+            let cambios = '';
+            for (const campo in noti.data.changes) {
+                if (noti.data.changes.hasOwnProperty(campo)) {
+                    const cambio = noti.data.changes[campo];
+                    cambios += `<li><strong>${campo}:</strong> ${cambio.old} → ${cambio.new}</li>`;
+                }
+            }
+            if (cambios) {
+                extraInfo += `<ul class='noti-changes mb-1 mt-1'>${cambios}</ul>`;
+            }
+        }
+        return `
+            <div class="noti-item shadow-sm mb-2 rounded border border-${color} ${isUnread ? 'noti-unread' : ''}" data-id="${noti.id}" style="background: ${isUnread ? '#f8fafd' : '#fff'}; transition: background 0.3s;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    ${icon}
+                    <span class="fw-bold text-${color}">${typeLabel}</span>
+                    ${newBadge}
+                    <small class="text-muted ms-auto">${formatDate(noti.created_at)}</small>
+                </div>
+                <div class="noti-content ps-1">
+                    <h6 class="noti-title mb-1">${noti.title}</h6>
+                    <p class="noti-message mb-1">${noti.message}</p>
+                    ${extraInfo}
+                    ${noti.data ? `
+                        <div class="noti-meta small text-secondary">
+                            ${noti.data.category ? `<span><i class='bi bi-tag'></i> ${noti.data.category}</span>` : ''}
+                            ${noti.data.creator ? `<span><i class='bi bi-person'></i> ${noti.data.creator}</span>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="noti-actions d-flex gap-2 mt-2">
+                    ${noti.link ? `
+                        <a href="${noti.link}" class="btn btn-sm btn-outline-${color} px-2 py-1">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Ver detalles
+                        </a>
+                    ` : ''}
+                    ${isUnread ? `
+                        <button class="btn btn-sm btn-outline-primary mark-read px-2 py-1" data-id="${noti.id}">
+                            <i class="bi bi-check2 me-1"></i>Marcar como leída
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm btn-outline-danger delete-noti px-2 py-1" data-id="${noti.id}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    }
+
     function fetchNotificaciones() {
         fetch('/notifications?ajax=1')
             .then(res => res.json())
             .then(data => {
-                const lista = document.getElementById('notificaciones-lista');
-                const badge = document.getElementById('noti-badge');
-                const btnTodas = document.getElementById('marcar-todas-leidas');
-                lista.innerHTML = '';
-                if (data.notifications.length === 0) {
-                    badge.style.display = 'none';
-                    lista.innerHTML = `<li class='list-group-item d-flex flex-column align-items-center justify-content-center text-center text-muted py-5' id='noti-vacio' style='min-height: 180px;'>
-                    <i class='bi bi-bell fs-1 mb-2'></i>
-                    <div>¡No tienes notificaciones nuevas!</div>
-                </li>`;
-                    btnTodas.disabled = true;
-                } else {
-                    badge.style.display = 'inline-flex';
-                    badge.textContent = data.notifications.filter(n => !n.is_read).length;
-                    data.notifications.forEach(noti => {
-                        // Formatear fecha y hora
-                        const fecha = new Date(noti.created_at);
-                        const fechaStr = fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                        const horaStr = fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
-                        lista.innerHTML += `
-                    <li class='list-group-item noti-item d-flex flex-column align-items-start gap-2 p-3 mb-2 rounded-3 shadow-sm ${!noti.is_read ? 'noti-unread' : ''}'>
-                        <div class='d-flex justify-content-between w-100'>
-                            <span class='text-muted small'>${fechaStr} ${horaStr}</span>
-                            <span class='badge bg-warning text-dark px-2 py-1 small fw-bold'>${(noti.title || '').replace(/\(para:.*\)/, '')}</span>
+                const notifications = data.notifications;
+                const unreadCount = notifications.filter(n => !n.is_read).length;
+                
+                // Actualizar badge
+                notiBadge.textContent = unreadCount;
+                notiBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+                
+                // Actualizar botón de marcar todas
+                btnTodas.disabled = unreadCount === 0;
+                
+                // Filtrar notificaciones según el filtro actual
+                const filteredNotis = currentFilter === 'unread' 
+                    ? notifications.filter(n => !n.is_read)
+                    : notifications;
+                
+                // Renderizar notificaciones
+                if (filteredNotis.length === 0) {
+                    notiContainer.innerHTML = `
+                        <div class="noti-empty">
+                            <i class="fas fa-bell-slash"></i>
+                            <p>No hay notificaciones ${currentFilter === 'unread' ? 'no leídas' : ''}</p>
                         </div>
-                        <div class='text-secondary small mb-1' style='margin-left:auto; margin-right:0; width:100%; text-align:right;'>${noti.data && noti.data.remitente ? 'Por: ' + noti.data.remitente : ''}</div>
-                        <div class='noti-message mb-2'>${noti.message}</div>
-                        <button class='btn btn-outline-danger btn-sm btn-eliminar-noti' data-id='${noti.id}' title='${!noti.is_read ? 'Debes marcar como leída antes de eliminar' : 'Eliminar notificación'}' ${!noti.is_read ? 'disabled' : ''}><i class='bi bi-trash'></i></button>
-                    </li>`;
-                    });
-                    if (data.notifications.length === 0 || data.notifications.filter(n => !n.is_read).length === 0) {
-                        btnTodas.disabled = true;
+                    `;
                     } else {
-                        btnTodas.disabled = false;
-                    }
+                    notiContainer.innerHTML = filteredNotis.map(renderNotification).join('');
                 }
             });
     }
 
-    // Inicializar polling
+    // Event Listeners
+    document.querySelectorAll('[data-filter]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
     fetchNotificaciones();
-    setInterval(fetchNotificaciones, 15000);
+        });
+    });
 
-    document.addEventListener('DOMContentLoaded', function () {
-        // Marcar como leída
-        document.body.addEventListener('click', function (e) {
-            if (e.target.classList.contains('btn-marcar-leida')) {
-                const id = e.target.getAttribute('data-id');
-                fetch(`/notifications/${id}/read`, { 
+    btnTodas.addEventListener('click', function() {
+        fetch('/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        }).then(() => fetchNotificaciones());
+    });
+
+    btnLimpiar.addEventListener('click', function() {
+        // Mostrar modal de confirmación en vez de confirm()
+        const modal = new bootstrap.Modal(document.getElementById('confirmLimpiarNotificacionesModal'));
+        modal.show();
+    });
+
+    // Acción al confirmar en el modal
+    document.getElementById('confirmLimpiarNotificacionesBtn').addEventListener('click', function() {
+        fetch('/notifications/cleanup', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        }).then(() => {
+            fetchNotificaciones();
+            // Cerrar el modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmLimpiarNotificacionesModal'));
+            modal.hide();
+        });
+    });
+
+    notiContainer.addEventListener('click', function(e) {
+        const target = e.target.closest('button');
+        if (!target) return;
+
+        if (target.classList.contains('mark-read')) {
+            const id = target.dataset.id;
+            fetch(`/notifications/${id}/mark-read`, {
                     method: 'POST', 
                     headers: { 
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     } 
-                })
-                .then(() => fetchNotificaciones());
+            }).then(() => fetchNotificaciones());
             }
-            // Eliminar notificación
-            if (e.target.classList.contains('btn-eliminar-noti') || (e.target.closest && e.target.closest('.btn-eliminar-noti'))) {
-                const btn = e.target.closest('.btn-eliminar-noti');
-                const id = btn.getAttribute('data-id');
-                const notiItem = btn.closest('.noti-item');
-                // Animación fade-out (opcional)
+        
+        if (target.classList.contains('delete-noti')) {
+            const id = target.dataset.id;
+            const notiItem = target.closest('.noti-item');
                 notiItem.classList.add('fade-out');
                 setTimeout(() => {
-                    notiItem.remove();
-                }, 300); // Quitar del DOM tras la animación
-                // Llamada al backend, pero no esperamos la respuesta para quitar del DOM
                 fetch(`/notifications/${id}`, {
                     method: 'DELETE',
                     headers: {
@@ -123,138 +288,118 @@
                         'Accept': 'application/json'
                     }
                 }).then(() => fetchNotificaciones());
+            }, 300);
             }
         });
-        // Marcar todas como leídas
-        document.getElementById('marcar-todas-leidas').addEventListener('click', function () {
-            fetch('/notifications/mark-all-read', { 
-                method: 'POST', 
-                headers: { 
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                } 
-            })
-            .then(() => fetchNotificaciones());
-        });
+
+    // Inicializar
+    fetchNotificaciones();
+    setInterval(fetchNotificaciones, 15000);
+
+    // Al abrir el modal, marcar todas como leídas automáticamente
+    const notificacionesModal = document.getElementById('notificacionesModal');
+    notificacionesModal.addEventListener('shown.bs.modal', function () {
+        fetch('/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            }
+        }).then(() => fetchNotificaciones());
     });
 
-    // Después de renderizar notificaciones:
-    if (window.bootstrap) {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-        tooltipTriggerList.forEach(function (el) {
-            if (!el._tooltip) {
-                el._tooltip = new bootstrap.Tooltip(el);
-            }
-        });
-    }
+    // Ocultar el botón de 'Marcar todas como leídas'
+    document.getElementById('marcar-todas-leidas').style.display = 'none';
+});
 </script>
 
 <style>
 .noti-item {
     border-left: 5px solid #0d6efd;
     background: #fff;
-    margin-bottom: 8px;
+    margin: 8px 0;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.3s ease;
     animation: fadeIn 0.5s ease;
+    padding: 16px;
+    border-radius: 10px;
+    position: relative;
 }
+
 .noti-unread {
-    background: #fffbe6 !important;
+    background: #f8fafd !important;
     border-left: 5px solid #0d6efd !important;
 }
-.noti-badge-title .badge, .noti-item .badge {
-    font-size: 0.85em !important;
-    border-radius: 6px;
-    background: #ffe066 !important;
-    color: #856404 !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-    transition: all 0.2s ease;
+
+.noti-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-.noti-message {
-    font-size: 1em;
-    color: #333;
-    transition: all 0.2s ease;
-}
-#noti-badge {
-    min-width: 22px;
-    height: 18px;
-    padding: 0 4px;
-    font-size: 0.82rem;
-    border-radius: 10px;
-    display: flex !important;
+
+.noti-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    background: #e74c3c !important;
-    color: #fff !important;
-    font-weight: 700;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    z-index: 1000;
-    line-height: 1;
-    position: absolute;
-    right: -8px;
-    top: -8px;
-    left: auto !important;
+    margin-bottom: 8px;
 }
-#notificaciones-lista {
-    max-height: 350px;
-    overflow-y: auto;
-    padding-right: 4px;
+
+.noti-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 4px;
 }
-#noti-bell-bootstrap {
-    z-index: 99999;
+
+.noti-message {
+    font-size: 0.97em;
+    color: #495057;
+    margin-bottom: 4px;
+    line-height: 1.4;
 }
-@media (max-width: 600px) {
-    .modal-dialog {
-        max-width: 98vw !important;
-        margin: 0 auto !important;
-        display: flex;
-        align-items: center;
-        min-height: 100vh;
-    }
-    .modal-content {
-        border-radius: 0 !important;
-        overflow: hidden;
-        padding: 0.5rem 0.2rem;
-        margin-top: 0 !important;
-    }
-    .modal-header.bg-primary {
-        border-top-left-radius: 0 !important;
-        border-top-right-radius: 0 !important;
-    }
-    #notificaciones-lista {
-        max-height: 45vh;
-        padding-right: 0;
-    }
-    #noti-bell-bootstrap {
-        left: 10px !important;
-        top: 60px !important;
-    }
-    #noti-badge {
-        min-width: 22px;
-        height: 18px;
-        font-size: 0.78rem;
-        right: -6px;
-        top: -6px;
-        left: auto !important;
-        padding: 0 5px;
-    }
-    body, .main, main {
-        display: flex !important;
-        flex-direction: column;
-        align-items: center !important;
-        justify-content: flex-start;
-        min-height: 100vh;
-        width: 100vw;
-        margin: 0;
-        padding: 0;
-        background: #f8fafc;
-    }
+
+.noti-meta {
+    font-size: 0.85em;
+    color: #6c757d;
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
 }
-.fade-out {
-    opacity: 0 !important;
-    transform: translateX(20px) !important;
-    transition: all 0.3s ease;
+
+.noti-meta span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
+
+.noti-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.noti-empty {
+    text-align: center;
+    padding: 32px;
+    color: #6c757d;
+}
+
+.noti-empty i {
+    font-size: 2.5em;
+    margin-bottom: 16px;
+    color: #dee2e6;
+}
+
+.noti-filters {
+    display: flex;
+    gap: 8px;
+}
+
+.noti-filters .btn {
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.9em;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -264,5 +409,21 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.fade-out {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.3s ease;
+}
+
+.noti-changes {
+    font-size: 0.95em;
+    color: #444;
+    padding-left: 1.2em;
+    margin-bottom: 0.5em;
+}
+.noti-changes li {
+    margin-bottom: 2px;
 }
 </style>

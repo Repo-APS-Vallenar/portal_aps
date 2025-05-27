@@ -16,6 +16,8 @@ use App\Mail\TicketUpdatedMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotificationService;
+use App\Notifications\TicketUpdatedNotification;
+use App\Notifications\TicketCommentedNotification;
 
 class TicketController extends Controller
 {
@@ -43,10 +45,20 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        // Todos los usuarios pueden ver todos los tickets
-        $tickets = Ticket::with(['category', 'status', 'creator', 'assignee'])
-            ->latest()
-            ->paginate(10);
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            $tickets = Ticket::with(['category', 'status', 'creator', 'assignedTo'])
+                ->latest()
+                ->paginate(10);
+        } else {
+            $tickets = Ticket::with(['category', 'status', 'creator', 'assignedTo'])
+                ->where('created_by', $user->id)
+                ->latest()
+                ->paginate(10);
+        }
+
+        if (request()->ajax()) {
+            return response()->view('tickets.partials.tickets-list', compact('tickets'));
+        }
 
         return view('tickets.index', compact('tickets'));
     }
@@ -153,13 +165,9 @@ class TicketController extends Controller
             $superadmins = \App\Models\User::where('role', 'superadmin')->get();
             $notificationService = app(\App\Services\NotificationService::class);
             foreach ($superadmins as $superadmin) {
-                $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
-                $noti = $notificationService->send(
+                $notificationService->send(
                     $superadmin,
-                    'nuevo_ticket',
-                    'Nuevo Ticket #' . $ticket->id,
-                    $mensaje,
-                    route('tickets.show', $ticket)
+                    new \App\Notifications\TicketCreatedNotification($ticket)
                 );
             }
         } else {
@@ -167,13 +175,9 @@ class TicketController extends Controller
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             $notificationService = app(\App\Services\NotificationService::class);
             foreach ($admins as $admin) {
-                $mensaje = 'Se ha creado un nuevo ticket #' . $ticket->id . ' por ' . Auth::user()->name . '.';
-                $noti = $notificationService->send(
+                $notificationService->send(
                     $admin,
-                    'nuevo_ticket',
-                    'Nuevo Ticket #' . $ticket->id,
-                    $mensaje,
-                    route('tickets.show', $ticket)
+                    new \App\Notifications\TicketCreatedNotification($ticket)
                 );
             }
         }
@@ -191,7 +195,7 @@ class TicketController extends Controller
     {
         $this->authorize('view', $ticket);
 
-        $ticket->load(['category', 'status', 'creator', 'location', 'assignee', 'comments.user', 'documents.user']);
+        $ticket->load(['category', 'status', 'creator', 'location', 'assignedTo', 'comments.user', 'documents.user']);
         return view('tickets.show', compact('ticket'));
     }
 
@@ -221,136 +225,84 @@ class TicketController extends Controller
      */
     public function update(Request $request, Ticket $ticket)
     {
-        // Autorización para editar el ticket
         $this->authorize('update', $ticket);
 
-        // Validación de los datos del request
-        $validated = $request->validate([
+        $user = Auth::user();
+        $rules = [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:ticket_categories,id',
             'status_id' => 'required|exists:ticket_statuses,id',
             'priority' => 'required|in:baja,media,alta,urgente',
             'assigned_to' => 'nullable|exists:users,id',
-            'marca' => 'nullable|string|max:255',
-            'modelo' => 'nullable|string|max:255',
-            'numero_serie' => 'nullable|string|max:255',
-            'location_id' => 'required|exists:locations,id',
-            'usuario' => 'nullable|string|max:255',
-            'ip_red_wifi' => 'nullable|string|max:255',
-            'cpu' => 'nullable|string|max:255',
-            'ram' => 'nullable|string|max:255',
-            'capacidad_almacenamiento' => 'nullable|string|max:255',
-            'tarjeta_video' => 'nullable|string|max:255',
-            'id_anydesk' => 'nullable|string|max:255',
-            'pass_anydesk' => 'nullable|string|max:255',
-            'version_windows' => 'nullable|string|max:255',
-            'licencia_windows' => 'nullable|string|max:255',
-            'version_office' => 'nullable|string|max:255',
-            'licencia_office' => 'nullable|string|max:255',
-            'password_cuenta' => 'nullable|string|max:255',
-            'fecha_instalacion' => 'nullable|date',
-            'comentarios' => 'nullable|string',
-            'contact_phone' => 'nullable|string|max:255',
-            'contact_email' => 'nullable|email|max:255',
-        ]);
-
-        // Clonamos el ticket antes de la actualización para detectar los cambios
-        $originalTicket = clone $ticket;
-
-        // Actualizamos el ticket con los datos validados
-        $ticket->update($validated);
-        $oldValues      = $originalTicket->getAttributes();
-        $newValues      = $ticket->getAttributes();
-        $mensajeAuditoria = $this->generarMensajeAuditoria($ticket, $oldValues, $newValues);
-
-        AuditLog::create([
-            'user_id'     => Auth::id(),
-            'action'      => 'Actualización de ticket',
-            'description' => $mensajeAuditoria,
-            'ip_address'  => $request->ip(),
-        ]);
-
-        // Forzar actualización de `updated_at` si no hubo cambios
-        if (!$ticket->wasChanged()) {
-            $ticket->touch();
-        }
-
-        // Detectar los cambios relevantes para el usuario
-        $camposUsuario = [
-            'priority' => 'Prioridad',
-            'status_id' => 'Estado',
+            'solucion_aplicada' => ($request->status_id && TicketStatus::find($request->status_id)?->name === 'Resuelto') ? 'required|string' : 'nullable|string',
         ];
-        $cambiosUsuario = [];
-        $estadoCambiado = false;
-        $nuevoEstado = null;
-        $nombreEstado = null;
-        $solucionAplicadaCambiada = false;
-        $textoSolucion = null;
-        foreach ($validated as $key => $newValue) {
-            $oldValue = $originalTicket->$key ?? null;
-            if ($oldValue != $newValue) {
-                if ($key === 'status_id') {
-                    $estadoCambiado = true;
-                    $nuevoEstado = $newValue;
-                    $nombreEstado = optional(\App\Models\TicketStatus::find($newValue))->name;
-                }
-                if ($key === 'comentarios') {
-                    $solucionAplicadaCambiada = true;
-                    $textoSolucion = $newValue;
-                }
-                if (array_key_exists($key, $camposUsuario)) {
-                    $cambiosUsuario[] = $camposUsuario[$key];
-                }
-            }
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            $rules = array_merge($rules, [
+                'location_id' => 'nullable|exists:locations,id',
+                'marca' => 'nullable|string|max:255',
+                'modelo' => 'nullable|string|max:255',
+                'numero_serie' => 'nullable|string|max:255',
+                'usuario' => 'nullable|string|max:255',
+                'ip_red_wifi' => 'nullable|string|max:255',
+                'cpu' => 'nullable|string|max:255',
+                'ram' => 'nullable|string|max:255',
+                'capacidad_almacenamiento' => 'nullable|string|max:255',
+                'tarjeta_video' => 'nullable|string|max:255',
+                'id_anydesk' => 'nullable|string|max:255',
+                'pass_anydesk' => 'nullable|string|max:255',
+                'version_windows' => 'nullable|string|max:255',
+                'licencia_windows' => 'nullable|string|max:255',
+                'version_office' => 'nullable|string|max:255',
+                'licencia_office' => 'nullable|string|max:255',
+                'password_cuenta' => 'nullable|string|max:255',
+                'fecha_instalacion' => 'nullable|date',
+                'comentarios' => 'nullable|string',
+                'contact_phone' => 'nullable|string|max:255',
+                'contact_email' => 'nullable|email|max:255',
+            ]);
         }
-        // Detectar si se agregó un comentario público
-        $comentarioAgregado = false;
-        $textoComentario = null;
-        if (request()->has('comment') && !request()->has('is_internal')) {
-            $comentarioAgregado = true;
-            $cambiosUsuario[] = 'Comentarios';
-            $textoComentario = request('comment');
-        }
-        // Enviar notificación solo si hay cambios relevantes
-        if (count($cambiosUsuario) > 0) {
-            $notificationService = app(\App\Services\NotificationService::class);
-            $mensaje = '📝 ¡Tu ticket ha sido actualizado!<br>Se realizaron cambios en los siguientes campos:<ul>';
-            foreach ($cambiosUsuario as $campo) {
-                $mensaje .= '<li>' . $campo . '</li>';
+        $validated = $request->validate($rules);
+
+        // Solo el asignado puede marcar como Resuelto
+        $statusResuelto = TicketStatus::where('name', 'Resuelto')->first();
+        $statusCerrado = TicketStatus::where('name', 'Cerrado')->first();
+        if ($request->status_id == optional($statusResuelto)->id) {
+            if (auth()->id() !== $ticket->assigned_to) {
+                return redirect()->back()->with('error', 'Solo el usuario asignado puede marcar el ticket como Resuelto.');
             }
-            $mensaje .= '</ul>';
-            if ($comentarioAgregado && $textoComentario) {
-                $mensaje .= '<b>Nuevo comentario del staff:</b><br>"' . e($textoComentario) . '"';
+            if (empty($validated['solucion_aplicada'])) {
+                return redirect()->back()->with('error', 'Debe ingresar la solución aplicada para resolver el ticket.');
             }
-            $noti = $notificationService->send(
-                $ticket->creator,
-                'ticket_update',
-                '', // Título se actualizará luego
-                $mensaje,
-                route('tickets.show', $ticket)
-            );
-            $noti->title = 'Actualización de ticket #' . $noti->id;
-            $noti->save();
-        }
-        // Notificación especial si se modificó la solución aplicada
-        if ($solucionAplicadaCambiada && $textoSolucion) {
-            $notificationService = app(\App\Services\NotificationService::class);
-            $mensaje = '✅ ¡Tu ticket ya tiene una solución aplicada!<br>Solución: "' . e($textoSolucion) . '"<br>El ticket está listo para el retiro y recepción conforme por parte del usuario una vez finalice sus pruebas.';
-            $noti = $notificationService->send(
-                $ticket->creator,
-                'ticket_update',
-                '',
-                $mensaje,
-                route('tickets.show', $ticket)
-            );
-            $noti->title = 'Notificación #' . $noti->id . ' Ticket #' . $ticket->id;
-            $noti->save();
+            // Cambiar automáticamente a Cerrado
+            $validated['status_id'] = optional($statusCerrado)->id ?? $request->status_id;
         }
 
-        // Redirigir a la vista del ticket actualizado
+        // Guardar los cambios originales para la notificación
+        $changes = [];
+        foreach ($validated as $field => $newValue) {
+            if ($ticket->$field != $newValue) {
+                $changes[$field] = [
+                    'old' => $ticket->$field,
+                    'new' => $newValue
+                ];
+            }
+        }
+
+        $ticket->update($validated);
+
+        // Notificar involucrados si se resolvió/cerró
+        if (isset($changes['status_id']) && $validated['status_id'] == optional($statusCerrado)->id) {
+            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                $ticket->creator->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
+            }
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                $ticket->assignedTo->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
+            }
+        }
+
         return redirect()->route('tickets.show', $ticket)
-            ->with('success', 'Ticket actualizado exitosamente.');
+            ->with('success', 'Ticket actualizado correctamente.');
     }
 
     /**
@@ -387,7 +339,6 @@ class TicketController extends Controller
             'is_internal' => $isInternal,
         ]);
 
-        // Log para debug
         \Log::info('Nuevo comentario creado', [
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
@@ -399,33 +350,39 @@ class TicketController extends Controller
 
         // Notificar solo si el comentario NO es interno
         if (!$comentario->is_internal) {
-            $notificationService = app(\App\Services\NotificationService::class);
-            $mensaje = '💬 Nuevo comentario ticket #' . $ticket->id . ' por ' . Auth::user()->name . ':<br>"' . e($comentario->comment) . '"';
-            if (Auth::user()->role === 'user') {
-                // Notificar a todos los admins y superadmins
-                $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-                foreach ($admins as $admin) {
-                    $titulo = 'Nuevo comentario Ticket #' . $ticket->id;
-                    $noti = $notificationService->send(
-                        $admin,
-                        'nuevo_comentario',
-                        $titulo,
-                        $mensaje,
-                        route('tickets.show', $ticket),
-                        ['remitente' => Auth::user()->name]
-                    );
+            // Notificar a los superadmins SIEMPRE
+            $superadmins = \App\Models\User::where('role', 'superadmin')->get();
+            foreach ($superadmins as $superadmin) {
+                if ($superadmin->id !== Auth::id()) {
+                    \Log::info('Notificando a superadmin', ['id' => $superadmin->id]);
+                    $superadmin->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
+                    \Log::info('Notificación enviada a superadmin', ['id' => $superadmin->id]);
                 }
+            }
+            // Si el comentario lo hace un usuario, notificar al asignado (si existe y no es el mismo que comenta)
+            if (Auth::user()->role === 'user' && $ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
+                \Log::info('Notificando a asignado', ['id' => $ticket->assignedTo->id]);
+                $ticket->assignedTo->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
+                \Log::info('Notificación enviada a asignado', ['id' => $ticket->assignedTo->id]);
+            }
+            // Si el comentario lo hace un admin, notificar al creador (si no es el mismo que comenta)
+            \Log::info('[Depuración Notificación] admin/superadmin comenta', [
+                'auth_id' => Auth::id(),
+                'auth_name' => Auth::user()->name,
+                'is_admin' => Auth::user()->isAdmin(),
+                'is_superadmin' => Auth::user()->isSuperadmin(),
+                'ticket_creator_id' => $ticket->creator ? $ticket->creator->id : null,
+                'ticket_creator_name' => $ticket->creator ? $ticket->creator->name : null,
+            ]);
+            if ((Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) && $ticket->creator && $ticket->creator->id !== Auth::id()) {
+                \Log::info('Notificando a creador', ['id' => $ticket->creator->id]);
+                $ticket->creator->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
+                \Log::info('Notificación enviada a creador', ['id' => $ticket->creator->id]);
             } else {
-                // Notificar al usuario creador del ticket
-                $titulo = 'Nuevo comentario ticket #' . $ticket->id;
-                $noti = $notificationService->send(
-                    $ticket->creator,
-                    'ticket_update',
-                    $titulo,
-                    $mensaje,
-                    route('tickets.show', $ticket),
-                    ['remitente' => Auth::user()->name]
-                );
+                \Log::warning('[Depuración Notificación] No se notificó al creador', [
+                    'auth_id' => Auth::id(),
+                    'ticket_creator_id' => $ticket->creator ? $ticket->creator->id : null,
+                ]);
             }
         }
 

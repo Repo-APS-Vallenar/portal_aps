@@ -21,8 +21,8 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
-        // Todos los usuarios pueden ver todos los tickets
-        return true;
+        // Solo el creador, admin o superadmin pueden ver el ticket
+        return $user->isAdmin() || $user->isSuperadmin() || $user->id === $ticket->created_by;
     }
 
     /**

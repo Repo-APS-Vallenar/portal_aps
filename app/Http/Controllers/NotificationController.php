@@ -33,7 +33,7 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        $this->notificationService->markAllAsRead(auth()->user());
+        auth()->user()->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
     }
 
@@ -42,10 +42,25 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
-        $notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->take(5)
-            ->get();
+        $notifications = auth()->user()->notifications()->latest()->take(10)->get();
+
+        // Adaptar para el frontend
+        $notifications = $notifications->map(function ($noti) {
+            $data = $noti->data;
+            if (is_string($data)) {
+                $data = json_decode($data, true);
+            }
+            return [
+                'id' => $noti->id,
+                'title' => $data['title'] ?? $noti->data['title'] ?? '',
+                'message' => $data['message'] ?? $noti->data['message'] ?? '',
+                'type' => $this->mapType($noti->type, $data),
+                'is_read' => is_null($noti->read_at) ? false : true,
+                'created_at' => $noti->created_at,
+                'link' => $data['url'] ?? null,
+                'data' => $data['data'] ?? [],
+            ];
+        });
 
         if ($request->ajax() || $request->has('ajax')) {
             return response()->json([
@@ -54,6 +69,15 @@ class NotificationController extends Controller
         }
 
         return view('notifications.index', compact('notifications'));
+    }
+
+    private function mapType($type, $data)
+    {
+        if (isset($data['type'])) return $data['type'];
+        if (str_contains($type, 'TicketCreatedNotification')) return 'ticket_created';
+        if (str_contains($type, 'TicketUpdatedNotification')) return 'ticket_updated';
+        if (str_contains($type, 'TicketCommentedNotification')) return 'ticket_commented';
+        return 'notification';
     }
 
     /**
@@ -68,12 +92,11 @@ class NotificationController extends Controller
             Log::warning('El ticket no tiene usuario asignado', ['ticket_id' => $ticket->id]);
             return response()->json(['success' => false, 'message' => 'El ticket no tiene usuario asignado.'], 404);
         }
-        $title = '#' . $ticket->id;
-        $message = 'Ticket de: ' . $user->name . ' (Categoría: ' . ($ticket->category->name ?? 'Sin categoría') . ')';
-        $link = route('tickets.show', $ticket);
-        $noti = $this->notificationService->send($user, 'ticket_manual', $title, $message, $link);
-        Log::info('Notificación creada', ['notification_id' => $noti->id, 'user_id' => $user->id]);
-        return response()->json(['success' => true, 'message' => 'Notificación enviada correctamente.', 'notification' => $noti]);
+        // Usar una notificación nativa de Laravel
+        $notification = new \App\Notifications\TicketManualNotification($ticket, $user);
+        $this->notificationService->send($user, $notification);
+        Log::info('Notificación creada', ['user_id' => $user->id]);
+        return response()->json(['success' => true, 'message' => 'Notificación enviada correctamente.']);
     }
 
     /**
@@ -91,5 +114,27 @@ class NotificationController extends Controller
         }
         $notification->delete();
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Elimina todas las notificaciones leídas del usuario
+     */
+    public function cleanup()
+    {
+        try {
+            $deleted = auth()->user()->notifications()->whereNotNull('read_at')->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones leídas eliminadas correctamente',
+                'deleted_count' => $deleted
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al limpiar notificaciones: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar las notificaciones'
+            ], 500);
+        }
     }
 }

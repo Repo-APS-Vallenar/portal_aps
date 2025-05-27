@@ -286,11 +286,10 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3">
-                                <label for="comentarios" class="form-label">Solución Aplicada</label>
-                                <textarea class="form-control @error('comentarios') is-invalid @enderror"
-                                    id="comentarios" name="comentarios" rows="3">{{ old('comentarios', $ticket->comentarios) }}</textarea>
-                                @error('comentarios')
+                            <div class="mb-3" id="solucion-aplicada-group" style="display: none;">
+                                <label for="solucion_aplicada" class="form-label">Solución Aplicada <span class="text-danger">*</span></label>
+                                <textarea class="form-control @error('solucion_aplicada') is-invalid @enderror" id="solucion_aplicada" name="solucion_aplicada" rows="3">{{ old('solucion_aplicada', $ticket->solucion_aplicada) }}</textarea>
+                                @error('solucion_aplicada')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -306,3 +305,32 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleSolucionAplicada() {
+        const statusSelect = document.getElementById('status_id');
+        const solucionGroup = document.getElementById('solucion-aplicada-group');
+        const solucionField = document.getElementById('solucion_aplicada');
+        let isResuelto = false;
+        if (statusSelect) {
+            const selectedOption = statusSelect.options[statusSelect.selectedIndex];
+            isResuelto = selectedOption && selectedOption.text.trim().toLowerCase() === 'resuelto';
+        }
+        if (isResuelto) {
+            solucionGroup.style.display = '';
+            solucionField.setAttribute('required', 'required');
+        } else {
+            solucionGroup.style.display = 'none';
+            solucionField.removeAttribute('required');
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.getElementById('status_id');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', toggleSolucionAplicada);
+            toggleSolucionAplicada();
+        }
+    });
+</script>
+@endpush

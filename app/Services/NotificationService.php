@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use App\Events\NewNotification;
 
 class NotificationService
 {
@@ -19,27 +20,18 @@ class NotificationService
      * @param array|null $data Datos adicionales
      * @return Notification
      */
-    public function send($user, string $type, string $title, string $message, ?string $link = null, ?array $data = null)
+    public function send($user, $notificationInstance)
     {
         try {
-            // Si se pasa un ID, obtener el usuario
             if (is_int($user)) {
-                $user = User::findOrFail($user);
+                $user = \App\Models\User::findOrFail($user);
             }
-
-            // Crear la notificación
-            $notification = Notification::create([
-                'user_id' => $user->id,
-                'type' => $type,
-                'title' => $title,
-                'message' => $message,
-                'link' => $link,
-                'data' => $data
-            ]);
-
-            return $notification;
+            $user->notify($notificationInstance);
+            return true;
         } catch (\Exception $e) {
-            Log::error('Error al enviar notificación: ' . $e->getMessage());
+            \Log::error('Error al enviar notificación: ' . $e->getMessage(), [
+                'user_id' => is_int($user) ? $user : $user->id,
+            ]);
             throw $e;
         }
     }
@@ -50,10 +42,11 @@ class NotificationService
      * @param int $notificationId
      * @return bool
      */
-    public function markAsRead(int $notificationId)
+    public function markAsRead($notificationId)
     {
-        $notification = Notification::findOrFail($notificationId);
-        return $notification->markAsRead();
+        $notification = auth()->user()->notifications()->findOrFail($notificationId);
+        $notification->markAsRead();
+        return true;
     }
 
     /**
@@ -65,16 +58,40 @@ class NotificationService
     public function markAllAsRead($user)
     {
         if (is_int($user)) {
-            $userId = $user;
-        } else {
-            $userId = $user->id;
+            $user = \App\Models\User::findOrFail($user);
         }
+        $user->unreadNotifications->markAsRead();
+        return true;
+    }
 
-        return Notification::where('user_id', $userId)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
-            ]);
+    /**
+     * Elimina notificaciones antiguas
+     *
+     * @param int $daysToKeep Número de días a mantener
+     * @return int
+     */
+    public function cleanupOldNotifications(int $daysToKeep = 30)
+    {
+        try {
+            $date = now()->subDays($daysToKeep);
+            return Notification::where('created_at', '<', $date)->delete();
+        } catch (\Exception $e) {
+            Log::error('Error al limpiar notificaciones antiguas: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtiene las notificaciones no leídas de un usuario
+     *
+     * @param User|int $user
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getUnreadNotifications($user)
+    {
+        if (is_int($user)) {
+            $user = \App\Models\User::findOrFail($user);
+        }
+        return $user->unreadNotifications;
     }
 } 
