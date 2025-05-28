@@ -15,11 +15,13 @@ class TicketPriorityUrgentNotification extends Notification
 
     protected $ticket;
     protected $updatedBy;
+    protected $notifiableId;
 
-    public function __construct(Ticket $ticket, $updatedBy)
+    public function __construct(Ticket $ticket, $updatedBy, $notifiableId = null)
     {
         $this->ticket = $ticket;
         $this->updatedBy = $updatedBy;
+        $this->notifiableId = $notifiableId;
     }
 
     public function via($notifiable)
@@ -61,7 +63,7 @@ class TicketPriorityUrgentNotification extends Notification
         ];
     }
 
-    public function toBroadcast($notifiable)
+    public function toBroadcast()
     {
         return new BroadcastMessage([
             'ticket_id' => $this->ticket->id,
@@ -75,5 +77,10 @@ class TicketPriorityUrgentNotification extends Notification
                 'description' => $this->ticket->description
             ]
         ]);
+    }
+
+    public function broadcastOn()
+    {
+        return new \Illuminate\Broadcasting\PrivateChannel('App.Models.User.' . $this->notifiableId);
     }
 } 

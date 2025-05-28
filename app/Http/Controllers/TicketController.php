@@ -163,28 +163,22 @@ class TicketController extends Controller
             }
         }
 
-        // Notificar solo a superadmins si el creador es admin
+        // Ejemplo para la creación de ticket (en store):
+        $usuariosNotificar = collect();
         if (Auth::user()->isAdmin()) {
             $superadmins = \App\Models\User::where('role', 'superadmin')->get();
-            $notificationService = app(\App\Services\NotificationService::class);
-            foreach ($superadmins as $superadmin) {
-                \Log::info('Notificando a superadmin', ['ticket_id' => $ticket->id, 'superadmin_id' => $superadmin->id]);
-                $notificationService->send(
-                    $superadmin,
-                    new \App\Notifications\TicketCreatedNotification($ticket)
-                );
-            }
-        } else {
-            // Si el creador no es admin, notificar a todos los admins y superadmins
+            $usuariosNotificar = $usuariosNotificar->merge($superadmins);
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-            $notificationService = app(\App\Services\NotificationService::class);
-            foreach ($admins as $admin) {
-                \Log::info('Notificando a admin/superadmin', ['ticket_id' => $ticket->id, 'admin_id' => $admin->id]);
-                $notificationService->send(
-                    $admin,
-                    new \App\Notifications\TicketCreatedNotification($ticket)
-                );
-            }
+            $usuariosNotificar = $usuariosNotificar->merge($admins);
+        }
+        $usuariosNotificar = $usuariosNotificar->unique('id');
+        $notificationService = app(\App\Services\NotificationService::class);
+        foreach ($usuariosNotificar as $usuario) {
+            \Log::info('Notificando a usuario único', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+            $notificationService->send(
+                $usuario,
+                new \App\Notifications\TicketCreatedNotification($ticket, $usuario->id)
+            );
         }
 
         $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth::user()->name);
@@ -303,14 +297,18 @@ class TicketController extends Controller
 
         // Notificar involucrados si se resolvió/cerró
         if (isset($changes['status_id']) && $validated['status_id'] == optional($statusCerrado)->id) {
+            $usuariosNotificar = collect();
             if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
-                \Log::info('Notificando al creador del ticket', ['ticket_id' => $ticket->id, 'creator_id' => $ticket->creator->id]);
-                $ticket->creator->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
+                $usuariosNotificar->push($ticket->creator);
             }
             if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
-                \Log::info('Notificando al asignado del ticket', ['ticket_id' => $ticket->id, 'assigned_to_id' => $ticket->assignedTo->id]);
-                $ticket->assignedTo->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user()));
-        }
+                $usuariosNotificar->push($ticket->assignedTo);
+            }
+            $usuariosNotificar = $usuariosNotificar->unique('id');
+            foreach ($usuariosNotificar as $usuario) {
+                \Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user(), $usuario->id));
+            }
         }
 
         // Notificar si la prioridad cambió a urgente
@@ -383,39 +381,36 @@ class TicketController extends Controller
 
         // Notificar solo si el comentario NO es interno
         if (!$comentario->is_internal) {
-            // Notificar a los superadmins SIEMPRE
+            $usuariosNotificar = collect();
+            // Notificar a todos los superadmins
             $superadmins = \App\Models\User::where('role', 'superadmin')->get();
-            foreach ($superadmins as $superadmin) {
-                if ($superadmin->id !== Auth::id()) {
-                    \Log::info('Notificando a superadmin', ['id' => $superadmin->id]);
-                    $superadmin->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
-                    \Log::info('Notificación enviada a superadmin', ['id' => $superadmin->id]);
-                }
+            $usuariosNotificar = $usuariosNotificar->merge($superadmins);
+            // Notificar a todos los admins
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            $usuariosNotificar = $usuariosNotificar->merge($admins);
+            // Notificar al asignado (si existe)
+            if ($ticket->assignedTo) {
+                $usuariosNotificar->push($ticket->assignedTo);
             }
-            // Si el comentario lo hace un usuario, notificar al asignado (si existe y no es el mismo que comenta)
-            if (Auth::user()->role === 'user' && $ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
-                \Log::info('Notificando a asignado', ['id' => $ticket->assignedTo->id]);
-                $ticket->assignedTo->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
-                \Log::info('Notificación enviada a asignado', ['id' => $ticket->assignedTo->id]);
+            // Notificar al creador
+            if ($ticket->creator) {
+                $usuariosNotificar->push($ticket->creator);
             }
-            // Si el comentario lo hace un admin, notificar al creador (si no es el mismo que comenta)
-            \Log::info('[Depuración Notificación] admin/superadmin comenta', [
-                'auth_id' => Auth::id(),
-                'auth_name' => Auth::user()->name,
-                'is_admin' => Auth::user()->isAdmin(),
-                'is_superadmin' => Auth::user()->isSuperadmin(),
-                'ticket_creator_id' => $ticket->creator ? $ticket->creator->id : null,
-                'ticket_creator_name' => $ticket->creator ? $ticket->creator->name : null,
-            ]);
-            if ((Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) && $ticket->creator && $ticket->creator->id !== Auth::id()) {
-                \Log::info('Notificando a creador', ['id' => $ticket->creator->id]);
-                $ticket->creator->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user()));
-                \Log::info('Notificación enviada a creador', ['id' => $ticket->creator->id]);
-            } else {
-                \Log::warning('[Depuración Notificación] No se notificó al creador', [
-                    'auth_id' => Auth::id(),
-                    'ticket_creator_id' => $ticket->creator ? $ticket->creator->id : null,
-                ]);
+            // Eliminar duplicados y excluir al usuario que comenta
+            $usuariosNotificar = $usuariosNotificar->unique('id')->filter(function($usuario) {
+                return $usuario->id !== Auth::id();
+            });
+            foreach ($usuariosNotificar as $usuario) {
+                \Log::info('Notificando a usuario único (comentario)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                $usuario->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user(), $usuario->id));
+                // Emitir evento personalizado para notificación en vivo
+                event(new \App\Events\CommentNotificationBroadcasted(
+                    $ticket->id,
+                    $comentario->comment,
+                    Auth::user()->name,
+                    $usuario->id,
+                    now()->toDateTimeString()
+                ));
             }
         }
 

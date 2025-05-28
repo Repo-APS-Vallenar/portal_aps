@@ -2,26 +2,26 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
-use Illuminate\Support\Carbon;
 use App\Models\Ticket;
+use App\Models\User;
+use Illuminate\Support\Carbon;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class TicketCreatedNotification extends Notification
+class TicketCreatedNotification extends Notification implements ShouldBroadcastNow
 {
-    use Queueable;
-
     protected $ticket;
+    protected $notifiableId;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(Ticket $ticket)
+    public function __construct(Ticket $ticket, $notifiableId = null)
     {
         $this->ticket = $ticket;
+        $this->notifiableId = $notifiableId;
     }
 
     /**
@@ -81,7 +81,7 @@ class TicketCreatedNotification extends Notification
     /**
      * Get the broadcast representation of the notification.
      */
-    public function toBroadcast($notifiable)
+    public function toBroadcast()
     {
         return new BroadcastMessage([
             'ticket_id' => $this->ticket->id,
@@ -95,5 +95,10 @@ class TicketCreatedNotification extends Notification
                 'description' => $this->ticket->description
             ]
         ]);
+    }
+
+    public function broadcastOn()
+    {
+        return new \Illuminate\Broadcasting\PrivateChannel('App.Models.User.' . $this->notifiableId);
     }
 }

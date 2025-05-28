@@ -2,25 +2,25 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
-class TicketManualNotification extends Notification
+class TicketManualNotification extends Notification implements ShouldBroadcastNow
 {
-    use Queueable;
-
     protected $ticket;
     protected $user;
+    protected $notifiableId;
 
-    public function __construct(Ticket $ticket, User $user)
+    public function __construct(Ticket $ticket, User $user, $notifiableId = null)
     {
         $this->ticket = $ticket;
         $this->user = $user;
+        $this->notifiableId = $notifiableId;
     }
 
     public function via($notifiable)
@@ -49,7 +49,7 @@ class TicketManualNotification extends Notification
             ->line('Gracias por usar el sistema.');
     }
 
-    public function toBroadcast($notifiable)
+    public function toBroadcast()
     {
         return new BroadcastMessage([
             'title' => 'Notificación manual de ticket',
@@ -58,5 +58,10 @@ class TicketManualNotification extends Notification
             'user_id' => $this->user->id,
             'created_at' => Carbon::now()->toDateTimeString(),
         ]);
+    }
+
+    public function broadcastOn()
+    {
+        return new \Illuminate\Broadcasting\PrivateChannel('App.Models.User.' . $this->notifiableId);
     }
 } 

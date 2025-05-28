@@ -93,7 +93,7 @@ class NotificationController extends Controller
             return response()->json(['success' => false, 'message' => 'El ticket no tiene usuario asignado.'], 404);
         }
         // Usar una notificación nativa de Laravel
-        $notification = new \App\Notifications\TicketManualNotification($ticket, $user);
+        $notification = new \App\Notifications\TicketManualNotification($ticket, $user, $user->id);
         $this->notificationService->send($user, $notification);
         Log::info('Notificación creada', ['user_id' => $user->id]);
         return response()->json(['success' => true, 'message' => 'Notificación enviada correctamente.']);

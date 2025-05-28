@@ -34,9 +34,6 @@
                             <button class="btn btn-sm btn-outline-primary active" data-filter="all">
                                 Todas
                             </button>
-                            <button class="btn btn-sm btn-outline-primary" data-filter="unread">
-                                No leídas
-                            </button>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-primary" id="marcar-todas-leidas" disabled>
                             <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
@@ -119,18 +116,30 @@ document.addEventListener('DOMContentLoaded', function() {
         let color = 'primary';
         let typeLabel = 'Notificación';
         let extraInfo = '';
-        if (noti.type === 'ticket_created') {
-            icon = '<i class="bi bi-ticket-detailed-fill text-success"></i>';
-            color = 'success';
-            typeLabel = 'Ticket';
+        let ticketNumber = noti.ticket_id || (noti.data && (noti.data.ticket_id || noti.data.id)) || '';
+        let notiTitle = noti.title;
+        let notiMessage = noti.message;
+        if (noti.type === 'ticket_commented') {
+            let ticketNumber = '';
+            if (noti.link) {
+                const match = noti.link.match(/tickets\/(\d+)/);
+                if (match) ticketNumber = match[1];
+            }
+            let user = noti.commenter_name || (noti.data && (noti.data.creator || noti.data.commented_by)) || 'Desconocido';
+            let comment = noti.comment || (noti.data && noti.data.comment) || '';
+            if (comment && comment.length > 50) {
+                comment = comment.substring(0, 50) + '...';
+            }
+            notiTitle = `Nuevo comentario en el ticket #${ticketNumber}`;
+            notiMessage = comment ? `"${comment}"` : 'Nuevo comentario en el ticket';
+            // Mostrar "Enviado por: NOMBRE" abajo SIEMPRE
+            extraInfo += `<div class='noti-meta small text-secondary mt-1'>Enviado por: <b>${user}</b></div>`;
+        } else if (noti.type === 'ticket_created') {
+            notiTitle = `Nuevo ticket #${ticketNumber}`;
+            notiMessage = (noti.data && noti.data.description) ? noti.data.description : noti.message;
         } else if (noti.type === 'ticket_updated') {
-            icon = '<i class="bi bi-pencil-square text-warning"></i>';
-            color = 'warning';
-            typeLabel = 'Actualización';
-        } else if (noti.type === 'ticket_commented') {
-            icon = '<i class="bi bi-chat-dots-fill text-info"></i>';
-            color = 'info';
-            typeLabel = 'Comentario';
+            notiTitle = `Ticket #${ticketNumber} actualizado`;
+            notiMessage = noti.message;
         }
         // Badge de nuevo
         const newBadge = isUnread ? '<span class="badge bg-danger ms-2">Nuevo</span>' : '';
@@ -156,8 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <small class="text-muted ms-auto">${formatDate(noti.created_at)}</small>
                 </div>
                 <div class="noti-content ps-1">
-                    <h6 class="noti-title mb-1">${noti.title}</h6>
-                    <p class="noti-message mb-1">${noti.message}</p>
+                    <h6 class="noti-title mb-1">${notiTitle}</h6>
+                    <p class="noti-message mb-1">${notiMessage}</p>
                     ${extraInfo}
                     ${noti.data ? `
                         <div class="noti-meta small text-secondary">
@@ -177,9 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <i class="bi bi-check2 me-1"></i>Marcar como leída
                         </button>
                     ` : `
-                        <button class="btn btn-sm btn-outline-danger delete-noti px-2 py-1" data-id="${noti.id}">
-                            <i class="bi bi-trash me-1"></i>Eliminar
-                        </button>
+
                     `}
                 </div>
             </div>
@@ -200,34 +207,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Actualizar botón de marcar todas
                 btnTodas.disabled = unreadCount === 0;
                 
-                // Filtrar notificaciones según el filtro actual
-                const filteredNotis = currentFilter === 'unread' 
-                    ? notifications.filter(n => !n.is_read)
-                    : notifications;
-                
-                // Renderizar notificaciones
-                if (filteredNotis.length === 0) {
+                // Mostrar todas las notificaciones
+                if (notifications.length === 0) {
                     notiContainer.innerHTML = `
                         <div class="noti-empty">
                             <i class="fas fa-bell-slash"></i>
-                            <p>No hay notificaciones ${currentFilter === 'unread' ? 'no leídas' : ''}</p>
+                            <p>No hay notificaciones</p>
                         </div>
                     `;
-                    } else {
-                    notiContainer.innerHTML = filteredNotis.map(renderNotification).join('');
+                } else {
+                    notiContainer.innerHTML = notifications.map(renderNotification).join('');
                 }
             });
     }
 
     // Event Listeners
     document.querySelectorAll('[data-filter]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.dataset.filter;
-    fetchNotificaciones();
-        });
+        if (btn.dataset.filter !== 'all') {
+            btn.remove();
+        }
     });
+    currentFilter = 'all';
 
     btnTodas.addEventListener('click', function() {
         fetch('/notifications/mark-all-read', {
@@ -261,40 +261,126 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Marcar notificación como leída por AJAX
     notiContainer.addEventListener('click', function(e) {
-        const target = e.target.closest('button');
-        if (!target) return;
-
-        if (target.classList.contains('mark-read')) {
-            const id = target.dataset.id;
-            fetch(`/notifications/${id}/mark-read`, {
-                    method: 'POST', 
-                    headers: { 
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    } 
-            }).then(() => fetchNotificaciones());
-            }
-        
-        if (target.classList.contains('delete-noti')) {
-            const id = target.dataset.id;
-            const notiItem = target.closest('.noti-item');
-                notiItem.classList.add('fade-out');
-                setTimeout(() => {
-                fetch(`/notifications/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
+        if (e.target.closest('.mark-read')) {
+            const btn = e.target.closest('.mark-read');
+            const notiId = btn.getAttribute('data-id');
+            btn.disabled = true;
+            fetch(`/notifications/${notiId}/mark-read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Cambiar visualmente la notificación
+                    const notiItem = btn.closest('.noti-item');
+                    if (notiItem) {
+                        notiItem.classList.remove('noti-unread');
+                        notiItem.style.background = '#fff';
+                        // Cambiar acciones: ocultar botón marcar como leída, mostrar eliminar
+                        btn.remove();
+                        const actions = notiItem.querySelector('.noti-actions');
+                        if (actions) {
+                            actions.insertAdjacentHTML('beforeend', `<button class="btn btn-sm btn-outline-danger delete-noti px-2 py-1" data-id="${notiId}"><i class="bi bi-trash me-1"></i>Eliminar</button>`);
+                        }
                     }
-                }).then(() => fetchNotificaciones());
-            }, 300);
-            }
-        });
+                    // Actualizar badge
+                    updateNotiBadge(-1);
+                    showGlobalToast('Notificación marcada como leída', 'success');
+                } else {
+                    showGlobalToast(data.message || 'Error al marcar como leída', 'error');
+                }
+            })
+            .catch(() => {
+                showGlobalToast('Error al marcar como leída', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        }
+    });
+
+    // Función para actualizar el badge de no leídas
+    function updateNotiBadge(delta) {
+        let count = parseInt(notiBadge.textContent) || 0;
+        count = Math.max(0, count + delta);
+        notiBadge.textContent = count;
+        notiBadge.style.display = count > 0 ? 'flex' : 'none';
+    }
+
+    // Eliminar notificación individual por AJAX
+    notiContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-noti')) {
+            const btn = e.target.closest('.delete-noti');
+            const notiId = btn.getAttribute('data-id');
+            btn.disabled = true;
+            fetch(`/notifications/${notiId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Eliminar del DOM
+                    const notiItem = btn.closest('.noti-item');
+                    if (notiItem) notiItem.remove();
+                    showGlobalToast('Notificación eliminada', 'success');
+                } else {
+                    showGlobalToast(data.message || 'Error al eliminar notificación', 'error');
+                }
+            })
+            .catch(() => {
+                showGlobalToast('Error al eliminar notificación', 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        }
+    });
 
     // Inicializar
     fetchNotificaciones();
-    setInterval(fetchNotificaciones, 60000);
+
+    // Polling de respaldo cada 15 segundos (Se refresca cada 15 segundos para que no se quede sin notificaciones)
+    setInterval(fetchNotificaciones, 15000);
+
+    // Suscribirse al canal privado de notificaciones del usuario con Echo
+    if (window.Echo && window.Laravel && window.Laravel.userId) {
+        window.Echo.private('App.Models.User.' + window.Laravel.userId)
+            .notification((notification) => {
+                console.log('NOTIFICACION EN VIVO:', notification);
+                if (notiContainer) {
+                    const html = renderNotification(notification);
+                    notiContainer.insertAdjacentHTML('afterbegin', html);
+                    updateNotiBadge(1);
+                    showGlobalToast('¡Nueva notificación recibida!', 'info');
+                }
+            })
+            .listen('.comment-notification', (data) => {
+                // Renderizar la notificación usando los datos del evento personalizado
+                const html = renderNotification({
+                    type: 'ticket_commented',
+                    ticket_id: data.ticket_id,
+                    commenter_name: data.commenter_name,
+                    comment: data.comment,
+                    created_at: data.created_at,
+                    is_read: false,
+                    title: `Nuevo comentario en el ticket #${data.ticket_id}`,
+                    message: `${data.commenter_name}: \"${data.comment}\"`
+                });
+                notiContainer.insertAdjacentHTML('afterbegin', html);
+                updateNotiBadge(1);
+                showGlobalToast('¡Nuevo comentario recibido!', 'info');
+            });
+    }
 
     // Al abrir el modal, marcar todas como leídas automáticamente
     const notificacionesModal = document.getElementById('notificacionesModal');
