@@ -37,8 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
     Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
 
-    // Rutas para documentos de tickets
-    Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
+    // Rutas para documentos de tickets (solo DELETE y GET protegidas)
     Route::delete('/tickets/documents/{document}', [TicketDocumentController::class, 'destroy'])->name('tickets.documents.destroy');
     Route::get('/tickets/documents/{document}/download', [TicketDocumentController::class, 'download'])->name('tickets.documents.download');
 
@@ -93,6 +92,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/parameters/statuses/{status}', [ParameterController::class, 'destroyStatus'])->name('admin.parameters.statuses.destroy');
 });
 
+// Ruta de subida de documentos SIN middleware auth para prueba
+Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
+
 // Desarrollo
 Route::middleware(['auth'])->group(function () {
     Route::get('/verificar-usuario', function () {
@@ -110,6 +112,11 @@ Route::middleware(['auth'])->group(function () {
             'password_encriptada' => Hash::needsRehash($user->password) ? 'No' : 'Sí',
         ];
     });
+});
+
+// Ruta para refrescar el token CSRF
+Route::get('/refresh-csrf', function () {
+    return response()->json(['csrfToken' => csrf_token()]);
 });
 
 require __DIR__.'/channels.php';

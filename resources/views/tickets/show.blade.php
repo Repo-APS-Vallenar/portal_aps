@@ -101,6 +101,50 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Visualización de documentos adjuntos -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Documentos Adjuntos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach($ticket->documents as $document)
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between">
+                                    <div class="card-body w-100 d-flex flex-column align-items-center justify-content-between p-0 pb-3">
+                                        @if(Str::startsWith($document->file_type, 'image/'))
+                                            <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="img-fluid doc-img-thumb mb-3 mt-3" style="max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
+                                        @else
+                                            <i class="fas fa-file fa-3x text-secondary mb-3 mt-3"></i>
+                                        @endif
+                                        <div class="w-100 text-center mb-2">
+                                            <strong>{{ $document->file_name }}</strong>
+                                            @if($document->description)
+                                                <div class="text-muted small mt-1">{{ $document->description }}</div>
+                                            @endif
+                                        </div>
+                                        <div class="pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap">
+                                            <a href="{{ route('tickets.documents.download', $document) }}" class="pill-btn pill-btn-download text-center" title="Descargar">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                                                <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" class="pill-btn pill-btn-delete btn-delete-document text-center" title="Eliminar">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-4">
@@ -146,115 +190,8 @@
                 </div>
             </div>
 
-            <!-- Información del Hardware/Software -->
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Información del Equipo</h4>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->marca)
-                        <dt class="col-sm-4">Marca:</dt>
-                        <dd class="col-sm-8">{{ $ticket->marca }}</dd>
-                        @endif
-
-                        @if($ticket->modelo)
-                        <dt class="col-sm-4">Modelo:</dt>
-                        <dd class="col-sm-8">{{ $ticket->modelo }}</dd>
-                        @endif
-
-                        @if($ticket->numero_serie)
-                        <dt class="col-sm-4">Número de Serie:</dt>
-                        <dd class="col-sm-8">{{ $ticket->numero_serie }}</dd>
-                        @endif
-                        @endif
-
-                        @if($ticket->usuario)
-                        <dt class="col-sm-4">Usuario:</dt>
-                        <dd class="col-sm-8">{{ $ticket->usuario }}</dd>
-                        @endif
-
-                        @if($ticket->ip_red_wifi)
-                        <dt class="col-sm-4">IP Red WiFi:</dt>
-                        <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
-                        @endif
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->cpu)
-                        <dt class="col-sm-4">CPU:</dt>
-                        <dd class="col-sm-8">{{ $ticket->cpu }}</dd>
-                        @endif
-
-                        @if($ticket->ram)
-                        <dt class="col-sm-4">RAM:</dt>
-                        <dd class="col-sm-8">{{ $ticket->ram }}</dd>
-                        @endif
-
-                        @if($ticket->capacidad_almacenamiento)
-                        <dt class="col-sm-4">Almacenamiento:</dt>
-                        <dd class="col-sm-8">{{ $ticket->capacidad_almacenamiento }}</dd>
-                        @endif
-
-                        @if($ticket->tarjeta_video)
-                        <dt class="col-sm-4">Tarjeta de Video:</dt>
-                        <dd class="col-sm-8">{{ $ticket->tarjeta_video }}</dd>
-                        @endif
-                        @endif
-                        @if($ticket->id_anydesk)
-                        <dt class="col-sm-4">ID AnyDesk:</dt>
-                        <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
-                        @endif
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->version_windows)
-                        <dt class="col-sm-4">Versión Windows:</dt>
-                        <dd class="col-sm-8">{{ $ticket->version_windows }}</dd>
-                        @endif
-
-                        @if($ticket->version_office)
-                        <dt class="col-sm-4">Versión Office:</dt>
-                        <dd class="col-sm-8">{{ $ticket->version_office }}</dd>
-                        @endif
-
-                        @if($ticket->fecha_instalacion)
-                        <dt class="col-sm-4">Fecha de Instalación:</dt>
-                        <dd class="col-sm-8">{{ $ticket->fecha_instalacion->format('d/m/Y') }}</dd>
-                        @endif
-                        @endif
-                    </dl>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <h4>Documentos Adjuntos</h4>
-                @if($ticket->documents->count() > 0)
-                    <div class="list-group">
-                        @foreach($ticket->documents as $document)
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="fas fa-file me-2"></i>
-                                    <strong>{{ $document->file_name }}</strong>
-                                    @if($document->description)
-                                        <small class="text-muted d-block">{{ $document->description }}</small>
-                                    @endif
-                                    @if(Str::startsWith($document->file_type, 'image/'))
-                                        <div class="mt-2">
-                                            <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" style="max-width: 180px; max-height: 120px; border-radius: 8px; border: 1px solid #eee;">
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="btn-group">
-                                    <a href="{{ route('tickets.documents.download', $document) }}" class="btn btn-sm btn-outline-primary" title="Descargar">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="text-muted">No hay documentos adjuntos.</p>
-                @endif
-            </div>
+            {{-- Formulario de subida de documentos adjuntos --}}
+            @include('tickets.partials.document-upload', ['ticket' => $ticket])
 
         </div>
     </div>
@@ -296,6 +233,40 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal para mostrar imagen en grande -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Vista de Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="Imagen adjunta" style="max-width: 100%; max-height: 70vh; border-radius: 10px; box-shadow: 0 2px 12px rgba(1,163,213,0.07);">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar documento -->
+<div class="modal fade" id="confirmDeleteDocumentModal" tabindex="-1" aria-labelledby="confirmDeleteDocumentLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmDeleteDocumentLabel">Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar este documento?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteDocumentBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 @push('scripts')
@@ -402,16 +373,7 @@
                 .then(data => {
                     if (data.success) {
                         // Mostrar mensaje de éxito
-                        const alert = document.createElement('div');
-                        alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                        alert.innerHTML = `
-                            ${data.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        `;
-                        if (commentsContainer) {
-                            commentsContainer.insertBefore(alert, document.getElementById('commentForm'));
-                            setTimeout(() => { alert.remove(); }, 1500);
-                        }
+                        showAlert(data.message, 'danger', commentsContainer, 1500);
                         // Actualizar la lista completa de comentarios
                         updateComments();
                     } else {
@@ -422,20 +384,7 @@
                     // Si hay error, recargar la lista de comentarios para restaurar el DOM
                     updateComments();
                     // Mostrar mensaje de error
-                    let commentsContainer = document.getElementById('comments-card-body');
-                    if (!commentsContainer) return;
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                    alert.innerHTML = `
-                        ${error.message || 'Error al eliminar el comentario. Por favor, intente nuevamente.'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    const formNode = document.getElementById('commentForm');
-                    if (formNode) {
-                        commentsContainer.insertBefore(alert, formNode);
-                    } else {
-                        commentsContainer.appendChild(alert);
-                    }
+                    showAlert(error.message || 'Error al eliminar el comentario. Por favor, intente nuevamente.', 'danger', commentsContainer, 2000);
                 });
             }
         });
@@ -510,32 +459,24 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Eliminar loader
-                let loaderEl = commentsListDynamic.querySelector('.comment-loader');
-                if (loaderEl) loaderEl.remove();
+                if (data.success) {
+                    // Eliminar loader
+                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                    if (loaderEl) loaderEl.remove();
 
-                // Limpiar el textarea y restaurar el botón
-                commentTextarea.value = '';
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Agregar Comentario';
+                    // Limpiar el textarea y restaurar el botón
+                    commentTextarea.value = '';
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Agregar Comentario';
 
-                // Refrescar la lista de comentarios (deja que updateComments y Pusher hagan el trabajo)
-                updateComments();
+                    // Refrescar la lista de comentarios (deja que updateComments y Pusher hagan el trabajo)
+                    updateComments();
 
-                // Mostrar mensaje de éxito
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
-                alert.innerHTML = `
-                    ${data.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                const formNode = document.getElementById('commentForm');
-                if (formNode && formNode.parentNode) {
-                    formNode.parentNode.insertBefore(alert, formNode);
-                } else if (commentsContainer) {
-                    commentsContainer.appendChild(alert);
+                    // Mostrar mensaje de éxito
+                    showAlert(data.message, 'success', commentsContainer, 1500);
+                } else {
+                    throw new Error(data.message || 'Error al enviar el comentario');
                 }
-                setTimeout(() => { alert.remove(); }, 1500);
             })
             .catch(error => {
                 // Eliminar loader si hay error
@@ -546,19 +487,7 @@
                 submitButton.disabled = false;
                 submitButton.innerHTML = 'Agregar Comentario';
                 // Mostrar mensaje de error
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                alert.innerHTML = `
-                    Error al enviar el comentario. Por favor, intente nuevamente.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                const formNode = document.getElementById('commentForm');
-                if (formNode) {
-                    commentsContainer.insertBefore(alert, formNode);
-                } else {
-                    commentsContainer.appendChild(alert);
-                }
-                setTimeout(() => { alert.remove(); }, 2000);
+                showAlert('Error al enviar el comentario. Por favor, intente nuevamente.', 'danger', commentsContainer, 2000);
             });
         });
 
@@ -572,6 +501,167 @@
             });
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Miniaturas de imagen: abrir modal con la imagen grande
+        document.querySelectorAll('.doc-img-thumb').forEach(function(img) {
+            img.addEventListener('click', function() {
+                const modalImg = document.getElementById('modalImage');
+                modalImg.src = this.getAttribute('data-img-src');
+            });
+        });
+        // Limpiar imagen al cerrar el modal
+        const imageModal = document.getElementById('imageModal');
+        imageModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('modalImage').src = '';
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let formToDelete = null;
+        document.querySelectorAll('.btn-delete-document').forEach(btn => {
+            btn.addEventListener('click', function() {
+                formToDelete = this.closest('form');
+                const modal = new bootstrap.Modal(document.getElementById('confirmDeleteDocumentModal'));
+                modal.show();
+            });
+        });
+        document.getElementById('confirmDeleteDocumentBtn').addEventListener('click', function() {
+            if (formToDelete) {
+                formToDelete.submit();
+            }
+        });
+    });
 </script>
 @endpush
+
+<style>
+    .pill-btn-group {
+        display: flex;
+        flex-direction: row;
+        border-radius: 18px;
+        background: #f8fbff;
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.2rem;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+        transition: box-shadow 0.2s;
+        gap: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
+    .pill-btn {
+        border: 2px solid #e3e8ee;
+        background: #fff;
+        width: 54px;
+        height: 54px;
+        font-size: 1.35em;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s;
+        outline: none;
+        border-radius: 999px;
+        margin: 0;
+        box-shadow: none;
+        min-width: 0;
+        gap: 0;
+        flex: 0 0 54px;
+        cursor: pointer;
+        padding: 0;
+    }
+    .pill-btn-download {
+        color: #2196f3;
+        border-color: #2196f3;
+    }
+    .pill-btn-download:hover, .pill-btn-download:focus {
+        background: #2196f3;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.13);
+        border-color: #2196f3;
+    }
+    .pill-btn-delete {
+        color: #e53935;
+        border-color: #e53935;
+    }
+    .pill-btn-delete:hover, .pill-btn-delete:focus {
+        background: #e53935;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(229,57,53,0.13);
+        border-color: #e53935;
+    }
+    .pill-btn i {
+        font-size: 1.35em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+    @media (max-width: 600px) {
+        .pill-btn-group {
+            flex-direction: row;
+            border-radius: 18px;
+            width: 100%;
+            gap: 0.7rem;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+            padding: 0.3rem 0.2rem;
+        }
+        .pill-btn {
+            width: 48px;
+            height: 48px;
+            font-size: 1.15em;
+            padding: 0;
+            flex: 0 0 48px;
+            justify-content: center;
+            border-radius: 999px !important;
+        }
+    }
+    .doc-card.card {
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(1,163,213,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
+        border: 1.5px solid #e3e8ee;
+        padding: 0;
+        margin-bottom: 1.2rem;
+        min-height: 340px;
+        background: #fff;
+        transition: box-shadow 0.18s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .doc-card .card-body {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 1.1rem 1.1rem 1.1rem;
+    }
+    .doc-img-thumb {
+        object-fit: cover;
+        width: 100%;
+        max-width: 180px;
+        max-height: 140px;
+        border-radius: 16px;
+        border: 1.5px solid #e3e8ee;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 600px) {
+        .doc-card.card {
+            min-height: 220px;
+            padding: 0;
+        }
+        .doc-card .card-body {
+            padding: 0 0.5rem 0.7rem 0.5rem;
+        }
+        .doc-img-thumb {
+            max-width: 100%;
+            max-height: 110px;
+        }
+    }
+</style>
 @endsection

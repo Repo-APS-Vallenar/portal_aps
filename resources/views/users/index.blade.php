@@ -319,5 +319,13 @@
                 });
             </script>
         @endif
+
+        @if(session('success'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    showAlert(@json(session('success')), 'success', document.querySelector('.container'), 5000);
+                });
+            </script>
+        @endif
     </div>
 @endsection

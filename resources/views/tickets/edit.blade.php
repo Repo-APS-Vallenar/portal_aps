@@ -128,41 +128,6 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="attachments" class="form-label">Adjuntar archivos (opcional)</label>
-                            <input type="file" class="form-control" id="attachments" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                            <div class="form-text">Puedes adjuntar varios archivos. Tamaño máximo por archivo: 10MB.</div>
-                        </div>
-
-                        @if($ticket->documents->count() > 0)
-                        <div class="mb-3">
-                            <label class="form-label">Documentos ya adjuntos:</label>
-                            <div class="list-group">
-                                @foreach($ticket->documents as $document)
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-file me-2"></i>
-                                            <strong>{{ $document->file_name }}</strong>
-                                            @if($document->description)
-                                                <small class="text-muted d-block">{{ $document->description }}</small>
-                                            @endif
-                                            @if(Str::startsWith($document->file_type, 'image/'))
-                                                <div class="mt-2">
-                                                    <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" style="max-width: 120px; max-height: 80px; border-radius: 8px; border: 1px solid #eee;">
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" onsubmit="return confirm('¿Eliminar este documento?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
                         <hr>
 
                         <h4>Información del Equipo</h4>

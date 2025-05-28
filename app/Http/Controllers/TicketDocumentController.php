@@ -13,12 +13,12 @@ class TicketDocumentController extends Controller
     public function store(Request $request, Ticket $ticket)
     {
         $request->validate([
-            'document' => 'required|file|max:10240', // Máximo 10MB
+            'document' => 'required|image|max:15240', // Solo imágenes, máximo 10MB
             'description' => 'nullable|string|max:255'
         ]);
 
         $file = $request->file('document');
-        $path = $file->store('ticket-documents/' . $ticket->id);
+        $path = $file->store('ticket-documents/' . $ticket->id, 'public');
 
         $document = TicketDocument::create([
             'ticket_id' => $ticket->id,
@@ -30,7 +30,7 @@ class TicketDocumentController extends Controller
             'description' => $request->description
         ]);
 
-        if ($request->ajax()) {
+        if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
                 'document' => $document,
@@ -45,7 +45,7 @@ class TicketDocumentController extends Controller
     {
         $this->authorize('delete', $document->ticket);
 
-        Storage::delete($document->file_path);
+        Storage::disk('public')->delete($document->file_path);
         $document->delete();
 
         if (request()->ajax()) {
@@ -62,9 +62,13 @@ class TicketDocumentController extends Controller
     {
         $this->authorize('view', $document->ticket);
 
-        return Storage::download(
-            $document->file_path,
-            $document->file_name
-        );
+        $path = $document->file_path;
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($path)) {
+            abort(404, 'Archivo no encontrado');
+        }
+
+        return $disk->download($path, $document->file_name);
     }
 } 

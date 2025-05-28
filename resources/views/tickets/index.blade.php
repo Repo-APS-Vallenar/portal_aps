@@ -16,38 +16,18 @@
                     <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                     <div class="card-body">
                         @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
                             <script>
-                                setTimeout(function () {
-                                    var alert = document.getElementById('success-alert');
-                                    if (alert) {
-                                        alert.classList.remove('show');
-                                        alert.classList.add('fade');
-                                        // Esperamos que la animación de desvanecimiento termine antes de eliminarla
-                                        setTimeout(function () {
-                                            alert.remove();
-                                        }, 150); // Espera el tiempo de la animación de desvanecimiento
-                                    }
-                                }, 5000); // 5000 milisegundos (5 segundos)
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    showAlert(@json(session('success')), 'success', document.querySelector('.container'), 5000);
+                                });
                             </script>
                         @endif
 
                         @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                {{ session('error') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
                             <script>
-                                setTimeout(function () {
-                                    var alert = document.querySelector('.alert');
-                                    if (alert) {
-                                        alert.classList.remove('show');
-                                        alert.classList.add('fade');
-                                    }
-                                }, 5000); // 5000 milisegundos (5 segundos)
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    showAlert(@json(session('error')), 'danger', document.querySelector('.container'), 5000);
+                                });
                             </script>
                         @endif
 
@@ -245,7 +225,7 @@
                     }
                 });
             }
-            setInterval(updateTicketsList, 30000);
+            setInterval(updateTicketsList, 60000);
         </script>
     @endpush
 
