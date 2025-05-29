@@ -16,41 +16,22 @@
                     <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                     <div class="card-body">
                         @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
-                                {{ session('success') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
                             <script>
-                                setTimeout(function () {
-                                    var alert = document.getElementById('success-alert');
-                                    if (alert) {
-                                        alert.classList.remove('show');
-                                        alert.classList.add('fade');
-                                        // Esperamos que la animación de desvanecimiento termine antes de eliminarla
-                                        setTimeout(function () {
-                                            alert.remove();
-                                        }, 150); // Espera el tiempo de la animación de desvanecimiento
-                                    }
-                                }, 5000); // 5000 milisegundos (5 segundos)
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    showAlert(@json(session('success')), 'success', document.querySelector('.container'), 5000);
+                                });
                             </script>
                         @endif
 
                         @if (session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                {{ session('error') }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
                             <script>
-                                setTimeout(function () {
-                                    var alert = document.querySelector('.alert');
-                                    if (alert) {
-                                        alert.classList.remove('show');
-                                        alert.classList.add('fade');
-                                    }
-                                }, 5000); // 5000 milisegundos (5 segundos)
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    showAlert(@json(session('error')), 'danger', document.querySelector('.container'), 5000);
+                                });
                             </script>
                         @endif
 
+                        <div id="tickets-list-container">
                         @if($tickets->isEmpty())
                             <div class="alert alert-info">
                                 No hay tickets disponibles.
@@ -92,7 +73,7 @@
                                                     </span>
                                                 </td>
                                                 <td>{{ $ticket->creator->name }}</td>
-                                                <td>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</td>
+                                                    <td>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</td>
                                                 <td>
                                                     <div class="d-flex justify-content-end">
                                                         <div class="btn-group" role="group" aria-label="Acciones del ticket">
@@ -106,7 +87,9 @@
                                                                     <i class="fas fa-edit me-1"></i> Editar
                                                                 </a>
                                                                 <button type="button" class="btn btn-outline-danger btn-sm"
-                                                                    onclick="if(confirm('¿Estás seguro de que deseas eliminar este ticket?')) { document.getElementById('delete-ticket-{{ $ticket->id }}').submit(); }">
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#confirmDeleteModal"
+                                                                    data-form="delete-ticket-{{ $ticket->id }}">
                                                                     <i class="fas fa-trash me-1"></i> Eliminar
                                                                 </button>
                                                             @endif
@@ -146,7 +129,7 @@
                                         <div class="mb-1"><span class="ticket-card-label">Creado por:</span>
                                             <span>{{ $ticket->creator->name }}</span></div>
                                         <div class="mb-2"><span class="ticket-card-label">Asignado a:</span>
-                                            <span>{{ $ticket->assignee ? $ticket->assignee->name : 'Sin asignar' }}</span></div>
+                                                <span>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</span></div>
                                         <div class="ticket-card-actions d-flex flex-column align-items-stretch mt-2"
                                             style="gap:0.4em;">
                                             <a href="{{ route('tickets.show', $ticket) }}"
@@ -183,6 +166,7 @@
                                 </div>
                             </div>
                         @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -224,6 +208,24 @@
                     if (formToSubmit) formToSubmit.submit();
                 });
             });
+
+            function updateTicketsList() {
+                fetch(window.location.href, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newList = doc.getElementById('tickets-list-container');
+                    if (newList) {
+                        document.getElementById('tickets-list-container').innerHTML = newList.innerHTML;
+                    }
+                });
+            }
+            setInterval(updateTicketsList, 60000);
         </script>
     @endpush
 

@@ -128,41 +128,6 @@
                             @enderror
                         </div>
 
-                        <div class="mb-3">
-                            <label for="attachments" class="form-label">Adjuntar archivos (opcional)</label>
-                            <input type="file" class="form-control" id="attachments" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                            <div class="form-text">Puedes adjuntar varios archivos. Tamaño máximo por archivo: 10MB.</div>
-                        </div>
-
-                        @if($ticket->documents->count() > 0)
-                        <div class="mb-3">
-                            <label class="form-label">Documentos ya adjuntos:</label>
-                            <div class="list-group">
-                                @foreach($ticket->documents as $document)
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <i class="fas fa-file me-2"></i>
-                                            <strong>{{ $document->file_name }}</strong>
-                                            @if($document->description)
-                                                <small class="text-muted d-block">{{ $document->description }}</small>
-                                            @endif
-                                            @if(Str::startsWith($document->file_type, 'image/'))
-                                                <div class="mt-2">
-                                                    <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" style="max-width: 120px; max-height: 80px; border-radius: 8px; border: 1px solid #eee;">
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" onsubmit="return confirm('¿Eliminar este documento?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash"></i></button>
-                                        </form>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
-
                         <hr>
 
                         <h4>Información del Equipo</h4>
@@ -286,11 +251,10 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3">
-                                <label for="comentarios" class="form-label">Solución Aplicada</label>
-                                <textarea class="form-control @error('comentarios') is-invalid @enderror"
-                                    id="comentarios" name="comentarios" rows="3">{{ old('comentarios', $ticket->comentarios) }}</textarea>
-                                @error('comentarios')
+                            <div class="mb-3" id="solucion-aplicada-group" style="display: none;">
+                                <label for="solucion_aplicada" class="form-label">Solución Aplicada <span class="text-danger">*</span></label>
+                                <textarea class="form-control @error('solucion_aplicada') is-invalid @enderror" id="solucion_aplicada" name="solucion_aplicada" rows="3">{{ old('solucion_aplicada', $ticket->solucion_aplicada) }}</textarea>
+                                @error('solucion_aplicada')
                                 <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -306,3 +270,32 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    function toggleSolucionAplicada() {
+        const statusSelect = document.getElementById('status_id');
+        const solucionGroup = document.getElementById('solucion-aplicada-group');
+        const solucionField = document.getElementById('solucion_aplicada');
+        let isResuelto = false;
+        if (statusSelect) {
+            const selectedOption = statusSelect.options[statusSelect.selectedIndex];
+            isResuelto = selectedOption && selectedOption.text.trim().toLowerCase() === 'resuelto';
+        }
+        if (isResuelto) {
+            solucionGroup.style.display = '';
+            solucionField.setAttribute('required', 'required');
+        } else {
+            solucionGroup.style.display = 'none';
+            solucionField.removeAttribute('required');
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusSelect = document.getElementById('status_id');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', toggleSolucionAplicada);
+            toggleSolucionAplicada();
+        }
+    });
+</script>
+@endpush

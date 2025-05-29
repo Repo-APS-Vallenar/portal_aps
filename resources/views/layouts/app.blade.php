@@ -166,6 +166,36 @@
         <x-notification-bell />
     @endauth
 
+    <!-- Modal de confirmación de sesión -->
+    <div class="modal fade" id="sessionConfirmModal" tabindex="-1" aria-labelledby="sessionConfirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-warning-subtle">
+            <h5 class="modal-title" id="sessionConfirmModalLabel">¿Deseas continuar con tu sesión?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            Tu sesión está a punto de expirar por inactividad.<br>
+            Si deseas seguir trabajando, haz clic en <b>Continuar</b>.<br>
+            Si no, puedes cerrar sesión de forma segura.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="logoutSessionBtn">Cerrar sesión</button>
+            <button type="button" class="btn btn-success" id="continueSessionBtn" data-bs-dismiss="modal">Continuar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toasts globales -->
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1200">
+        <div id="globalToast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="globalToastBody"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -174,5 +204,63 @@
     @yield('scripts')
 
     @include('layouts.footer')
+
+    <script>
+    // Configuración: minutos antes de expirar para mostrar el modal
+    const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime', 120) }};
+    const WARNING_BEFORE_MINUTES = 2; // Mostrar modal 2 minutos antes de expirar
+    let sessionTimeout, warningTimeout;
+
+    function resetSessionTimers() {
+        clearTimeout(sessionTimeout);
+        clearTimeout(warningTimeout);
+        // Tiempo hasta mostrar advertencia (en ms)
+        const warningMs = (SESSION_LIFETIME_MINUTES - WARNING_BEFORE_MINUTES) * 60 * 1000;
+        // Tiempo hasta expirar (en ms)
+        const expireMs = SESSION_LIFETIME_MINUTES * 60 * 1000;
+        warningTimeout = setTimeout(showSessionWarningModal, warningMs);
+        sessionTimeout = setTimeout(autoLogout, expireMs);
+    }
+
+    function showSessionWarningModal() {
+        const modal = new bootstrap.Modal(document.getElementById('sessionConfirmModal'));
+        modal.show();
+    }
+
+    function autoLogout() {
+        window.location.href = '{{ route('logout') }}';
+    }
+
+    document.getElementById('continueSessionBtn').addEventListener('click', function() {
+        // Hacer ping al backend para refrescar la sesión
+        fetch(window.location.href, { method: 'GET', credentials: 'same-origin' })
+            .then(() => {
+                resetSessionTimers();
+            });
+    });
+    document.getElementById('logoutSessionBtn').addEventListener('click', function() {
+        autoLogout();
+    });
+
+    // Reiniciar temporizadores en cualquier interacción
+    ['click', 'keydown', 'mousemove', 'scroll'].forEach(evt => {
+        document.addEventListener(evt, resetSessionTimers);
+    });
+    // Inicializar al cargar
+    resetSessionTimers();
+    </script>
+
+    @push('scripts')
+    <script>
+    window.showGlobalToast = function(message, type = 'success', delay = 4000) {
+        const toastEl = document.getElementById('globalToast');
+        const toastBody = document.getElementById('globalToastBody');
+        toastBody.innerHTML = message;
+        toastEl.className = 'toast align-items-center border-0 text-bg-' + (type === 'error' ? 'danger' : type);
+        const toast = new bootstrap.Toast(toastEl, { delay });
+        toast.show();
+    }
+    </script>
+    @endpush
 </body>
 </html> 

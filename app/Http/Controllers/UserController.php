@@ -122,13 +122,9 @@ class UserController extends Controller
         $notificationService = app(\App\Services\NotificationService::class);
         $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
         foreach ($admins as $admin) {
-            $mensaje = 'Se ha creado un nuevo usuario: ' . $user->name . ' (' . $user->email . ') con rol ' . $user->role . '.';
             $notificationService->send(
                 $admin,
-                'nuevo_usuario',
-                'Nuevo usuario registrado',
-                $mensaje,
-                null
+                new \App\Notifications\UserCreatedNotification($user)
             );
         }
 
@@ -271,13 +267,9 @@ class UserController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
-                $mensaje = 'El usuario ' . $user->name . ' (' . $user->email . ') ha cambiado de rol: ' . $original->role . ' → ' . $user->role . '.';
                 $notificationService->send(
                     $admin,
-                    'cambio_rol',
-                    'Cambio de rol de usuario',
-                    $mensaje,
-                    null
+                    new \App\Notifications\UserRoleChangedNotification($user, $original->role)
                 );
             }
         }
@@ -301,13 +293,9 @@ class UserController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
-                $mensaje = 'El usuario ' . $user->name . ' ha sido habilitado.';
                 $notificationService->send(
                     $admin,
-                    'desbloqueo_usuario',
-                    'Usuario habilitado',
-                    $mensaje,
-                    null
+                    new \App\Notifications\UserEnabledNotification($user)
                 );
             }
         } else {
@@ -319,13 +307,9 @@ class UserController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
-                $mensaje = 'El usuario ' . $user->name . ' ha sido deshabilitado.';
                 $notificationService->send(
                     $admin,
-                    'bloqueo_usuario',
-                    'Usuario deshabilitado',
-                    $mensaje,
-                    null
+                    new \App\Notifications\UserDisabledNotification($user)
                 );
             }
         }
@@ -412,13 +396,9 @@ class UserController extends Controller
         $notificationService = app(\App\Services\NotificationService::class);
         $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
         foreach ($admins as $admin) {
-            $mensaje = 'El usuario ' . $user->name . ' ha cambiado su contraseña.';
             $notificationService->send(
                 $admin,
-                'cambio_contraseña',
-                'Cambio de contraseña de usuario',
-                $mensaje,
-                null
+                new \App\Notifications\UserPasswordChangedNotification($user)
             );
         }
 
@@ -439,13 +419,9 @@ class UserController extends Controller
                 $notificationService = app(\App\Services\NotificationService::class);
                 $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
                 foreach ($admins as $admin) {
-                    $mensaje = 'El usuario ' . $user->name . ' ha sido habilitado.';
                     $notificationService->send(
                         $admin,
-                        'desbloqueo_usuario',
-                        'Usuario habilitado',
-                        $mensaje,
-                        null
+                        new \App\Notifications\UserEnabledNotification($user)
                     );
                 }
                 // Notificar al propio usuario
@@ -527,13 +503,9 @@ class UserController extends Controller
             $notificationService = app(\App\Services\NotificationService::class);
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
-                $mensaje = 'El usuario ' . $user->name . ' ha cambiado su contraseña.';
                 $notificationService->send(
                     $admin,
-                    'cambio_contraseña',
-                    'Cambio de contraseña de usuario',
-                    $mensaje,
-                    null
+                    new \App\Notifications\UserPasswordChangedNotification($user)
                 );
             }
             

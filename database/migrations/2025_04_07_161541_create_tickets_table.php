@@ -42,6 +42,7 @@ return new class extends Migration
             $table->string('password_cuenta')->nullable();
             $table->date('fecha_instalacion')->nullable();
             $table->text('comentarios')->nullable();
+            $table->text('solucion_aplicada')->nullable();
             
             $table->timestamps();
             $table->softDeletes();

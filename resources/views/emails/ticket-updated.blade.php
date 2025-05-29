@@ -1,43 +1,23 @@
-<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px; background-color: #f7f7f7; border-radius: 8px; max-width: 600px; margin: 0 auto;">
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #FFA500;">Actualización de Ticket</h2>
-        <p style="font-size: 1.1em; color: #555;">Se ha realizado una actualización en tu ticket. A continuación, se detallan los cambios realizados:</p>
-    </div>
-
-    <div style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-        <h3 style="color: #333; font-size: 1.2em;">Detalles del Ticket</h3>
-        <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
-        <p><strong>Estado:</strong> 
-            <span style="color: {{ $ticket->status->color }}; font-weight: bold;">
-                {{ $ticket->status->name }}
-            </span>
-        </p>
-        <p><strong>Prioridad:</strong> 
-            <span style="color: {{ $ticket->priority === 'alta' ? '#FF0000' : ($ticket->priority === 'media' ? '#FFA500' : '#4CAF50') }}; font-weight: bold;">
-                {{ ucfirst($ticket->priority) }}
-            </span>
-        </p>
-    </div>
-
-    <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
-
-    <div style="background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-        <h3 style="color: #333; font-size: 1.2em;">Cambios Realizados</h3>
-        <ul style="list-style: none; padding-left: 0; color: #555;">
+<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2 style="color: #FFA500; margin-bottom: 18px;">✏️ Ticket actualizado</h2>
+    <p>¡Hola! 👋<br>Se han realizado cambios en tu ticket. Aquí tienes los detalles:</p>
+    <div style="background: #f8fafd; border: 1px solid #e3e8ee; border-radius: 10px; padding: 20px 18px 14px 18px; margin: 18px 0 24px 0; box-shadow: 0 2px 8px #0001;">
+        <p style="margin: 0 0 10px 0;"><strong>📝 Título:</strong> {{ $ticket->title }}</p>
+        <p style="margin: 0 0 10px 0;"><strong>🔄 Cambios realizados:</strong></p>
+        <ul style="margin: 0 0 10px 18px; padding: 0;">
             @foreach($changes as $change)
-                <li style="margin-bottom: 10px; padding-left: 20px; position: relative;">
-                    <span style="position: absolute; left: 0; top: 0; font-size: 16px; color: #FFA500;">&#x2713;</span>
-                    {{ $change }}
+                <li style="margin-bottom: 6px;">
+                    <span style="font-size:1.1em;">👉</span> <strong>{{ $change['label'] }}:</strong> <span style="color:#888;">{{ $change['old'] }}</span> <span style="color:#0d6efd;">→</span> <span style="color:#222; font-weight:bold;">{{ $change['new'] }}</span>
                 </li>
             @endforeach
         </ul>
+        <p style="margin: 0 0 10px 0;"><strong>🏷️ Categoría:</strong> {{ $ticket->category->name ?? 'Sin categoría' }}</p>
+        <p style="margin: 0 0 10px 0;"><strong>👤 Actualizado por:</strong> {{ $updatedBy->name }}</p>
     </div>
-
-    <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
-
-    <div style="text-align: center;">
-        <p style="font-size: 0.9em; color: #555;">Este es un mensaje automático, por favor no responder.</p>
-        <p style="font-size: 0.9em; color: #555;">Saludos,</p>
-        <p style="font-size: 0.9em; color: #555; font-weight: bold;">El equipo de soporte de Intranet APS</p>
+    <div style="margin: 24px 0; text-align:center;">
+        <a href="{{ url('/tickets/' . $ticket->id) }}" style="display:inline-block; background:#0d6efd; color:#fff; padding:14px 36px; border-radius:8px; text-decoration:none; font-weight:700; font-size:1.12em; box-shadow:0 2px 8px #0d6efd33; letter-spacing:0.5px;">Ver ticket</a>
     </div>
+    <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="font-size: 0.95em; color: #555;">Gracias por usar nuestro sistema de tickets.<br>Este es un mensaje automático, por favor no responder.</p>
+    <p style="font-size: 0.95em; color: #555;">¡Saludos! 😊<br>El equipo de soporte de Intranet APS | TBJ</p>
 </div>

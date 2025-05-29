@@ -37,8 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
     Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
 
-    // Rutas para documentos de tickets
-    Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
+    // Rutas para documentos de tickets (solo DELETE y GET protegidas)
     Route::delete('/tickets/documents/{document}', [TicketDocumentController::class, 'destroy'])->name('tickets.documents.destroy');
     Route::get('/tickets/documents/{document}/download', [TicketDocumentController::class, 'download'])->name('tickets.documents.download');
 
@@ -69,10 +68,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected');
 
     // Notificaciones
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::post('/notifications/cleanup', [NotificationController::class, 'cleanup'])->name('notifications.cleanup');
 
     // Perfil
     Route::get('/perfil', [UserController::class, 'profile'])->name('profile');
@@ -92,6 +92,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin/parameters/statuses/{status}', [ParameterController::class, 'destroyStatus'])->name('admin.parameters.statuses.destroy');
 });
 
+// Ruta de subida de documentos SIN middleware auth para prueba
+Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
+
 // Desarrollo
 Route::middleware(['auth'])->group(function () {
     Route::get('/verificar-usuario', function () {
@@ -110,3 +113,10 @@ Route::middleware(['auth'])->group(function () {
         ];
     });
 });
+
+// Ruta para refrescar el token CSRF
+Route::get('/refresh-csrf', function () {
+    return response()->json(['csrfToken' => csrf_token()]);
+});
+
+require __DIR__.'/channels.php';

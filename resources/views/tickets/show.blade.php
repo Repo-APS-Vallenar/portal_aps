@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container custom-container">
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
         {{ session('success') }}
@@ -68,16 +68,14 @@
                 <div class="card-header">
                     <h4 class="mb-0">Comentarios</h4>
                 </div>
-                <div class="card-body">
-                    @if($ticket->comments->isEmpty())
-                    <p class="text-muted">No hay comentarios aún.</p>
-                    @else
+                <div class="card-body" id="comments-card-body">
                     <div id="comments-list">
-                    @foreach($ticket->comments as $comment)
-                        @include('tickets.partials.comment', ['comment' => $comment, 'ticket' => $ticket])
-                    @endforeach
+                        @forelse($ticket->comments as $comment)
+                            @include('tickets.partials.comment', ['comment' => $comment, 'ticket' => $ticket])
+                        @empty
+                            <p class="text-muted no-comments-msg">No hay comentarios aún.</p>
+                        @endforelse
                     </div>
-                    @endif
 
                     <!-- Formulario para nuevo comentario -->
                     <form action="{{ route('tickets.addComment', $ticket) }}" method="POST" class="mt-4" id="commentForm">
@@ -103,160 +101,98 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Visualización de documentos adjuntos -->
+            <div class="card mt-4 mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Documentos Adjuntos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @forelse($ticket->documents as $document)
+                            <div class="col-12 col-md-6 col-lg-4" data-document-id="{{ $document->id }}">
+                                <div class="doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between">
+                                    @if(Str::startsWith($document->file_type, 'image/'))
+                                        <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="img-fluid doc-img-thumb mb-3 mt-3" style="max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
+                                    @else
+                                        <i class="fas fa-file fa-3x text-secondary mb-3 mt-3"></i>
+                                    @endif
+                                    <div class="w-100 text-center mb-2">
+                                        <strong>{{ $document->file_name }}</strong>
+                                        @if($document->description)
+                                            <div class="text-muted small mt-1">{{ $document->description }}</div>
+                                        @endif
+                                        @if ($document->user && $document->user->name)
+                                            <div class="text-muted small mt-1">Subido por: <strong>{{ $document->user->name }}</strong><br>el {{ $document->created_at->format('d/m/Y H:i') }}</div>
+                                        @endif
+                                    </div>
+                                    <div class="pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap">
+                                        <a href="{{ route('tickets.documents.download', $document) }}" class="pill-btn pill-btn-download text-center" title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                                            <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="pill-btn pill-btn-delete btn-delete-document text-center" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="col-12 text-center text-muted py-4" style="font-size:1.1em;">
+                                <i class="fas fa-image fa-2x mb-2"></i><br>
+                                No hay imágenes subidas aún
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="col-md-4">
             <!-- Información Adicional -->
-            <div class="card mb-4">
+            <div class="card mb-4 card-info-adicional">
                 <div class="card-header">
                     <h4 class="mb-0">Información Adicional</h4>
                 </div>
                 <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">Estado:</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge"
-                                style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }}">
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Estado:</div>
+                        <div class="col-7">
+                            <span class="badge" style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }}">
                                 {{ $ticket->status->name }}
                             </span>
-                        </dd>
-
-                        <dt class="col-sm-4">Contacto:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->contact_email ?? 'No asignado' }}
-                            {{ $ticket->contact_phone ? ' - ' . $ticket->contact_phone : '' }}
-                        </dd>
-
-                        <dt class="col-sm-4">Ubicación:</dt>
-                        <dd class="col-sm-8">{{ $ticket->location->name ?? 'No asignada' }}</dd>
-
-                        <dt class="col-sm-4">Asignado a:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->assignee->name ?? 'No asignado' }}
-                        </dd>
-
-
-                        <dt class="col-sm-4">Última actualización:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->updated_at->setTimezone('America/Santiago')->format('d/m/Y H:i') }}
-                        </dd>
-
-
-                        <dt class="col-sm-4">Solución Aplicada:</dt>
-                        <dd class="col-sm-8">{{ $ticket->comentarios ?? 'No hay solución aplicada aún' }}</dd>
-                    </dl>
-                </div>
-            </div>
-
-            <!-- Información del Hardware/Software -->
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Información del Equipo</h4>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->marca)
-                        <dt class="col-sm-4">Marca:</dt>
-                        <dd class="col-sm-8">{{ $ticket->marca }}</dd>
-                        @endif
-
-                        @if($ticket->modelo)
-                        <dt class="col-sm-4">Modelo:</dt>
-                        <dd class="col-sm-8">{{ $ticket->modelo }}</dd>
-                        @endif
-
-                        @if($ticket->numero_serie)
-                        <dt class="col-sm-4">Número de Serie:</dt>
-                        <dd class="col-sm-8">{{ $ticket->numero_serie }}</dd>
-                        @endif
-                        @endif
-
-                        @if($ticket->usuario)
-                        <dt class="col-sm-4">Usuario:</dt>
-                        <dd class="col-sm-8">{{ $ticket->usuario }}</dd>
-                        @endif
-
-                        @if($ticket->ip_red_wifi)
-                        <dt class="col-sm-4">IP Red WiFi:</dt>
-                        <dd class="col-sm-8">{{ $ticket->ip_red_wifi }}</dd>
-                        @endif
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->cpu)
-                        <dt class="col-sm-4">CPU:</dt>
-                        <dd class="col-sm-8">{{ $ticket->cpu }}</dd>
-                        @endif
-
-                        @if($ticket->ram)
-                        <dt class="col-sm-4">RAM:</dt>
-                        <dd class="col-sm-8">{{ $ticket->ram }}</dd>
-                        @endif
-
-                        @if($ticket->capacidad_almacenamiento)
-                        <dt class="col-sm-4">Almacenamiento:</dt>
-                        <dd class="col-sm-8">{{ $ticket->capacidad_almacenamiento }}</dd>
-                        @endif
-
-                        @if($ticket->tarjeta_video)
-                        <dt class="col-sm-4">Tarjeta de Video:</dt>
-                        <dd class="col-sm-8">{{ $ticket->tarjeta_video }}</dd>
-                        @endif
-                        @endif
-                        @if($ticket->id_anydesk)
-                        <dt class="col-sm-4">ID AnyDesk:</dt>
-                        <dd class="col-sm-8">{{ $ticket->id_anydesk }}</dd>
-                        @endif
-                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                        @if($ticket->version_windows)
-                        <dt class="col-sm-4">Versión Windows:</dt>
-                        <dd class="col-sm-8">{{ $ticket->version_windows }}</dd>
-                        @endif
-
-                        @if($ticket->version_office)
-                        <dt class="col-sm-4">Versión Office:</dt>
-                        <dd class="col-sm-8">{{ $ticket->version_office }}</dd>
-                        @endif
-
-                        @if($ticket->fecha_instalacion)
-                        <dt class="col-sm-4">Fecha de Instalación:</dt>
-                        <dd class="col-sm-8">{{ $ticket->fecha_instalacion->format('d/m/Y') }}</dd>
-                        @endif
-                        @endif
-                    </dl>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <h4>Documentos Adjuntos</h4>
-                @if($ticket->documents->count() > 0)
-                    <div class="list-group">
-                        @foreach($ticket->documents as $document)
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="fas fa-file me-2"></i>
-                                    <strong>{{ $document->file_name }}</strong>
-                                    @if($document->description)
-                                        <small class="text-muted d-block">{{ $document->description }}</small>
-                                    @endif
-                                    @if(Str::startsWith($document->file_type, 'image/'))
-                                        <div class="mt-2">
-                                            <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" style="max-width: 180px; max-height: 120px; border-radius: 8px; border: 1px solid #eee;">
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="btn-group">
-                                    <a href="{{ route('tickets.documents.download', $document) }}" class="btn btn-sm btn-outline-primary" title="Descargar">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        @endforeach
+                        </div>
                     </div>
-                @else
-                    <p class="text-muted">No hay documentos adjuntos.</p>
-                @endif
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Contacto:</div>
+                        <div class="col-7">{{ $ticket->contact_email ?? 'No asignado' }}{{ $ticket->contact_phone ? ' - ' . $ticket->contact_phone : '' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Ubicación:</div>
+                        <div class="col-7">{{ $ticket->location->name ?? 'No asignada' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Asignado:</div>
+                        <div class="col-7">{{ $ticket->assignedTo->name ?? 'No asignado' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Actualización:</div>
+                        <div class="col-7">{{ $ticket->updated_at->setTimezone('America/Santiago')->format('d/m/Y H:i') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Solución:</div>
+                        <div class="col-7">{{ $ticket->solucion_aplicada ?? 'No hay solución aplicada aún' }}</div>
+                    </div>
+                </div>
             </div>
+
+            {{-- Formulario de subida de documentos adjuntos --}}
+            @include('tickets.partials.document-upload', ['ticket' => $ticket])
 
         </div>
     </div>
@@ -300,6 +236,40 @@
     </div>
 </div>
 
+<!-- Modal para mostrar imagen en grande -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Vista de Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" alt="Imagen adjunta" style="max-width: 100%; max-height: 70vh; border-radius: 10px; box-shadow: 0 2px 12px rgba(1,163,213,0.07);">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar documento -->
+<div class="modal fade" id="confirmDeleteDocumentModal" tabindex="-1" aria-labelledby="confirmDeleteDocumentLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="confirmDeleteDocumentLabel">Confirmar eliminación</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        ¿Estás seguro de que deseas eliminar este documento?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteDocumentBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 @push('scripts')
 <script>
     let formToSubmit = null;
@@ -307,11 +277,15 @@
     let ticketId = null;
     let lastCommentId = null;
 
+    window.authUserName = @json(Auth::user()->name);
+    window.authUserRole = @json(Auth::user()->role);
+    window.ticketId = {{ $ticket->id }};
+
     // Función para actualizar los comentarios
     function updateComments() {
-        const commentsList = document.getElementById('comments-list');
-        if (!commentsList) return;
-
+        let commentsContainer = document.getElementById('comments-card-body');
+        let commentsList = document.getElementById('comments-list');
+        if (!commentsContainer) return;
         fetch(`/tickets/{{ $ticket->id }}/comments`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -319,8 +293,21 @@
         })
         .then(response => response.json())
         .then(data => {
+            if (!commentsList) {
+                commentsList = document.createElement('div');
+                commentsList.id = 'comments-list';
+                let commentForm = document.getElementById('commentForm');
+                if (commentForm && commentForm.parentNode) {
+                    commentForm.parentNode.insertBefore(commentsList, commentForm);
+                } else {
+                    commentsContainer.appendChild(commentsList);
+                }
+            }
             if (data.success) {
                 commentsList.innerHTML = data.html;
+                if (!data.html.trim()) {
+                    commentsList.innerHTML = '<p class="text-muted no-comments-msg">No hay comentarios aún.</p>';
+                }
             }
         })
         .catch(error => console.error('Error al actualizar comentarios:', error));
@@ -349,6 +336,8 @@
         document.getElementById('confirmDeleteCommentBtn').addEventListener('click', function () {
             if (commentToDelete && ticketId) {
                 // Eliminar el comentario del DOM inmediatamente
+                let commentsContainer = document.getElementById('comments-card-body');
+                if (!commentsContainer) return;
                 const commentElement = document.querySelector(`[data-comment-id="${commentToDelete}"]`);
                 if (commentElement) {
                     commentElement.remove();
@@ -361,21 +350,18 @@
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `/tickets/${ticketId}/comments/${commentToDelete}`;
-                
                 // Agregar el token CSRF
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
                 csrfInput.name = '_token';
                 csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
                 form.appendChild(csrfInput);
-                
                 // Agregar el método DELETE
                 const methodInput = document.createElement('input');
                 methodInput.type = 'hidden';
                 methodInput.name = '_method';
                 methodInput.value = 'DELETE';
                 form.appendChild(methodInput);
-
                 // Enviar la petición AJAX
                 fetch(form.action, {
                     method: 'POST',
@@ -388,14 +374,7 @@
                 .then(data => {
                     if (data.success) {
                         // Mostrar mensaje de éxito
-                        const alert = document.createElement('div');
-                        alert.className = 'alert alert-success alert-dismissible fade show mt-3';
-                        alert.innerHTML = `
-                            ${data.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        `;
-                        document.querySelector('.card-body').insertBefore(alert, document.getElementById('commentForm'));
-                        setTimeout(() => { alert.remove(); }, 1500);
+                        showAlert(data.message, 'danger', commentsContainer, 1500);
                         // Actualizar la lista completa de comentarios
                         updateComments();
                     } else {
@@ -406,35 +385,121 @@
                     // Si hay error, recargar la lista de comentarios para restaurar el DOM
                     updateComments();
                     // Mostrar mensaje de error
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                    alert.innerHTML = `
-                        ${error.message || 'Error al eliminar el comentario. Por favor, intente nuevamente.'}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    const formNode = document.getElementById('commentForm');
-                    if (formNode) {
-                        commentsContainer.insertBefore(alert, formNode);
-                    } else {
-                        commentsContainer.appendChild(alert);
-                    }
+                    showAlert(error.message || 'Error al eliminar el comentario. Por favor, intente nuevamente.', 'danger', commentsContainer, 2000);
                 });
             }
         });
 
-        // Actualizar comentarios cada 30 segundos
-        setInterval(updateComments, 30000);
+        // Actualizar comentarios cada 5 minutos como respaldo
+        setInterval(updateComments, 300000);
+
+        // --- Pusher tiempo real ---
+        if (window.ticketId && window.Echo) {
+            window.Echo.private('ticket.' + window.ticketId)
+                .listen('.comment-added', (e) => {
+                    updateComments();
+                })
+                .listen('.comment-deleted', (e) => {
+                    updateComments();
+                })
+                .listen('.document-deleted', (e) => {
+                    console.log('Evento document-deleted recibido', e);
+                    // Eliminar el documento del DOM usando data-document-id
+                    const docContainer = document.querySelector(`[data-document-id="${e.document_id}"]`);
+                    if (docContainer) {
+                        docContainer.remove();
+                    }
+                    // Si no quedan documentos, mostrar mensaje vacío
+                    const docsRow = document.querySelector('.card-body .row.g-3');
+                    if (docsRow && docsRow.children.length === 0) {
+                        docsRow.innerHTML = `<div class=\"col-12 text-center text-muted py-4\" style=\"font-size:1.1em;\"><i class=\"fas fa-image fa-2x mb-2\"></i><br>No hay imágenes subidas aún</div>`;
+                    }
+                })
+                .listen('.document-added', (e) => {
+                    // Agregar el nuevo documento al DOM sin recargar la página
+                    const docsRow = document.querySelector('.card-body .row.g-3');
+                    if (!docsRow) return;
+                    // Si hay mensaje de vacío, eliminarlo
+                    const emptyMsg = docsRow.querySelector('.text-muted');
+                    if (emptyMsg) emptyMsg.remove();
+                    // Construir el HTML del nuevo adjunto
+                    let html = '';
+                    const doc = e.document;
+                    const isImage = doc.file_type && doc.file_type.startsWith('image/');
+                    html += `<div class=\"col-12 col-md-6 col-lg-4\" data-document-id=\"${doc.id}\">`;
+                    html += `<div class=\"doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between\">`;
+                    if (isImage) {
+                        html += `<img src=\"/storage/${doc.file_path}\" alt=\"Imagen adjunta\" class=\"img-fluid doc-img-thumb mb-3 mt-3\" style=\"max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);\" data-bs-toggle=\"modal\" data-bs-target=\"#imageModal\" data-img-src=\"/storage/${doc.file_path}\">`;
+                    } else {
+                        html += `<i class=\"fas fa-file fa-3x text-secondary mb-3 mt-3\"></i>`;
+                    }
+                    html += `<div class=\"w-100 text-center mb-2\"><strong>${doc.file_name}</strong>`;
+                    if (doc.description) {
+                        html += `<div class=\"text-muted small mt-1\">${doc.description}</div>`;
+                    }
+                    if (doc.user && doc.user.name) {
+                        html += `<div class=\"text-muted small mt-1\">Subido por: <strong>${doc.user.name}</strong><br>el ${doc.created_at}</div>`;
+                    }
+                    html += `</div>`;
+                    html += `<div class=\"pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap\">`;
+                    html += `<a href=\"/tickets/documents/${doc.id}/download\" class=\"pill-btn pill-btn-download text-center\" title=\"Descargar\"><i class=\"fas fa-download\"></i></a>`;
+                    if (window.authUserRole === 'admin' || window.authUserRole === 'superadmin') {
+                        html += `<form action=\"/tickets/documents/${doc.id}\" method=\"POST\" class=\"d-inline m-0 p-0 delete-document-form\">`;
+                        html += `<input type=\"hidden\" name=\"_token\" value=\"${document.querySelector('meta[name=csrf-token]').content}\">`;
+                        html += `<input type=\"hidden\" name=\"_method\" value=\"DELETE\">`;
+                        html += `<button type=\"button\" class=\"pill-btn pill-btn-delete btn-delete-document text-center\" title=\"Eliminar\"><i class=\"fas fa-trash\"></i></button>`;
+                        html += `</form>`;
+                    }
+                    html += `</div></div></div>`;
+                    docsRow.insertAdjacentHTML('afterbegin', html);
+                    // Reasignar eventos a miniaturas
+                    if (isImage) {
+                        document.querySelector('.doc-img-thumb[data-img-src="/storage/' + doc.file_path + '"]')?.addEventListener('click', function() {
+                            const modalImg = document.getElementById('modalImage');
+                            modalImg.src = this.getAttribute('data-img-src');
+                        });
+                    }
+                });
+        }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
         const commentForm = document.getElementById('commentForm');
         const commentTextarea = document.getElementById('comment');
         const submitButton = document.getElementById('submitComment');
-        const commentsContainer = document.querySelector('.card-body');
+        let commentsContainer = document.getElementById('comments-card-body');
+        if (!commentsContainer) return;
         const commentsList = document.getElementById('comments-list');
 
         commentForm.addEventListener('submit', function(e) {
             e.preventDefault();
+
+            // Eliminar TODOS los mensajes de "No hay comentarios" inmediatamente (antes de AJAX)
+            let noCommentsMsgs = commentsContainer.querySelectorAll('.text-muted');
+            noCommentsMsgs.forEach(function(msg) {
+                if (msg.textContent.includes('No hay comentarios')) {
+                    msg.remove();
+                }
+            });
+
+            // Si no existe el contenedor, crearlo
+            let commentsListDynamic = document.getElementById('comments-list');
+            if (!commentsListDynamic) {
+                commentsListDynamic = document.createElement('div');
+                commentsListDynamic.id = 'comments-list';
+                // Insertar antes del formulario si es posible
+                if (commentForm && commentForm.parentNode) {
+                    commentForm.parentNode.insertBefore(commentsListDynamic, commentForm);
+                } else if (commentsContainer) {
+                    commentsContainer.appendChild(commentsListDynamic);
+                }
+            }
+
+            // Mostrar loader temporal
+            let loader = document.createElement('div');
+            loader.className = 'text-center text-secondary my-2 comment-loader';
+            loader.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Agregando comentario...';
+            commentsListDynamic.insertBefore(loader, commentsListDynamic.firstChild);
 
             // Deshabilitar el botón y mostrar loading
             submitButton.disabled = true;
@@ -454,70 +519,261 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Insertar el nuevo comentario al principio de la lista
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = data.html;
-                    const newComment = tempDiv.firstElementChild;
-                    
-                    // Si no hay comentarios, eliminar el mensaje de "No hay comentarios"
-                    const noCommentsMsg = commentsContainer.querySelector('.text-muted');
-                    if (noCommentsMsg && noCommentsMsg.textContent.includes('No hay comentarios')) {
-                        noCommentsMsg.remove();
-                    }
-                    
-                    // Insertar el nuevo comentario en el contenedor correcto
-                    if (commentsList) {
-                        commentsList.insertBefore(newComment, commentsList.firstChild);
-                    }
-                    
-                    // Limpiar el formulario
-                    commentForm.reset();
-                    
-                    // Mostrar mensaje de éxito
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-success alert-dismissible fade show mt-3';
-                    alert.innerHTML = `
-                        ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    `;
-                    const formNode = document.getElementById('commentForm');
-                    if (formNode && formNode.parentNode) {
-                        formNode.parentNode.insertBefore(alert, formNode);
-                    } else if (commentsContainer) {
-                        commentsContainer.appendChild(alert);
-                    }
-                    
-                    // Eliminar el mensaje después de 1.5 segundos
-                    setTimeout(() => {
-                        alert.remove();
-                    }, 1500);
+                    // Eliminar loader
+                    let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                    if (loaderEl) loaderEl.remove();
 
-                    // Ya NO llamamos a updateComments() aquí para evitar que desaparezca el comentario
+                    // Limpiar el textarea y restaurar el botón
+                    commentTextarea.value = '';
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Agregar Comentario';
+
+                    // Refrescar la lista de comentarios (deja que updateComments y Pusher hagan el trabajo)
+                    updateComments();
+
+                    // Mostrar mensaje de éxito
+                    showAlert(data.message, 'success', commentsContainer, 1500);
+                } else {
+                    throw new Error(data.message || 'Error al enviar el comentario');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                // Mostrar mensaje de error
-                const alert = document.createElement('div');
-                alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                alert.innerHTML = `
-                    Error al enviar el comentario. Por favor, intente nuevamente.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                const formNode = document.getElementById('commentForm');
-                if (formNode) {
-                    commentsContainer.insertBefore(alert, formNode);
-                } else {
-                    commentsContainer.appendChild(alert);
-                }
-            })
-            .finally(() => {
-                // Restaurar el botón
+                // Eliminar loader si hay error
+                let loaderEl = commentsListDynamic.querySelector('.comment-loader');
+                if (loaderEl) loaderEl.remove();
+                // Limpiar el textarea y restaurar el botón
+                commentTextarea.value = '';
                 submitButton.disabled = false;
                 submitButton.innerHTML = 'Agregar Comentario';
+                // Mostrar mensaje de error
+                showAlert('Error al enviar el comentario. Por favor, intente nuevamente.', 'danger', commentsContainer, 2000);
             });
+        });
+
+        // Eliminar mensaje de 'No hay comentarios' al escribir en el textarea
+        commentTextarea.addEventListener('input', function() {
+            let noCommentsMsgs = commentsContainer.querySelectorAll('.text-muted');
+            noCommentsMsgs.forEach(function(msg) {
+                if (msg.textContent.includes('No hay comentarios')) {
+                    msg.remove();
+                }
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Miniaturas de imagen: abrir modal con la imagen grande
+        document.querySelectorAll('.doc-img-thumb').forEach(function(img) {
+            img.addEventListener('click', function() {
+                const modalImg = document.getElementById('modalImage');
+                modalImg.src = this.getAttribute('data-img-src');
+            });
+        });
+        // Limpiar imagen al cerrar el modal
+        const imageModal = document.getElementById('imageModal');
+        imageModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('modalImage').src = '';
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        let formToDelete = null;
+        document.body.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-delete-document')) {
+                formToDelete = e.target.closest('form');
+                const modal = new bootstrap.Modal(document.getElementById('confirmDeleteDocumentModal'));
+                modal.show();
+            }
+        });
+        document.getElementById('confirmDeleteDocumentBtn').addEventListener('click', function() {
+            if (formToDelete) {
+                // Interceptar el submit y hacerlo por AJAX
+                const form = formToDelete;
+                const action = form.getAttribute('action');
+                const formData = new FormData(form);
+                fetch(action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // El backend emitirá el evento broadcast y el DOM se actualizará en vivo
+                });
+                // Cerrar el modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteDocumentModal'));
+                modal.hide();
+            }
         });
     });
 </script>
 @endpush
+
+<style>
+    .pill-btn-group {
+        display: flex;
+        flex-direction: row;
+        border-radius: 18px;
+        background: #f8fbff;
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+        margin-bottom: 0.2rem;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+        transition: box-shadow 0.2s;
+        gap: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
+    .pill-btn {
+        border: 2px solid #e3e8ee;
+        background: #fff;
+        width: 54px;
+        height: 54px;
+        font-size: 1.35em;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s, border-color 0.18s;
+        outline: none;
+        border-radius: 999px;
+        margin: 0;
+        box-shadow: none;
+        min-width: 0;
+        gap: 0;
+        flex: 0 0 54px;
+        cursor: pointer;
+        padding: 0;
+    }
+    .pill-btn-download {
+        color: #2196f3;
+        border-color: #2196f3;
+    }
+    .pill-btn-download:hover, .pill-btn-download:focus {
+        background: #2196f3;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.13);
+        border-color: #2196f3;
+    }
+    .pill-btn-delete {
+        color: #e53935;
+        border-color: #e53935;
+    }
+    .pill-btn-delete:hover, .pill-btn-delete:focus {
+        background: #e53935;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(229,57,53,0.13);
+        border-color: #e53935;
+    }
+    .pill-btn i {
+        font-size: 1.35em;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+    @media (max-width: 600px) {
+        .pill-btn-group {
+            flex-direction: row;
+            border-radius: 18px;
+            width: 100%;
+            gap: 0.7rem;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+            padding: 0.3rem 0.2rem;
+        }
+        .pill-btn {
+            width: 48px;
+            height: 48px;
+            font-size: 1.15em;
+            padding: 0;
+            flex: 0 0 48px;
+            justify-content: center;
+            border-radius: 999px !important;
+        }
+    }
+    .doc-card.card {
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(1,163,213,0.07), 0 1.5px 4px rgba(0,0,0,0.03);
+        border: 1.5px solid #e3e8ee;
+        padding: 0;
+        margin-bottom: 1.2rem;
+        min-height: 340px;
+        background: #fff;
+        transition: box-shadow 0.18s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+    .doc-card .card-body {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 1.1rem 1.1rem 1.1rem;
+    }
+    .doc-img-thumb {
+        object-fit: cover;
+        width: 100%;
+        max-width: 180px;
+        max-height: 140px;
+        border-radius: 16px;
+        border: 1.5px solid #e3e8ee;
+        box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+        margin-bottom: 0.5rem;
+    }
+    @media (max-width: 600px) {
+        .doc-card.card {
+            min-height: 220px;
+            padding: 0;
+        }
+        .doc-card .card-body {
+            padding: 0 0.5rem 0.7rem 0.5rem;
+        }
+        .doc-img-thumb {
+            max-width: 100%;
+            max-height: 110px;
+        }
+    }
+    .card .card-body dl dt {
+        white-space: normal;
+        width: auto;
+        min-width: 0;
+    }
+    .card .card-body dl dd {
+        width: auto;
+    }
+    .info-label {
+        white-space: nowrap;
+    }
+    .card-info-adicional {
+       
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .card-info-adicional .card-body {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    .card-info-adicional .row.mb-2 {
+        margin-bottom: 0.7rem !important;
+    }
+    @media (max-width: 600px) {
+        .card-info-adicional {
+            max-width: 100%;
+            padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+        }
+    }
+    .custom-container {
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+</style>
 @endsection

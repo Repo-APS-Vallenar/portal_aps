@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\TicketCategory;
 
 class Ticket extends Model
 {
@@ -53,6 +54,7 @@ class Ticket extends Model
         'comentarios',
         'contact_phone',
         'contact_email',
+        'solucion_aplicada',
     ];
 
     protected $casts = [
@@ -89,7 +91,7 @@ class Ticket extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function assignee()
+    public function assignedTo()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
@@ -127,7 +129,7 @@ class Ticket extends Model
         return $query->where('status_id', $statusId);
     }
 
-    public function scopeByAssignee($query, $userId)
+    public function scopeByAssignedTo($query, $userId)
     {
         return $query->where('assigned_to', $userId);
     }
