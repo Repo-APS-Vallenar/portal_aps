@@ -19,9 +19,9 @@
                     <i class="fas fa-upload me-1"></i> Subir Documento
                 </button>
             </form>
-        </div>
-    </div>
-</div>
+                                </div>
+                                </div>
+                            </div>
 
 <!-- Toast de error para subida de documentos -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100">
@@ -84,7 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.data && response.data.success) {
                 // Limpiar formulario
                 form.reset();
-                btnUpload.disabled = false;
+                fileInput.value = '';
+                btnUpload.disabled = true;
+                fileInput.dispatchEvent(new Event('change'));
                 progressBar.style.width = '100%';
                 progressBar.innerText = '100%';
                 setTimeout(() => {
@@ -109,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .finally(() => {
-            btnUpload.disabled = false;
+            btnUpload.disabled = !fileInput.files.length;
         });
     });
 

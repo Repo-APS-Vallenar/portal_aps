@@ -111,21 +111,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderNotification(noti) {
+        console.log('NOTIFICACION DEBUG:', noti);
         const isUnread = !noti.is_read;
         let icon = '<i class="bi bi-bell"></i>';
         let color = 'primary';
         let typeLabel = 'Notificación';
         let extraInfo = '';
-        let ticketNumber = noti.ticket_id || (noti.data && (noti.data.ticket_id || noti.data.id)) || '';
+        let ticketNumber = noti.ticket_id || '';
         let notiTitle = noti.title;
         let notiMessage = noti.message;
         if (noti.type === 'ticket_commented') {
-            let ticketNumber = '';
-            if (noti.link) {
-                const match = noti.link.match(/tickets\/(\d+)/);
-                if (match) ticketNumber = match[1];
-            }
-            let user = noti.commenter_name || (noti.data && (noti.data.creator || noti.data.commented_by)) || 'Desconocido';
+            let user = (noti.data && noti.data.commenter_name) || noti.commenter_name || (noti.data && (noti.data.creator || noti.data.commented_by)) || 'Desconocido';
             let comment = noti.comment || (noti.data && noti.data.comment) || '';
             if (comment && comment.length > 50) {
                 comment = comment.substring(0, 50) + '...';
@@ -176,8 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     ` : ''}
                 </div>
                 <div class="noti-actions d-flex gap-2 mt-2">
-                    ${noti.link ? `
-                        <a href="${noti.link}" class="btn btn-sm btn-outline-${color} px-2 py-1">
+                    ${(noti.link || noti.url) ? `
+                        <a href="${noti.link || noti.url}" class="btn btn-sm btn-outline-${color} px-2 py-1">
                             <i class="bi bi-box-arrow-up-right me-1"></i>Ver detalles
                         </a>
                     ` : ''}

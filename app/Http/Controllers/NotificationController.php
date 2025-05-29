@@ -50,16 +50,12 @@ class NotificationController extends Controller
             if (is_string($data)) {
                 $data = json_decode($data, true);
             }
-            return [
+            return array_merge([
                 'id' => $noti->id,
-                'title' => $data['title'] ?? $noti->data['title'] ?? '',
-                'message' => $data['message'] ?? $noti->data['message'] ?? '',
                 'type' => $this->mapType($noti->type, $data),
                 'is_read' => is_null($noti->read_at) ? false : true,
                 'created_at' => $noti->created_at,
-                'link' => $data['url'] ?? null,
-                'data' => $data['data'] ?? [],
-            ];
+            ], $data);
         });
 
         if ($request->ajax() || $request->has('ajax')) {

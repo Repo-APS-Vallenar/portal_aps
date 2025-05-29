@@ -12,8 +12,8 @@
     <span class="badge bg-warning">Interno</span>
     @endif
 
-    <!-- Botón para eliminar (solo si es admin o el autor del comentario) -->
-    @if(Auth::user()->isAdmin() || Auth::id() === $comment->user_id)
+    <!-- Botón para eliminar (solo si es superadmin o el autor del comentario) -->
+    @if(Auth::user()->isSuperadmin() || Auth::id() === $comment->user_id)
     <div class="mt-2">
         <button type="button" 
                 class="btn btn-sm btn-outline-danger"

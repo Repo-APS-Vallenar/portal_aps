@@ -288,6 +288,20 @@ class TicketController extends Controller
             }
         }
 
+        // Notificar cambio de asignado
+        if (isset($changes['assigned_to']) && $validated['assigned_to']) {
+            $nuevoAsignado = \App\Models\User::find($validated['assigned_to']);
+            if ($nuevoAsignado) {
+                // Notificar al nuevo asignado
+                $nuevoAsignado->notify(new \App\Notifications\TicketAssignedChangedNotification($ticket, $nuevoAsignado, $nuevoAsignado->id));
+                // Notificar al creador si no es el mismo
+                if ($ticket->creator && $ticket->creator->id != $nuevoAsignado->id) {
+                    $mensajeCreador = 'Tu ticket fue asignado a: ' . $nuevoAsignado->name;
+                    $ticket->creator->notify(new \App\Notifications\TicketAssignedChangedNotification($ticket, $nuevoAsignado, $ticket->creator->id, $mensajeCreador));
+                }
+            }
+        }
+
         // Detectar cambio de prioridad a urgente
         $prioridadAnterior = $ticket->priority;
         $ticket->update($validated);
@@ -295,8 +309,97 @@ class TicketController extends Controller
         // Cargar relaciones necesarias para evitar nulls
         $ticket->load(['category', 'creator', 'assignedTo']);
 
+        // Notificar cambio de prioridad
+        if (isset($changes['priority']) && $changes['priority']['old'] !== $changes['priority']['new']) {
+            $usuariosNotificar = collect();
+            
+            // Notificar al creador si no es el que hizo el cambio
+            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                $usuariosNotificar->push($ticket->creator);
+            }
+            
+            // Notificar al asignado si existe y no es el que hizo el cambio
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                $usuariosNotificar->push($ticket->assignedTo);
+            }
+            
+            // Eliminar duplicados y enviar notificaciones
+            $usuariosNotificar = $usuariosNotificar->unique('id');
+            foreach ($usuariosNotificar as $usuario) {
+                $usuario->notify(new \App\Notifications\TicketPriorityChangedNotification(
+                    $ticket,
+                    auth()->user(),
+                    $changes['priority']['old'],
+                    $changes['priority']['new'],
+                    $usuario->id
+                ));
+            }
+        }
+
         // Notificar involucrados si se resolvió/cerró
         if (isset($changes['status_id']) && $validated['status_id'] == optional($statusCerrado)->id) {
+            $usuariosNotificar = collect();
+            
+            // Notificar al creador si no es el que hizo el cambio
+            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                $usuariosNotificar->push($ticket->creator);
+            }
+            
+            // Notificar al asignado si existe y no es el que hizo el cambio
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                $usuariosNotificar->push($ticket->assignedTo);
+            }
+            
+            // Eliminar duplicados y enviar notificaciones
+            $usuariosNotificar = $usuariosNotificar->unique('id');
+            foreach ($usuariosNotificar as $usuario) {
+                \Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user(), $usuario->id));
+            }
+        }
+
+        // Detectar reapertura de ticket (de Cerrado o Resuelto a otro estado)
+        if (
+            isset($changes['status_id']) &&
+            isset($changes['status_id']['old'], $changes['status_id']['new']) &&
+            $changes['status_id']['old'] != $changes['status_id']['new']
+        ) {
+            $statusCerrado = \App\Models\TicketStatus::where('name', 'Cerrado')->first();
+            $statusResuelto = \App\Models\TicketStatus::where('name', 'Resuelto')->first();
+            $oldStatus = \App\Models\TicketStatus::find($changes['status_id']['old']);
+            $newStatus = \App\Models\TicketStatus::find($changes['status_id']['new']);
+            $esReapertura = false;
+            if (
+                ($oldStatus && in_array($oldStatus->name, ['Cerrado', 'Resuelto'])) &&
+                ($newStatus && !in_array($newStatus->name, ['Cerrado', 'Resuelto']))
+            ) {
+                $esReapertura = true;
+            }
+            if ($esReapertura) {
+                $usuariosNotificar = collect();
+                if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                    $usuariosNotificar->push($ticket->creator);
+                }
+                if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                    $usuariosNotificar->push($ticket->assignedTo);
+                }
+                $usuariosNotificar = $usuariosNotificar->unique('id');
+                foreach ($usuariosNotificar as $usuario) {
+                    $usuario->notify(new \App\Notifications\TicketReopenedNotification(
+                        $ticket,
+                        auth()->user(),
+                        $oldStatus->name,
+                        $newStatus->name,
+                        $usuario->id
+                    ));
+                }
+            }
+        }
+
+        // Notificar cambio de categoría
+        if (isset($changes['category_id']) && $changes['category_id']['old'] !== $changes['category_id']['new']) {
+            $oldCategory = \App\Models\TicketCategory::find($changes['category_id']['old']);
+            $newCategory = \App\Models\TicketCategory::find($changes['category_id']['new']);
             $usuariosNotificar = collect();
             if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
                 $usuariosNotificar->push($ticket->creator);
@@ -306,27 +409,14 @@ class TicketController extends Controller
             }
             $usuariosNotificar = $usuariosNotificar->unique('id');
             foreach ($usuariosNotificar as $usuario) {
-                \Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
-                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user(), $usuario->id));
+                $usuario->notify(new \App\Notifications\TicketCategoryChangedNotification(
+                    $ticket,
+                    auth()->user(),
+                    $oldCategory ? $oldCategory->name : 'Sin categoría',
+                    $newCategory ? $newCategory->name : 'Sin categoría',
+                    $usuario->id
+                ));
             }
-        }
-
-        // Notificar si la prioridad cambió a urgente
-        if (
-            isset($changes['priority']) &&
-            $changes['priority']['new'] === 'urgente' &&
-            $changes['priority']['old'] !== 'urgente'
-        ) {
-            $notificacion = new \App\Notifications\TicketPriorityUrgentNotification($ticket, auth()->user());
-            // Notificar al asignado
-            if ($ticket->assignedTo) {
-                $ticket->assignedTo->notify($notificacion);
-            }
-            // Notificar a todos los admins y superadmins
-            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-            foreach ($admins as $admin) {
-                $admin->notify($notificacion);
-        }
         }
 
         return redirect()->route('tickets.show', $ticket)
@@ -412,6 +502,29 @@ class TicketController extends Controller
                     now()->toDateTimeString()
                 ));
             }
+        } else {
+            // Notificar solo a staff (admins, superadmins y asignado si es staff)
+            $usuariosNotificar = collect();
+            $superadmins = \App\Models\User::where('role', 'superadmin')->get();
+            $usuariosNotificar = $usuariosNotificar->merge($superadmins);
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            $usuariosNotificar = $usuariosNotificar->merge($admins);
+            // Notificar al asignado si es staff
+            if ($ticket->assignedTo && in_array($ticket->assignedTo->role, ['admin', 'superadmin'])) {
+                $usuariosNotificar->push($ticket->assignedTo);
+            }
+            // Eliminar duplicados y excluir al usuario que comenta
+            $usuariosNotificar = $usuariosNotificar->unique('id')->filter(function($usuario) {
+                return $usuario->id !== Auth::id();
+            });
+            foreach ($usuariosNotificar as $usuario) {
+                $usuario->notify(new \App\Notifications\TicketInternalCommentedNotification(
+                    $ticket,
+                    $comentario->comment,
+                    Auth::user(),
+                    $usuario->id
+                ));
+            }
         }
 
         // Si la petición es AJAX, devolver el HTML del comentario
@@ -454,8 +567,8 @@ class TicketController extends Controller
 
     public function deleteComment(Ticket $ticket, TicketComment $comment)
     {
-        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
-            // Solo el autor o admin puede eliminar
+        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isSuperadmin()) {
+            // Solo el autor o superadmin puede eliminar
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este comentario.'], 403);
             }

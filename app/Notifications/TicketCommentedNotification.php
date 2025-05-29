@@ -54,11 +54,11 @@ class TicketCommentedNotification extends Notification implements ShouldBroadcas
         return [
             'ticket_id' => $this->ticket->id,
             'title' => 'Nuevo comentario en el ticket',
-            
-            'comment' => $this->comment->comment,
+            'message' => 'Nuevo comentario en el ticket #' . $this->ticket->id . ' por ' . $this->commenter->name,
+            'comment' => is_object($this->comment) && isset($this->comment->comment) ? $this->comment->comment : $this->comment,
             'commenter_name' => $this->commenter->name,
             'url' => url('/tickets/' . $this->ticket->id),
-            'created_at' => Carbon::now()->toDateTimeString(),
+            'created_at' => \Carbon\Carbon::now()->toDateTimeString(),
         ];
     }
 

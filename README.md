@@ -1,97 +1,76 @@
-Portal APS - Sistema de Gestión de Plataformas y Tickets para los usuarios de APS
+# Portal APS - Sistema de Gestión de Plataformas y Tickets
 
 
-🚀 Sobre el Proyecto
-Portal APS es una aplicación web que centraliza el acceso a todas las plataformas utilizadas por los usuarios de la institución. 
-Ofrece una interfaz moderna y amigable para navegar entre diferentes sistemas, con un buscador integrado y un sistema de tickets para gestionar solicitudes de soporte.
+🚀 **Sobre el Proyecto**
+Portal APS es una aplicación web moderna que centraliza el acceso a todas las plataformas utilizadas por los usuarios de la institución y gestiona solicitudes de soporte mediante un sistema de tickets robusto, seguro y en tiempo real.
 
 
-✨ # Características Principales
+✨ **Características Principales**
 
-### Sistema de Tickets
-- Gestión completa de tickets con estados personalizables
+## Sistema de Tickets
+- Gestión completa de tickets con estados personalizables (Solicitado, Pendiente, En Proceso, Resuelto, Cerrado, Cancelado)
 - Prioridades: baja, media, alta, urgente
 - Seguimiento de cambios con bitácora detallada
 - Notificaciones en tiempo real para usuarios y administradores
 - Comentarios públicos e internos (solo visibles para staff)
+- Adjuntos solo de imágenes (JPG, PNG), con visualización de quién subió y cuándo
+- Visualización clara y responsiva de los adjuntos
 
-### Seguridad
+## Seguridad
 - Autenticación con bloqueo automático tras 3 intentos fallidos
 - Roles: superadmin, admin, user
-- Validación de contraseñas robusta (8+ caracteres, mayúscula, minúscula, número, símbolo)
-- Bitácora de auditoría para acciones sensibles
+- Validación de contraseñas robusta
+- Bitácora de auditoría para acciones sensibles (incluye subida de archivos)
 - Protección contra edición de tickets cerrados
+- Control de acceso basado en roles y políticas
 
-### Características Técnicas Destacadas
+## Notificaciones
+- Notificaciones automáticas para:
+  - Nuevo ticket
+  - Cambio de asignado
+  - Cambio de prioridad
+  - Reapertura de ticket
+  - Cambio de categoría
+  - Adjuntos (subida/eliminación de imágenes)
+  - Comentarios (públicos e internos)
+- Notificaciones en tiempo real vía Pusher y Laravel Echo
+- Acceso directo desde la notificación al ticket correspondiente
+- No se permite eliminar notificaciones individuales (solo limpiar todas)
 
-#### Gestión de Estados
-```php
-// Estados personalizables con colores
-$statuses = TicketStatus::where('is_active', true)
-    ->orderBy('name')
-    ->select('id', 'name', 'color')
-    ->distinct()
-    ->get();
-```
+## Auditoría
+- Registro detallado de cambios en tickets y subida de archivos
+- Trazabilidad de acciones de usuarios (incluye IP y timestamp)
+- Exportación de logs a PDF y Excel
 
-#### Sistema de Notificaciones
-- Notificaciones bidireccionales (usuario → admin, admin → usuario)
-- Diferentes tipos de notificaciones (nuevo ticket, actualización, comentarios)
-- Notificaciones internas para el staff
-- Cierre automático de alertas tras 5 segundos
+## UX/UI
+- Diseño responsivo y optimizado para móvil y escritorio
+- Visualización clara de información adicional y adjuntos
+- Feedback visual inmediato (alertas de éxito/error)
+- Interfaz moderna y amigable
 
-#### Bitácora de Auditoría
-- Registro detallado de cambios en tickets
-- Trazabilidad de acciones de usuarios
-- Registro de IP y timestamp
-- Exportación a PDF y Excel
-
-#### Exportación de Datos
+## Exportación de Datos
 - Exportación selectiva de tickets
 - Reportes en PDF y Excel
 - Filtros personalizados
-- Formato consistente en exportaciones
 
-### Flujos de Trabajo
-
-#### Creación de Ticket
-1. Usuario crea ticket con estado "Solicitado"
-2. Notificación automática a admins
-3. Asignación de prioridad y categoría
-4. Registro en bitácora
-
-#### Actualización de Ticket
-1. Validación de permisos
-2. Registro de cambios en bitácora
-3. Notificación al usuario si hay cambios relevantes
-4. Actualización de estado y comentarios
-
-#### Gestión de Usuarios
+## Gestión de Usuarios
 - Creación con validación de email único
 - Asignación de roles por superadmin
 - Bloqueo/desbloqueo manual
 - Historial de cambios en perfil
 
-### Consideraciones Técnicas
-
-#### Base de Datos
+## Base de Datos
 - Uso de soft deletes para tickets y comentarios
 - Índices optimizados para búsquedas
 - Relaciones bien definidas entre modelos
 
-#### Frontend
-- Diseño responsivo con Bootstrap
+## Frontend
+- Bootstrap 5
+- Font Awesome
 - Modales para acciones rápidas
 - Validación en tiempo real
-- Feedback visual inmediato
 
-#### Seguridad
-- Protección CSRF en todas las rutas
-- Validación de datos en servidor
-- Sanitización de inputs
-- Control de acceso basado en roles
-
-### Comandos Útiles
+## Comandos Útiles
 ```bash
 # Migraciones
 php artisan migrate
@@ -105,69 +84,42 @@ php artisan cache:clear
 php artisan view:clear
 ```
 
-### Notas de Desarrollo
-- Sistema desarrollado con Laravel 10
-- Uso de Bootstrap 5 para el frontend
-- Implementación de colas para notificaciones
-- Integración con servicios de correo
+## Tecnologías
+- PHP
+- Laravel 10
+- Bootstrap 5
+- Font Awesome
+- CSS
+- PostgreSQL
+- Pusher (Laravel Echo)
 
-
-🎯 Próximas Implementaciones
-Sistema de Tickets Mejorado:
-
-Estados dinámicos (Solicitado, Pendiente, En Proceso, Resuelto, Cerrado, Cancelado)
-
-Prioridades configurables
-
-Notificaciones por email
-
-Historial de cambios
-
-Adjuntar archivos a los tickets
-
-Creacion de cards para la gestion de plataformas
-
-
-
-💻 Tecnologías
-
-PHP
-
-Laravel
-
-Bootstrap
-
-Font Awesome
-
-CSS
-
-PostgreSQL
-
-👥 Equipo
-
+## Equipo
 Desarrollado por el equipo de TI de APS para mejorar la experiencia de los usuarios internos.
+
 
 ## 📡 Tiempo Real y Broadcasting (Pusher)
 
 Este sistema utiliza **Pusher** y Laravel Echo para funcionalidades en tiempo real, mejorando la colaboración y la experiencia de usuario.
 
 ### Canales privados utilizados
-- `private-ticket.{ticketId}`: Canal privado para comentarios en tiempo real de cada ticket. Solo usuarios con acceso al ticket pueden suscribirse.
+- `private-ticket.{ticketId}`: Canal privado para comentarios y adjuntos en tiempo real de cada ticket. Solo usuarios con acceso al ticket pueden suscribirse.
 - `private-user.{userId}`: Canal privado para notificaciones personales en tiempo real.
 
 ### Eventos broadcast principales
-- `.comment-added`: Se emite cuando se agrega un comentario a un ticket. Todos los usuarios suscritos al canal del ticket reciben el nuevo comentario en tiempo real.
-- `.comment-deleted`: Se emite cuando se elimina un comentario. Todos los usuarios ven la actualización al instante.
-- `.new-notification`: Se emite cuando un usuario recibe una notificación (nuevo ticket, actualización, comentario, etc.).
+- `.comment-added`: Se emite cuando se agrega un comentario a un ticket.
+- `.comment-deleted`: Se emite cuando se elimina un comentario.
+- `.document-added`: Se emite cuando se sube una imagen adjunta.
+- `.document-deleted`: Se emite cuando se elimina una imagen adjunta.
+- `.new-notification`: Se emite cuando un usuario recibe una notificación relevante.
 
-### Flujo de comentarios en tiempo real
-1. El usuario envía un comentario desde el formulario.
-2. El backend guarda el comentario y emite el evento `.comment-added` por Pusher.
-3. Todos los usuarios conectados al canal del ticket reciben el evento y actualizan la lista de comentarios automáticamente.
-4. Al eliminar un comentario, se emite `.comment-deleted` y se actualiza la lista en todas las ventanas.
+### Flujo de comentarios y adjuntos en tiempo real
+1. El usuario envía un comentario o sube una imagen.
+2. El backend guarda el registro y emite el evento correspondiente por Pusher.
+3. Todos los usuarios conectados al canal del ticket reciben el evento y actualizan la lista automáticamente.
+4. Al eliminar un comentario o adjunto, se emite el evento correspondiente y se actualiza la lista en todas las ventanas.
 
 ### Flujo de notificaciones en tiempo real
-1. Cuando ocurre una acción relevante (nuevo ticket, comentario, cambio de estado), se crea una notificación y se emite el evento `.new-notification` al canal privado del usuario.
+1. Cuando ocurre una acción relevante (nuevo ticket, comentario, cambio de estado, adjunto, etc.), se crea una notificación y se emite el evento `.new-notification` al canal privado del usuario.
 2. El frontend actualiza el badge y la lista de notificaciones sin recargar la página.
 
 ### Buenas prácticas y recomendaciones

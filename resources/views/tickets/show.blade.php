@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
+<div class="container custom-container">
     @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
         {{ session('success') }}
@@ -103,45 +103,51 @@
             </div>
 
             <!-- Visualización de documentos adjuntos -->
-            <div class="card mt-4">
+            <div class="card mt-4 mb-4">
                 <div class="card-header">
                     <h4 class="mb-0">Documentos Adjuntos</h4>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
-                        @foreach($ticket->documents as $document)
-                            <div class="col-12 col-md-6 col-lg-4">
+                        @forelse($ticket->documents as $document)
+                            <div class="col-12 col-md-6 col-lg-4" data-document-id="{{ $document->id }}">
                                 <div class="doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between">
-                                    <div class="card-body w-100 d-flex flex-column align-items-center justify-content-between p-0 pb-3">
-                                        @if(Str::startsWith($document->file_type, 'image/'))
-                                            <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="img-fluid doc-img-thumb mb-3 mt-3" style="max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
-                                        @else
-                                            <i class="fas fa-file fa-3x text-secondary mb-3 mt-3"></i>
+                                    @if(Str::startsWith($document->file_type, 'image/'))
+                                        <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="img-fluid doc-img-thumb mb-3 mt-3" style="max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
+                                    @else
+                                        <i class="fas fa-file fa-3x text-secondary mb-3 mt-3"></i>
+                                    @endif
+                                    <div class="w-100 text-center mb-2">
+                                        <strong>{{ $document->file_name }}</strong>
+                                        @if($document->description)
+                                            <div class="text-muted small mt-1">{{ $document->description }}</div>
                                         @endif
-                                        <div class="w-100 text-center mb-2">
-                                            <strong>{{ $document->file_name }}</strong>
-                                            @if($document->description)
-                                                <div class="text-muted small mt-1">{{ $document->description }}</div>
-                                            @endif
-                                        </div>
-                                        <div class="pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap">
-                                            <a href="{{ route('tickets.documents.download', $document) }}" class="pill-btn pill-btn-download text-center" title="Descargar">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                            @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                                                <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="button" class="pill-btn pill-btn-delete btn-delete-document text-center" title="Eliminar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
+                                        @if ($document->user && $document->user->name)
+                                            <div class="text-muted small mt-1">Subido por: <strong>{{ $document->user->name }}</strong><br>el {{ $document->created_at->format('d/m/Y H:i') }}</div>
+                                        @endif
+                                    </div>
+                                    <div class="pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap">
+                                        <a href="{{ route('tickets.documents.download', $document) }}" class="pill-btn pill-btn-download text-center" title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                                            <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="pill-btn pill-btn-delete btn-delete-document text-center" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <div class="col-12 text-center text-muted py-4" style="font-size:1.1em;">
+                                <i class="fas fa-image fa-2x mb-2"></i><br>
+                                No hay imágenes subidas aún
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
@@ -149,44 +155,39 @@
 
         <div class="col-md-4">
             <!-- Información Adicional -->
-            <div class="card mb-4">
+            <div class="card mb-4 card-info-adicional">
                 <div class="card-header">
                     <h4 class="mb-0">Información Adicional</h4>
                 </div>
                 <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-4">Estado:</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge"
-                                style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }}">
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Estado:</div>
+                        <div class="col-7">
+                            <span class="badge" style="background-color: {{ $ticket->status->color }}; color: {{ $ticket->status->color == '#FFD700' ? '#000' : '#fff' }}">
                                 {{ $ticket->status->name }}
                             </span>
-                        </dd>
-
-                        <dt class="col-sm-4">Contacto:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->contact_email ?? 'No asignado' }}
-                            {{ $ticket->contact_phone ? ' - ' . $ticket->contact_phone : '' }}
-                        </dd>
-
-                        <dt class="col-sm-4">Ubicación:</dt>
-                        <dd class="col-sm-8">{{ $ticket->location->name ?? 'No asignada' }}</dd>
-
-                        <dt class="col-sm-4">Asignado a:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->assignedTo->name ?? 'No asignado' }}
-                        </dd>
-
-
-                        <dt class="col-sm-4">Última actualización:</dt>
-                        <dd class="col-sm-8">
-                            {{ $ticket->updated_at->setTimezone('America/Santiago')->format('d/m/Y H:i') }}
-                        </dd>
-
-
-                        <dt class="col-sm-4">Solución Aplicada:</dt>
-                        <dd class="col-sm-8">{{ $ticket->solucion_aplicada ?? 'No hay solución aplicada aún' }}</dd>
-                    </dl>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Contacto:</div>
+                        <div class="col-7">{{ $ticket->contact_email ?? 'No asignado' }}{{ $ticket->contact_phone ? ' - ' . $ticket->contact_phone : '' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Ubicación:</div>
+                        <div class="col-7">{{ $ticket->location->name ?? 'No asignada' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Asignado:</div>
+                        <div class="col-7">{{ $ticket->assignedTo->name ?? 'No asignado' }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Actualización:</div>
+                        <div class="col-7">{{ $ticket->updated_at->setTimezone('America/Santiago')->format('d/m/Y H:i') }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5 fw-bold info-label">Solución:</div>
+                        <div class="col-7">{{ $ticket->solucion_aplicada ?? 'No hay solución aplicada aún' }}</div>
+                    </div>
                 </div>
             </div>
 
@@ -400,6 +401,64 @@
                 })
                 .listen('.comment-deleted', (e) => {
                     updateComments();
+                })
+                .listen('.document-deleted', (e) => {
+                    console.log('Evento document-deleted recibido', e);
+                    // Eliminar el documento del DOM usando data-document-id
+                    const docContainer = document.querySelector(`[data-document-id="${e.document_id}"]`);
+                    if (docContainer) {
+                        docContainer.remove();
+                    }
+                    // Si no quedan documentos, mostrar mensaje vacío
+                    const docsRow = document.querySelector('.card-body .row.g-3');
+                    if (docsRow && docsRow.children.length === 0) {
+                        docsRow.innerHTML = `<div class=\"col-12 text-center text-muted py-4\" style=\"font-size:1.1em;\"><i class=\"fas fa-image fa-2x mb-2\"></i><br>No hay imágenes subidas aún</div>`;
+                    }
+                })
+                .listen('.document-added', (e) => {
+                    // Agregar el nuevo documento al DOM sin recargar la página
+                    const docsRow = document.querySelector('.card-body .row.g-3');
+                    if (!docsRow) return;
+                    // Si hay mensaje de vacío, eliminarlo
+                    const emptyMsg = docsRow.querySelector('.text-muted');
+                    if (emptyMsg) emptyMsg.remove();
+                    // Construir el HTML del nuevo adjunto
+                    let html = '';
+                    const doc = e.document;
+                    const isImage = doc.file_type && doc.file_type.startsWith('image/');
+                    html += `<div class=\"col-12 col-md-6 col-lg-4\" data-document-id=\"${doc.id}\">`;
+                    html += `<div class=\"doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between\">`;
+                    if (isImage) {
+                        html += `<img src=\"/storage/${doc.file_path}\" alt=\"Imagen adjunta\" class=\"img-fluid doc-img-thumb mb-3 mt-3\" style=\"max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);\" data-bs-toggle=\"modal\" data-bs-target=\"#imageModal\" data-img-src=\"/storage/${doc.file_path}\">`;
+                    } else {
+                        html += `<i class=\"fas fa-file fa-3x text-secondary mb-3 mt-3\"></i>`;
+                    }
+                    html += `<div class=\"w-100 text-center mb-2\"><strong>${doc.file_name}</strong>`;
+                    if (doc.description) {
+                        html += `<div class=\"text-muted small mt-1\">${doc.description}</div>`;
+                    }
+                    if (doc.user && doc.user.name) {
+                        html += `<div class=\"text-muted small mt-1\">Subido por: <strong>${doc.user.name}</strong><br>el ${doc.created_at}</div>`;
+                    }
+                    html += `</div>`;
+                    html += `<div class=\"pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap\">`;
+                    html += `<a href=\"/tickets/documents/${doc.id}/download\" class=\"pill-btn pill-btn-download text-center\" title=\"Descargar\"><i class=\"fas fa-download\"></i></a>`;
+                    if (window.authUserRole === 'admin' || window.authUserRole === 'superadmin') {
+                        html += `<form action=\"/tickets/documents/${doc.id}\" method=\"POST\" class=\"d-inline m-0 p-0 delete-document-form\">`;
+                        html += `<input type=\"hidden\" name=\"_token\" value=\"${document.querySelector('meta[name=csrf-token]').content}\">`;
+                        html += `<input type=\"hidden\" name=\"_method\" value=\"DELETE\">`;
+                        html += `<button type=\"button\" class=\"pill-btn pill-btn-delete btn-delete-document text-center\" title=\"Eliminar\"><i class=\"fas fa-trash\"></i></button>`;
+                        html += `</form>`;
+                    }
+                    html += `</div></div></div>`;
+                    docsRow.insertAdjacentHTML('afterbegin', html);
+                    // Reasignar eventos a miniaturas
+                    if (isImage) {
+                        document.querySelector('.doc-img-thumb[data-img-src="/storage/' + doc.file_path + '"]')?.addEventListener('click', function() {
+                            const modalImg = document.getElementById('modalImage');
+                            modalImg.src = this.getAttribute('data-img-src');
+                        });
+                    }
                 });
         }
     });
@@ -519,16 +578,33 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         let formToDelete = null;
-        document.querySelectorAll('.btn-delete-document').forEach(btn => {
-            btn.addEventListener('click', function() {
-                formToDelete = this.closest('form');
+        document.body.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-delete-document')) {
+                formToDelete = e.target.closest('form');
                 const modal = new bootstrap.Modal(document.getElementById('confirmDeleteDocumentModal'));
                 modal.show();
-            });
+            }
         });
         document.getElementById('confirmDeleteDocumentBtn').addEventListener('click', function() {
             if (formToDelete) {
-                formToDelete.submit();
+                // Interceptar el submit y hacerlo por AJAX
+                const form = formToDelete;
+                const action = form.getAttribute('action');
+                const formData = new FormData(form);
+                fetch(action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // El backend emitirá el evento broadcast y el DOM se actualizará en vivo
+                });
+                // Cerrar el modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteDocumentModal'));
+                modal.hide();
             }
         });
     });
@@ -662,6 +738,42 @@
             max-width: 100%;
             max-height: 110px;
         }
+    }
+    .card .card-body dl dt {
+        white-space: normal;
+        width: auto;
+        min-width: 0;
+    }
+    .card .card-body dl dd {
+        width: auto;
+    }
+    .info-label {
+        white-space: nowrap;
+    }
+    .card-info-adicional {
+       
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .card-info-adicional .card-body {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+    .card-info-adicional .row.mb-2 {
+        margin-bottom: 0.7rem !important;
+    }
+    @media (max-width: 600px) {
+        .card-info-adicional {
+            max-width: 100%;
+            padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+        }
+    }
+    .custom-container {
+        max-width: 1600px;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
     }
 </style>
 @endsection

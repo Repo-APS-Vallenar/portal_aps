@@ -49,9 +49,14 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
             ->line('Se han realizado cambios en tu ticket:')
             ->line('📋 Título: ' . $this->ticket->title);
 
-        // Agregar los cambios específicos
-        foreach ($this->formattedChanges() as $change) {
-            $message->line('🔄 ' . $change['label'] . ': ' . $change['old'] . ' → ' . $change['new']);
+        $formatted = $this->formattedChanges();
+        if (count($formatted)) {
+            $message->line('Cambios realizados:');
+            foreach ($formatted as $cambio) {
+                $message->line('- ' . $cambio['label'] . ': de \' ' . $cambio['old'] . '\' a \' ' . $cambio['new'] . '\'');
+            }
+        } else {
+            $message->line('Se han realizado cambios en el ticket.');
         }
 
         $message->line('👤 Actualizado por: ' . $this->updatedBy->name)
@@ -70,10 +75,19 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
     public function toDatabase($notifiable)
     {
         $formatted = $this->formattedChanges();
+        $lista = '';
+        if (count($formatted)) {
+            $lista = "Cambios realizados:\n";
+            foreach ($formatted as $cambio) {
+                $lista .= "- {$cambio['label']}: de '{$cambio['old']}' a '{$cambio['new']}'\n";
+            }
+        } else {
+            $lista = 'Se han realizado cambios en el ticket.';
+        }
         return [
             'ticket_id' => $this->ticket->id,
             'title' => 'Ticket actualizado',
-            'message' => 'Se han realizado cambios en el ticket #' . $this->ticket->id,
+            'message' => $lista,
             'changes' => $formatted,
             'url' => url('/tickets/' . $this->ticket->id),
             'created_at' => Carbon::now()->toDateTimeString(),
@@ -90,10 +104,20 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
      */
     public function toBroadcast()
     {
+        $formatted = $this->formattedChanges();
+        $lista = '';
+        if (count($formatted)) {
+            $lista = "Cambios realizados:\n";
+            foreach ($formatted as $cambio) {
+                $lista .= "- {$cambio['label']}: de '{$cambio['old']}' a '{$cambio['new']}'\n";
+            }
+        } else {
+            $lista = 'Se han realizado cambios en el ticket.';
+        }
         return new BroadcastMessage([
             'ticket_id' => $this->ticket->id,
             'title' => 'Ticket actualizado',
-            'message' => 'Se han realizado cambios en el ticket #' . $this->ticket->id,
+            'message' => $lista,
             'url' => url('/tickets/' . $this->ticket->id),
             'created_at' => Carbon::now()->toDateTimeString(),
             'data' => [
@@ -127,13 +151,8 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
     protected function fieldValue($field, $value)
     {
         if ($field === 'status_id') {
-            $map = [
-                1 => 'Pendiente',
-                2 => 'En Progreso',
-                3 => 'Resuelto',
-                4 => 'Cerrado',
-            ];
-            return $map[$value] ?? $value;
+            $status = \App\Models\TicketStatus::find($value);
+            return $status ? $status->name : $value;
         }
         if ($field === 'category_id') {
             return \App\Models\TicketCategory::find($value)?->name ?? 'Sin categoría';

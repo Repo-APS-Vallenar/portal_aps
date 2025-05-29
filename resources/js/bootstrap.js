@@ -40,8 +40,8 @@ function refreshCsrfToken() {
             if (meta) meta.setAttribute('content', data.csrfToken);
             // Actualiza Axios
             window.axios.defaults.headers.common['X-CSRF-TOKEN'] = data.csrfToken;
-        }
-    });
+            }
+        });
 }
 setInterval(refreshCsrfToken, 5 * 60 * 1000); // Cada 5 minutos
 refreshCsrfToken(); // Al cargar
