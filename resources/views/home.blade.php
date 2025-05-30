@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Panel De Inicio')
+
 @section('content')
     <!-- Contenido principal con padding-top para compensar el navbar fijo -->
     <div class="container" style="padding-top: 20px;">

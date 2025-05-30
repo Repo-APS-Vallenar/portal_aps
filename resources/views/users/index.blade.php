@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Usuarios')
+
 @section('content')
     <div class="container">
         <h2 class="mb-4">Gestión de Usuarios</h2>

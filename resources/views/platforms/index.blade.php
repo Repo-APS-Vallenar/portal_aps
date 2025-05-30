@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Plataformas')
+
 @section('content')
     <div class="container">
         <!-- Encabezado de la página -->

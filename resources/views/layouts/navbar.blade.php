@@ -5,7 +5,7 @@
             <img src="{{ asset('images/logo_vallenar.png') }}" alt="Logo" class="img-fluid me-2"
                 style="max-height: 50px;">
             <div class="intranet-logo-gradient">
-                TicketGo
+                Intranet APS
             </div>
         </a>
         <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse"

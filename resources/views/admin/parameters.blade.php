@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Parámetros')
+
 @section('content')
     <div class="container py-4">
         <h2 class="mb-4"><i class="bi bi-gear me-2 text-warning"></i>Parámetros del sistema</h2>

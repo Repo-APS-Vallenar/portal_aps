@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Tickets')
+
 @section('content')
 <div class="container custom-container">
     @if(session('success'))

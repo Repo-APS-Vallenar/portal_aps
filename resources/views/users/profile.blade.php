@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Mi Perfil')
+
 @section('content')
 <div class="container py-1">
     <div class="row justify-content-center">
