@@ -26,6 +26,13 @@ COPY . .
 ARG COMPOSER_FLAGS="--optimize-autoloader --no-dev"
 RUN composer install $COMPOSER_FLAGS || composer install --ignore-platform-reqs $COMPOSER_FLAGS
 
+# Instalar Node.js y npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+
+# Instalar dependencias de npm y compilar assets con Vite
+RUN npm install && npm run build
+
 # Crear carpetas necesarias y asignar permisos
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
