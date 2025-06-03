@@ -17,11 +17,11 @@
                             <label for="document_description" class="form-label mb-1 small text-muted">Descripción (Opcional)</label>
                             <input type="text" class="form-control form-control-sm" id="document_description" name="description" placeholder="Breve descripción" style="width:100%; min-width: 120px;">
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm d-none d-md-flex align-items-center justify-content-center upload-btn-minimal ms-2" id="btnUploadDocument" disabled style="height: 38px; width: 40px; border-radius: 10px; flex-shrink: 0; margin-bottom: 0.2rem;">
+                        <button type="submit" class="btn btn-primary btn-sm d-none d-md-flex align-items-center justify-content-center upload-btn-minimal ms-2" id="btnUploadDocument" style="height: 38px; width: 40px; border-radius: 10px; flex-shrink: 0; margin-bottom: 0.2rem;">
                             <i class="fas fa-upload"></i>
                         </button>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm d-flex d-md-none align-items-center justify-content-center upload-btn-minimal mt-2" id="btnUploadDocumentMobile" disabled style="height: 38px; width: 100%; border-radius: 10px;">
+                    <button type="submit" class="btn btn-primary btn-sm d-flex d-md-none align-items-center justify-content-center upload-btn-minimal mt-2" id="btnUploadDocumentMobile" style="height: 38px; width: 100%; border-radius: 10px;">
                         <i class="fas fa-upload"></i> <span class="ms-1">Subir</span>
                     </button>
                 </div>
@@ -71,6 +71,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     form.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            showGlobalToast('Debes seleccionar una imagen antes de subir.', 'error');
+            e.preventDefault();
+            return;
+        }
         e.preventDefault();
         const formData = new FormData(this);
         const ticketId = '{{ $ticket->id ?? "" }}';

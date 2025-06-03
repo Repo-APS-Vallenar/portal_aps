@@ -267,12 +267,6 @@
                                 <input type="text" name="contact_phone" class="form-control" value="{{ old('contact_phone', $ticket->contact_phone ?? '') }}">
                             </div>
 
-                            <div class="mb-3">
-                                <label for="attachments" class="form-label">Adjuntar archivos (opcional)</label>
-                                <input type="file" class="form-control" id="attachments" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
-                                <div class="form-text">Puedes adjuntar varios archivos. Tamaño máximo por archivo: 10MB.</div>
-                            </div>
-
                             @if(Auth::user()->isAdmin())
                             <div class="row mb-3">
                                 <div class="col-md-12">
