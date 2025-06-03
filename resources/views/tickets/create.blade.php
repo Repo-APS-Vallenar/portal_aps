@@ -256,7 +256,10 @@
                             @endif
                             <div class="mb-3">
                                 <label for="contact_email" class="form-label">Correo de contacto</label>
-                                <input type="email" name="contact_email" class="form-control" value="{{ old('contact_email', $ticket->contact_email ?? '') }}">
+                                <input type="email" name="contact_email" class="form-control"
+                                    value="{{ old('contact_email', auth()->user()->email) }}"
+                                    @if(auth()->user()->role === 'usuario') readonly @endif
+                                >
                             </div>
 
                             <div class="mb-3">
