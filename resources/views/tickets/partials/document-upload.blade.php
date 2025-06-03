@@ -62,7 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
     progressBar.style.width = '0%';
     progressBar.innerText = '';
     progressBarContainer.appendChild(progressBar);
-    form.insertBefore(progressBarContainer, btnUpload);
+
+    // Insertar progress bar antes del botón si existe, si no al final del form
+    if (btnUpload) {
+        form.insertBefore(progressBarContainer, btnUpload);
+    } else {
+        form.appendChild(progressBarContainer);
+    }
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
