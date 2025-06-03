@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             StatusSeeder::class,
             LocationSeeder::class,
+            AddSolicitadoStatusSeeder::class,
+            UpdateTicketStatusColorsSeeder::class,
         ]);
     }
 }
