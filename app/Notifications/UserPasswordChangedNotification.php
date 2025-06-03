@@ -9,6 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Mail\Mailable;
 
 class UserPasswordChangedNotification extends Notification
 {
@@ -39,12 +40,9 @@ class UserPasswordChangedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        \Log::info('Notificación por correo a: ' . $notifiable->email);
         return (new MailMessage)
-            ->subject('Cambio de contraseña de usuario')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('El usuario ' . $this->user->name . ' ha cambiado su contraseña.')
-            ->line('Gracias por usar el sistema.');
+            ->subject('Contraseña cambiada correctamente')
+            ->view('emails.user-password-changed');
     }
 
     public function toBroadcast($notifiable)

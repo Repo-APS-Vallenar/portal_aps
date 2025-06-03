@@ -39,11 +39,11 @@ return [
 
         'smtp' => [
             'transport' => 'smtp',
-            'host' => env('MAIL_HOST', 'smtp-relay.brevo.com'),
+            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'username' => env('MAIL_USERNAME', 'informatica.aps.vallenar@gmail.com'),
+            'password' => env('MAIL_PASSWORD', 'yusezxwdoykborkh'),
         ],
     
 
@@ -107,8 +107,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'soporte@demomailtrap.co'),
-        'name' => env('MAIL_FROM_NAME', 'Portal APS'),
+        'address' => env('MAIL_FROM_ADDRESS', 'informatica.aps.vallenar@gmail.com'),
+        'name' => env('MAIL_FROM_NAME', 'No-Reply'),
     ],
 
 ];

@@ -73,6 +73,22 @@ class Ticket extends Model
                 $ticket->priority = self::PRIORITY_MEDIA;
             }
         });
+
+        static::deleting(function ($ticket) {
+            // Eliminar archivos físicos y registros de documentos
+            foreach ($ticket->documents as $document) {
+                // Eliminar archivo físico
+                if ($document->file_path && \Storage::disk('public')->exists($document->file_path)) {
+                    \Storage::disk('public')->delete($document->file_path);
+                }
+                $document->delete();
+            }
+            // (Opcional) Eliminar la carpeta si está vacía
+            $folder = 'ticket-documents/' . $ticket->id;
+            if (\Storage::disk('public')->exists($folder) && empty(\Storage::disk('public')->files($folder))) {
+                \Storage::disk('public')->deleteDirectory($folder);
+            }
+        });
     }
 
     // Relaciones

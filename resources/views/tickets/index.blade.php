@@ -33,7 +33,7 @@
 
                         <div id="tickets-list-container">
                         @if($tickets->isEmpty())
-                            <div class="alert alert-info">
+                            <div class="alert" style="background: #c8f4fc; color: #222; border-radius: 10px; border: 1px solid #b6e6f7;">
                                 No hay tickets disponibles.
                             </div>
                         @else
@@ -52,7 +52,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($tickets as $ticket)
+                                        @forelse($tickets as $ticket)
                                             <tr>
                                                 <td>{{ $ticket->id }}</td>
                                                 <td>{{ $ticket->title }}</td>
@@ -73,7 +73,7 @@
                                                     </span>
                                                 </td>
                                                 <td>{{ $ticket->creator->name }}</td>
-                                                    <td>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</td>
+                                                <td>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</td>
                                                 <td>
                                                     <div class="d-flex justify-content-end">
                                                         <div class="btn-group" role="group" aria-label="Acciones del ticket">
@@ -103,7 +103,13 @@
                                                     </div>
                                                 </td>
                                             </tr>
-                                        @endforeach
+                                        @empty
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted" style="background: #c8f4fc; color: #222; border-radius: 10px;">
+                                                    No hay tickets disponibles.
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>

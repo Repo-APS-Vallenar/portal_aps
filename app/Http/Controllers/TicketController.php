@@ -150,7 +150,7 @@ class TicketController extends Controller
         // Guardar archivos adjuntos si existen
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('ticket-documents/' . $ticket->id);
+                $path = $file->store('ticket-documents/' . $ticket->id, 'public');
                 \App\Models\TicketDocument::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => Auth::id(),
@@ -165,16 +165,22 @@ class TicketController extends Controller
 
         // Ejemplo para la creación de ticket (en store):
         $usuariosNotificar = collect();
-        if (Auth::user()->isAdmin()) {
-            $superadmins = \App\Models\User::where('role', 'superadmin')->get();
-            $usuariosNotificar = $usuariosNotificar->merge($superadmins);
+
+        if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
+            // Notificar a todos los admin y superadmin, excepto al propio creador
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])
+                ->where('id', '!=', Auth::id())
+                ->get();
+            $usuariosNotificar = $usuariosNotificar->merge($admins);
+        } else {
+            // Si es usuario normal, notificar a todos los admin y superadmin
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             $usuariosNotificar = $usuariosNotificar->merge($admins);
         }
+
         $usuariosNotificar = $usuariosNotificar->unique('id');
         $notificationService = app(\App\Services\NotificationService::class);
         foreach ($usuariosNotificar as $usuario) {
-            \Log::info('Notificando a usuario único', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
             $notificationService->send(
                 $usuario,
                 new \App\Notifications\TicketCreatedNotification($ticket, $usuario->id)

@@ -12,7 +12,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('tickets.store') }}">
+                    <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data">
                         @if ($errors->any())
                         <div class="alert alert-danger">
                             <ul>
@@ -64,7 +64,7 @@
                                     </option>
                                 </select>
                                 @error('priority')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">{{ $errors->first('priority') }}</div>
                                 @enderror
                             </div>
                             <div class="mb-3">
@@ -85,7 +85,7 @@
                                         @endforeach
                                     </select>
                                     @error('status_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('status_id') }}</div>
                                     @enderror
                                     @endif
                                 </div>
@@ -108,9 +108,9 @@
                             <div class="col-md-12 mb-3">
                                 <label for="description" class="form-label">Descripción del problema</label>
                                 <textarea class="form-control @error('description') is-invalid @enderror"
-                                    id="description" name="description" rows="3">{{ old('description') }}</textarea>
+                                    id="description" name="description" rows="3" style="resize: none;">{{ old('description') }}</textarea>
                                 @error('description')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                                <div class="invalid-feedback">{{ $errors->first('description') }}</div>
                                 @enderror
                             </div>
 
@@ -121,7 +121,7 @@
                                     <input type="text" class="form-control @error('marca') is-invalid @enderror"
                                         id="marca" name="marca" value="{{ old('marca') }}">
                                     @error('marca')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('marca') }}</div>
                                     @enderror
                                 </div>
 
@@ -130,7 +130,7 @@
                                     <input type="text" class="form-control @error('modelo') is-invalid @enderror"
                                         id="modelo" name="modelo" value="{{ old('modelo') }}">
                                     @error('modelo')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('modelo') }}</div>
                                     @enderror
                                 </div>
 
@@ -139,7 +139,7 @@
                                     <input type="text" class="form-control @error('numero_serie') is-invalid @enderror"
                                         id="numero_serie" name="numero_serie" value="{{ old('numero_serie') }}">
                                     @error('numero_serie')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('numero_serie') }}</div>
                                     @enderror
                                 </div>
                                 @endif
@@ -157,7 +157,7 @@
                                         @endforeach
                                     </select>
                                     @error('location_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('location_id') }}</div>
                                     @enderror
                                 </div>
 
@@ -166,7 +166,7 @@
                                     <input type="text" class="form-control @error('usuario') is-invalid @enderror"
                                         id="usuario" name="usuario" value="{{ old('usuario') }}">
                                     @error('usuario')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('usuario') }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -180,7 +180,7 @@
                                     <input type="text" class="form-control @error('ip_red_wifi') is-invalid @enderror"
                                         id="ip_red_wifi" name="ip_red_wifi" value="{{ old('ip_red_wifi') }}">
                                     @error('ip_red_wifi')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('ip_red_wifi') }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -192,7 +192,7 @@
                                     <input type="text" class="form-control @error('cpu') is-invalid @enderror" id="cpu"
                                         name="cpu" value="{{ old('cpu') }}">
                                     @error('cpu')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('cpu') }}</div>
                                     @enderror
                                 </div>
 
@@ -201,7 +201,7 @@
                                     <input type="text" class="form-control @error('ram') is-invalid @enderror" id="ram"
                                         name="ram" value="{{ old('ram') }}">
                                     @error('ram')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('ram') }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -215,7 +215,7 @@
                                         id="capacidad_almacenamiento" name="capacidad_almacenamiento"
                                         value="{{ old('capacidad_almacenamiento') }}">
                                     @error('capacidad_almacenamiento')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('capacidad_almacenamiento') }}</div>
                                     @enderror
                                 </div>
 
@@ -224,7 +224,7 @@
                                     <input type="text" class="form-control @error('tarjeta_video') is-invalid @enderror"
                                         id="tarjeta_video" name="tarjeta_video" value="{{ old('tarjeta_video') }}">
                                     @error('tarjeta_video')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('tarjeta_video') }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -238,7 +238,7 @@
                                     <input type="text" class="form-control @error('id_anydesk') is-invalid @enderror"
                                         id="id_anydesk" name="id_anydesk" value="{{ old('id_anydesk') }}">
                                     @error('id_anydesk')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="invalid-feedback">{{ $errors->first('id_anydesk') }}</div>
                                     @enderror
                                 </div>
                             </div>
@@ -249,9 +249,9 @@
                                 <input type="date" class="form-control @error('fecha_instalacion') is-invalid @enderror"
                                     id="fecha_instalacion" name="fecha_instalacion"
                                     value="{{ old('fecha_instalacion') }}">
-                                @error('fecha_instalacion')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                                    @error('fecha_instalacion')
+                                    <div class="invalid-feedback">{{ $errors->first('fecha_instalacion') }}</div>
+                                    @enderror
                             </div>
                             @endif
                             <div class="mb-3">
@@ -292,4 +292,5 @@
         </div>
     </div>
 </div>
+{{-- @include('tickets.partials.document-upload') --}}
 @endsection

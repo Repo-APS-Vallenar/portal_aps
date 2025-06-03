@@ -103,56 +103,6 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Visualización de documentos adjuntos -->
-            <div class="card mt-4 mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Documentos Adjuntos</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        @forelse($ticket->documents as $document)
-                            <div class="col-12 col-md-6 col-lg-4" data-document-id="{{ $document->id }}">
-                                <div class="doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between">
-                                    @if(Str::startsWith($document->file_type, 'image/'))
-                                        <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="img-fluid doc-img-thumb mb-3 mt-3" style="max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
-                                    @else
-                                        <i class="fas fa-file fa-3x text-secondary mb-3 mt-3"></i>
-                                    @endif
-                                    <div class="w-100 text-center mb-2">
-                                        <strong>{{ $document->file_name }}</strong>
-                                        @if($document->description)
-                                            <div class="text-muted small mt-1">{{ $document->description }}</div>
-                                        @endif
-                                        @if ($document->user && $document->user->name)
-                                            <div class="text-muted small mt-1">Subido por: <strong>{{ $document->user->name }}</strong><br>el {{ $document->created_at->format('d/m/Y H:i') }}</div>
-                                        @endif
-                                    </div>
-                                    <div class="pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap">
-                                        <a href="{{ route('tickets.documents.download', $document) }}" class="pill-btn pill-btn-download text-center" title="Descargar">
-                                            <i class="fas fa-download"></i>
-                                        </a>
-                                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
-                                            <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="button" class="pill-btn pill-btn-delete btn-delete-document text-center" title="Eliminar">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="col-12 text-center text-muted py-4" style="font-size:1.1em;">
-                                <i class="fas fa-image fa-2x mb-2"></i><br>
-                                No hay imágenes subidas aún
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="col-md-4">
@@ -193,9 +143,55 @@
                 </div>
             </div>
 
-            {{-- Formulario de subida de documentos adjuntos --}}
-            @include('tickets.partials.document-upload', ['ticket' => $ticket])
-
+            <!-- Visualización de documentos adjuntos -->
+            <div class="card mt-4 mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Documentos Adjuntos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-3">
+                        @forelse($ticket->documents as $document)
+                            <div class="d-flex align-items-center justify-content-between p-2 shadow-sm rounded flex-nowrap" style="background: #f8fbff; border: 1.5px solid #e3e8ee; min-height: 80px;">
+                                <div class="d-flex align-items-center gap-3 flex-grow-1 min-width-0" style="max-width: 65%;">
+                                    @if(Str::startsWith($document->file_type, 'image/'))
+                                        <img src="{{ asset('storage/' . $document->file_path) }}" alt="Imagen adjunta" class="rounded" style="width: 60px; height: 60px; object-fit: cover; border: 1.5px solid #e3e8ee; cursor:pointer;" data-bs-toggle="modal" data-bs-target="#imageModal" data-img-src="{{ asset('storage/' . $document->file_path) }}">
+                                    @else
+                                        <i class="fas fa-file fa-2x text-secondary"></i>
+                                    @endif
+                                    <div class="ms-1 min-width-0" style="min-width:0;">
+                                        <div class="fw-bold text-truncate" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{{ $document->file_name }}</div>
+                                        @if($document->description)
+                                            <div class="text-muted small text-truncate" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{{ $document->description }}</div>
+                                        @endif
+                                        @if ($document->user && $document->user->name)
+                                            <div class="text-muted small">Subido por: <strong>{{ $document->user->name }}</strong> el {{ $document->created_at->format('d/m/Y H:i') }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0" style="max-width: 100px;">
+                                    <a href="{{ route('tickets.documents.download', $document) }}" class="btn btn-outline-primary btn-sm px-1" title="Descargar" style="min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                                        <form action="{{ route('tickets.documents.destroy', $document) }}" method="POST" class="d-inline m-0 p-0 delete-document-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="btn btn-outline-danger btn-sm btn-delete-document px-1" title="Eliminar" style="min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center text-muted py-4" style="font-size:1.1em;">
+                                <i class="fas fa-image fa-2x mb-2"></i><br>
+                                No hay imágenes subidas aún
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -565,16 +561,21 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         // Miniaturas de imagen: abrir modal con la imagen grande
-        document.querySelectorAll('.doc-img-thumb').forEach(function(img) {
+        document.querySelectorAll('.doc-img-thumb, .card-body img[data-img-src]').forEach(function(img) {
             img.addEventListener('click', function() {
                 const modalImg = document.getElementById('modalImage');
                 modalImg.src = this.getAttribute('data-img-src');
+                modalImg.onerror = function() {
+                    modalImg.src = 'https://via.placeholder.com/400x300?text=Imagen+no+disponible';
+                };
             });
         });
         // Limpiar imagen al cerrar el modal
         const imageModal = document.getElementById('imageModal');
         imageModal.addEventListener('hidden.bs.modal', function () {
-            document.getElementById('modalImage').src = '';
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = '';
+            modalImg.onerror = null; // Limpia el evento onerror para evitar loops
         });
     });
 

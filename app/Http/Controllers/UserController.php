@@ -284,28 +284,25 @@ class UserController extends Controller
         }
 
         // Notificar a admin y superadmin sobre el desbloqueo o bloqueo
-        if ($user->is_active) {
+        $notificationService = app(\App\Services\NotificationService::class);
+        $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+        if ($user->is_active && (!$user->locked_until || now()->greaterThan($user->locked_until))) {
             $this->logAudit(
                 'Habilitar Usuario',
                 'Se habilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
             );
-            // Notificar a admin y superadmin sobre el desbloqueo
-            $notificationService = app(\App\Services\NotificationService::class);
-            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
                 $notificationService->send(
                     $admin,
                     new \App\Notifications\UserEnabledNotification($user)
                 );
             }
-        } else {
+        }
+        if ($user->locked_until && now()->lessThan($user->locked_until)) {
             $this->logAudit(
                 'Deshabilitar Usuario',
                 'Se deshabilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
             );
-            // Notificar a admin y superadmin sobre el bloqueo
-            $notificationService = app(\App\Services\NotificationService::class);
-            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
             foreach ($admins as $admin) {
                 $notificationService->send(
                     $admin,

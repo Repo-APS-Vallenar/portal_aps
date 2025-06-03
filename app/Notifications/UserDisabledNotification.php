@@ -8,6 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Mail\Mailable;
 
 class UserDisabledNotification extends Notification
 {
@@ -38,10 +39,8 @@ class UserDisabledNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('Usuario deshabilitado')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('El usuario ' . $this->user->name . ' ha sido deshabilitado.')
-            ->line('Gracias por usar el sistema.');
+            ->subject('Tu cuenta ha sido deshabilitada')
+            ->view('emails.user-disabled');
     }
 
     public function toBroadcast($notifiable)

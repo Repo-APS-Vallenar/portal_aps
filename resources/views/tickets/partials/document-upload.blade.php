@@ -1,27 +1,34 @@
-<div class="document-upload-section mb-4">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Adjuntar Documentos</h5>
+<div class="document-upload-section mb-4 mt-4">
+    <div class="card" style="box-shadow: 0 2px 8px rgba(1,163,213,0.07); border-radius: 16px; border: 1px solid #e3e8ee; background: #fafdff;">
+        <div class="card-header" style="padding-bottom: 0.5rem; background: none; border-bottom: 1px solid #e3e8ee;">
+            <h5 class="mb-0" style="font-size: 1.18rem; font-weight: 600;">Adjuntar Documentos</h5>
         </div>
-        <div class="card-body">
-            <form id="documentUploadForm" class="mb-3" enctype="multipart/form-data">
+        <div class="card-body pt-3 pb-2">
+            <form id="documentUploadForm" class="mb-0 d-flex flex-wrap align-items-center gap-2 gap-md-3" enctype="multipart/form-data">
                 @csrf
-                <div class="mb-3">
-                    <label for="document" class="form-label">Seleccionar Archivo</label>
-                    <input type="file" class="form-control" id="document" name="document" accept="image/*">
-                    <div class="form-text">Tamaño máximo: 20MB. Formatos permitidos:JPG, PNG</div>
+                <div class="d-flex flex-column" style="min-width: 180px;">
+                    <label for="document" class="form-label mb-1 small text-muted">Archivo</label>
+                    <input type="file" class="form-control form-control-sm" id="document" name="document" accept="image/*" style="min-width: 180px;">
+                    <div class="form-text small" style="font-size: 0.92em;">Máx: 20MB. JPG, PNG</div>
                 </div>
-                <div class="mb-3">
-                    <label for="document_description" class="form-label">Descripción (opcional)</label>
-                    <input type="text" class="form-control" id="document_description" name="description" placeholder="Breve descripción del documento">
+                <div class="flex-grow-1 d-flex flex-column flex-md-row align-items-md-end" style="min-width: 140px;">
+                    <div class="w-100 d-flex flex-row align-items-end" style="gap: 0.5rem;">
+                        <div class="flex-grow-1">
+                            <label for="document_description" class="form-label mb-1 small text-muted">Descripción (Opcional)</label>
+                            <input type="text" class="form-control form-control-sm" id="document_description" name="description" placeholder="Breve descripción" style="width:100%; min-width: 120px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm d-none d-md-flex align-items-center justify-content-center upload-btn-minimal ms-2" id="btnUploadDocument" disabled style="height: 38px; width: 40px; border-radius: 10px; flex-shrink: 0; margin-bottom: 0.2rem;">
+                            <i class="fas fa-upload"></i>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm d-flex d-md-none align-items-center justify-content-center upload-btn-minimal mt-2" id="btnUploadDocumentMobile" disabled style="height: 38px; width: 100%; border-radius: 10px;">
+                        <i class="fas fa-upload"></i> <span class="ms-1">Subir</span>
+                    </button>
                 </div>
-                <button type="submit" class="btn btn-info w-100" id="btnUploadDocument" disabled>
-                    <i class="fas fa-upload me-1"></i> Subir Documento
-                </button>
             </form>
-                                </div>
-                                </div>
-                            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Toast de error para subida de documentos -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1100">
@@ -42,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('documentUploadForm');
     const fileInput = document.getElementById('document');
     const btnUpload = document.getElementById('btnUploadDocument');
+    const btnUploadMobile = document.getElementById('btnUploadDocumentMobile');
     const progressBarContainer = document.createElement('div');
     progressBarContainer.className = 'progress mb-2';
     progressBarContainer.style.display = 'none';
@@ -63,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         formData.append('_token', csrfToken);
         btnUpload.disabled = true;
+        btnUploadMobile.disabled = true;
         progressBarContainer.style.display = 'block';
         progressBar.style.width = '0%';
         progressBar.innerText = '';
@@ -86,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 form.reset();
                 fileInput.value = '';
                 btnUpload.disabled = true;
+                btnUploadMobile.disabled = true;
                 fileInput.dispatchEvent(new Event('change'));
                 progressBar.style.width = '100%';
                 progressBar.innerText = '100%';
@@ -112,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             btnUpload.disabled = !fileInput.files.length;
+            btnUploadMobile.disabled = !fileInput.files.length;
         });
     });
 
@@ -145,7 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     fileInput.addEventListener('change', function() {
-        btnUpload.disabled = !fileInput.files.length;
+        if (btnUpload) btnUpload.disabled = !fileInput.files.length;
+        if (btnUploadMobile) btnUploadMobile.disabled = !fileInput.files.length;
     });
 
     // Función para actualizar la lista de documentos adjuntos
@@ -190,4 +202,47 @@ function showDocumentUploadErrorToast(message) {
     toast.show();
 }
 </script>
-@endpush 
+@endpush
+
+<style>
+.upload-btn-minimal {
+    background: #2196f3;
+    border: none;
+    color: #fff;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+    border-radius: 10px;
+    transition: background 0.18s, color 0.18s;
+    font-size: 1.15em;
+    padding: 0;
+}
+.upload-btn-minimal:hover, .upload-btn-minimal:focus {
+    background: #1769aa;
+    color: #fff;
+}
+#documentUploadForm .form-control-sm {
+    font-size: 1em;
+    padding: 0.45rem 0.7rem;
+}
+#documentUploadForm .form-label {
+    font-size: 0.98em;
+    font-weight: 500;
+    color: #888;
+}
+@media (max-width: 767.98px) {
+    #documentUploadForm {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.7rem !important;
+    }
+    .upload-btn-minimal {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-radius: 8px !important;
+        justify-content: center !important;
+    }
+    #btnUploadDocument span {
+        display: inline !important;
+    }
+}
+</style> 

@@ -32,33 +32,44 @@ class TicketAssignedChangedNotification extends Notification implements ShouldBr
 
     public function toDatabase($notifiable)
     {
+        $ticketNumber = $this->ticket->id;
+        $msg = $this->customMessage
+            ?
+            : ('Se asignó el ticket a: ' . $this->newAssigned->name);
         return [
-            'ticket_id' => $this->ticket->id,
-            'title' => 'Cambio de asignado',
-            'message' => $this->customMessage ?? ('Has sido asignado al ticket #' . $this->ticket->id . ': ' . $this->ticket->title),
-            'url' => url('/tickets/' . $this->ticket->id),
+            'ticket_id' => $ticketNumber,
+            'title' => 'Cambio de asignado en el ticket #' . $ticketNumber,
+            'message' => $msg,
+            'url' => url('/tickets/' . $ticketNumber),
             'created_at' => Carbon::now()->toDateTimeString(),
         ];
     }
 
     public function toMail($notifiable)
     {
-        $msg = $this->customMessage ?? ('Has sido asignado al ticket #' . $this->ticket->id . ': ' . $this->ticket->title);
+        $ticketNumber = $this->ticket->id;
+        $msg = $this->customMessage
+            ? ('Ticket #' . $ticketNumber . ': ' . $this->customMessage)
+            : ('Se asignó el ticket a: ' . $this->newAssigned->name);
         return (new MailMessage)
-            ->subject('Cambio de asignado en el ticket #' . $this->ticket->id)
+            ->subject('Cambio de asignado en el ticket #' . $ticketNumber)
             ->greeting('¡Hola ' . $notifiable->name . '!')
             ->line($msg)
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
+            ->action('Ver ticket', url('/tickets/' . $ticketNumber))
             ->line('Gracias por usar nuestro sistema.');
     }
 
     public function toBroadcast()
     {
+        $ticketNumber = $this->ticket->id;
+        $msg = $this->customMessage
+            ? ('Ticket #' . $ticketNumber . ': ' . $this->customMessage)
+            : ('Se asignó el ticket a: ' . $this->newAssigned->name);
         return new BroadcastMessage([
-            'ticket_id' => $this->ticket->id,
-            'title' => 'Cambio de asignado',
-            'message' => $this->customMessage ?? ('Has sido asignado al ticket #' . $this->ticket->id . ': ' . $this->ticket->title),
-            'url' => url('/tickets/' . $this->ticket->id),
+            'ticket_id' => $ticketNumber,
+            'title' => 'Cambio de asignado en el ticket #' . $ticketNumber,
+            'message' => $msg,
+            'url' => url('/tickets/' . $ticketNumber),
             'created_at' => Carbon::now()->toDateTimeString(),
         ]);
     }
@@ -67,4 +78,4 @@ class TicketAssignedChangedNotification extends Notification implements ShouldBr
     {
         return new \Illuminate\Broadcasting\PrivateChannel('App.Models.User.' . $this->notifiableId);
     }
-} 
+}

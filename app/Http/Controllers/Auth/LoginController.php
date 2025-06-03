@@ -82,6 +82,16 @@ class LoginController extends Controller
         $credentials = $this->credentials($request);
         $user = User::where('email', $request->email)->first();
 
+        if ($user && $user->role === 'superadmin') {
+            // Si es superadmin, nunca bloquear ni contar intentos
+            if (Auth::attempt($credentials)) {
+                $this->logLoginSuccess($user, $request);
+                return redirect()->intended();
+            }
+            // Mensaje de error normal, pero sin bloquear
+            return back()->withErrors(['email' => 'Credenciales incorrectas.']);
+        }
+
         if ($user) {
             // Reiniciar intentos si han pasado más de 15 minutos desde el último intento fallido
             if ($user->last_login_attempt_at && now()->diffInMinutes($user->last_login_attempt_at) >= self::BLOCK_MINUTES) {
@@ -123,6 +133,10 @@ class LoginController extends Controller
 
     private function handleFailedLogin($user, $request)
     {
+        if ($user->role === 'superadmin') {
+            // No incrementar intentos ni bloquear
+            return;
+        }
         $user->login_attempts++;
         $user->last_login_attempt_at = now();
         AuditLog::create([

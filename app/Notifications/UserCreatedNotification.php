@@ -9,6 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Mail\Mailable;
 
 class UserCreatedNotification extends Notification
 {
@@ -39,12 +40,9 @@ class UserCreatedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        \Log::info('Notificación por correo a: ' . $notifiable->email);
         return (new MailMessage)
-            ->subject('Nuevo usuario registrado')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('Se ha creado un nuevo usuario: ' . $this->user->name . ' (' . $this->user->email . ') con rol ' . $this->user->role . '.')
-            ->line('Gracias por usar el sistema.');
+            ->subject('Nuevo usuario creado')
+            ->view('emails.user-created');
     }
 
     public function toBroadcast($notifiable)

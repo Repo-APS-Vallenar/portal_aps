@@ -8,6 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Mail\Mailable;
 
 class UserRoleChangedNotification extends Notification
 {
@@ -41,9 +42,7 @@ class UserRoleChangedNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Cambio de rol de usuario')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('El usuario ' . $this->user->name . ' cambió de rol de ' . $this->oldRole . ' a ' . $this->user->role . '.')
-            ->line('Gracias por usar el sistema.');
+            ->view('emails.user-role-changed');
     }
 
     public function toBroadcast($notifiable)

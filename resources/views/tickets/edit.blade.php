@@ -264,6 +264,10 @@
                                 <button type="submit" class="btn btn-gradient">Actualizar Ticket</button>
                             </div>
                     </form>
+
+                    @if(Auth::user() && (Auth::user()->role === 'admin' || Auth::user()->role === 'superadmin'))
+                        @include('tickets.partials.document-upload', ['ticket' => $ticket])
+                    @endif
                 </div>
             </div>
         </div>
