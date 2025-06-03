@@ -24,7 +24,10 @@ class TicketInitialDataSeeder extends Seeder
         ];
 
         foreach ($statuses as $status) {
-            TicketStatus::create($status);
+            \App\Models\TicketStatus::updateOrCreate(
+                ['name' => $status['name']],
+                $status
+            );
         }
 
         // Crear categorías de tickets
@@ -37,7 +40,10 @@ class TicketInitialDataSeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            TicketCategory::create($category);
+            \App\Models\TicketCategory::updateOrCreate(
+                ['name' => $category['name']],
+                $category
+            );
         }
     }
 }

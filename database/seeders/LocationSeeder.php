@@ -22,7 +22,10 @@ class LocationSeeder extends Seeder
         ];
 
         foreach ($ubicaciones as $ubicacion) {
-            Location::create(['name' => $ubicacion]);
+            \App\Models\Location::updateOrCreate(
+                ['name' => $ubicacion],
+                ['name' => $ubicacion]
+            );
         }
     }
 }
