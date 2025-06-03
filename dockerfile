@@ -19,12 +19,12 @@ WORKDIR /var/www/html
 # Copiar solo composer.json y composer.lock para aprovechar cache de dependencias
 COPY composer.json composer.lock ./
 
+# Copiar el resto del código fuente (incluyendo artisan)
+COPY . .
+
 # Instalar dependencias de Laravel (sin dev por defecto, configurable por ARG)
 ARG COMPOSER_FLAGS="--optimize-autoloader --no-dev"
 RUN composer install $COMPOSER_FLAGS || composer install --ignore-platform-reqs $COMPOSER_FLAGS
-
-# Copiar el resto del código fuente
-COPY . .
 
 # Crear carpetas necesarias y asignar permisos
 RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
