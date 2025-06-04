@@ -47,7 +47,7 @@
         <p class="signature">
             Gracias por usar TicketGo.<br>
             <strong>Equipo TicketGo</strong>
-        </p>
+    </p>
         <div class="footer">
             Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br>
             <a href="{{ url('/login') }}">{{ url('/login') }}</a>

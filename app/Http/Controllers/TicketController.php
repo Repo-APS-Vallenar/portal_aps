@@ -147,20 +147,19 @@ class TicketController extends Controller
         // Cargar relaciones necesarias para evitar nulls
         $ticket->load(['category', 'creator', 'assignedTo']);
 
-        // Guardar archivos adjuntos si existen
+        // Guardar archivos adjuntos
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $path = $file->store('ticket-documents/' . $ticket->id, 'public');
-                \App\Models\TicketDocument::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => Auth::id(),
-                    'file_name' => $file->getClientOriginalName(),
+                $ticket->documents()->create([
                     'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
                     'file_type' => $file->getClientMimeType(),
                     'file_size' => $file->getSize(),
-                    'description' => null
+                    'user_id' => auth()->id()
                 ]);
             }
+            \Log::info('Archivos adjuntos guardados para el ticket: ' . $ticket->id);
         }
 
         // Ejemplo para la creación de ticket (en store):

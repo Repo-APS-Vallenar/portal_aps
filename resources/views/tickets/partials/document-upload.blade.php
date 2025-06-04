@@ -4,7 +4,7 @@
             <h5 class="mb-0" style="font-size: 1.18rem; font-weight: 600;">Adjuntar Documentos</h5>
         </div>
         <div class="card-body pt-3 pb-2">
-            <form id="documentUploadForm" class="mb-0 d-flex flex-wrap align-items-center gap-2 gap-md-3" enctype="multipart/form-data">
+            <form id="documentUploadForm" class="mb-0 d-flex flex-wrap align-items-center gap-2 gap-md-3" enctype="multipart/form-data" method="POST" action="{{ route('tickets.documents.store', $ticket) }}">
                 @csrf
                 <div class="d-flex flex-column" style="min-width: 180px;">
                     <label for="document" class="form-label mb-1 small text-muted">Archivo</label>
@@ -42,178 +42,12 @@
     </div>
 </div>
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('documentUploadForm');
-    const fileInput = document.getElementById('document');
-    const btnUpload = document.getElementById('btnUploadDocument');
-    const btnUploadMobile = document.getElementById('btnUploadDocumentMobile');
-    const progressBarContainer = document.createElement('div');
-    progressBarContainer.className = 'progress mb-2';
-    progressBarContainer.style.display = 'none';
-    const progressBar = document.createElement('div');
-    progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
-    progressBar.role = 'progressbar';
-    progressBar.ariaValuenow = 0;
-    progressBar.ariaValuemin = 0;
-    progressBar.ariaValuemax = 100;
-    progressBar.style.width = '0%';
-    progressBar.innerText = '';
-    progressBarContainer.appendChild(progressBar);
-
-    // Insertar progress bar antes del botón si existe, si no al final del form
-    if (btnUpload) {
-        form.insertBefore(progressBarContainer, btnUpload);
-    } else {
-        form.appendChild(progressBarContainer);
-    }
-
-    form.addEventListener('submit', function(e) {
-        if (!fileInput.files.length) {
-            showGlobalToast('Debes seleccionar una imagen antes de subir.', 'error');
-            e.preventDefault();
-            return;
-        }
-        e.preventDefault();
-        const formData = new FormData(this);
-        const ticketId = '{{ $ticket->id ?? "" }}';
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        formData.append('_token', csrfToken);
-        btnUpload.disabled = true;
-        btnUploadMobile.disabled = true;
-        progressBarContainer.style.display = 'block';
-        progressBar.style.width = '0%';
-        progressBar.innerText = '';
-        axios.post(`/tickets/${ticketId}/documents`, formData, {
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Content-Type': 'multipart/form-data'
-            },
-            withCredentials: true,
-            onUploadProgress: function(progressEvent) {
-                if (progressEvent.lengthComputable) {
-                    let percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                    progressBar.style.width = percent + '%';
-                    progressBar.innerText = percent + '%';
-                }
-            }
-        })
-        .then(response => {
-            if (response.data && response.data.success) {
-                // Limpiar formulario
-                form.reset();
-                fileInput.value = '';
-                btnUpload.disabled = true;
-                btnUploadMobile.disabled = true;
-                fileInput.dispatchEvent(new Event('change'));
-                progressBar.style.width = '100%';
-                progressBar.innerText = '100%';
-                setTimeout(() => {
-                    progressBarContainer.style.display = 'none';
-                    progressBar.style.width = '0%';
-                    progressBar.innerText = '';
-                }, 800);
-                // Actualizar la lista de documentos adjuntos dinámicamente
-                updateDocumentsList();
-                showGlobalToast('Documento subido exitosamente', 'success');
-            } else if (response.data && response.data.message) {
-                showGlobalToast(response.data.message, 'error');
-            } else {
-                showGlobalToast('Error al subir la imagen.', 'error');
-            }
-        })
-        .catch(error => {
-            if (error.response && error.response.data && error.response.data.message) {
-                showGlobalToast(error.response.data.message, 'error');
-            } else {
-                showGlobalToast('Error inesperado al subir la imagen.', 'error');
-            }
-        })
-        .finally(() => {
-            btnUpload.disabled = !fileInput.files.length;
-            btnUploadMobile.disabled = !fileInput.files.length;
-        });
-    });
-
-    // Manejar eliminación de documentos
-    document.querySelectorAll('.delete-document').forEach(button => {
-        button.addEventListener('click', function() {
-            if (confirm('¿Estás seguro de que deseas eliminar este documento?')) {
-                const documentId = this.dataset.documentId;
-                
-                fetch(`/tickets/documents/${documentId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        this.closest('.list-group-item').remove();
-                    } else {
-                        alert('Error al eliminar el documento');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al eliminar el documento');
-                });
-            }
-        });
-    });
-
-    fileInput.addEventListener('change', function() {
-        if (btnUpload) btnUpload.disabled = !fileInput.files.length;
-        if (btnUploadMobile) btnUploadMobile.disabled = !fileInput.files.length;
-    });
-
-    // Función para actualizar la lista de documentos adjuntos
-    function updateDocumentsList() {
-        fetch(window.location.pathname, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newDocs = doc.querySelector('.card-body .row.g-3');
-            const currentDocs = document.querySelector('.card-body .row.g-3');
-            if (newDocs && currentDocs) {
-                currentDocs.innerHTML = newDocs.innerHTML;
-                // Reasignar eventos a miniaturas
-                assignImageModalEvents();
-            }
-        });
-    }
-
-    // Función para asignar el evento de click a las miniaturas
-    function assignImageModalEvents() {
-        document.querySelectorAll('.doc-img-thumb').forEach(function(img) {
-            img.addEventListener('click', function() {
-                const modalImg = document.getElementById('modalImage');
-                modalImg.src = this.getAttribute('data-img-src');
-            });
-        });
-    }
-
-    // Asignar eventos al cargar la página
-    assignImageModalEvents();
-});
-
-// Toast de error para subida de documentos
-function showDocumentUploadErrorToast(message) {
-    const toastBody = document.getElementById('documentUploadErrorToastBody');
-    toastBody.innerHTML = message;
-    const toastEl = document.getElementById('documentUploadErrorToast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
-    toast.show();
-}
-</script>
-@endpush
+<!-- Barra de progreso de carga -->
+<div id="uploadProgressBarContainer" style="display:none; width:100%; margin-bottom: 10px;">
+    <div class="progress" style="height: 18px;">
+        <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%; font-weight:600; font-size:1em;">0%</div>
+    </div>
+</div>
 
 <style>
 .upload-btn-minimal {
@@ -256,4 +90,42 @@ function showDocumentUploadErrorToast(message) {
         display: inline !important;
     }
 }
-</style> 
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('documentUploadForm');
+    const progressBarContainer = document.getElementById('uploadProgressBarContainer');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const btnUpload = document.getElementById('btnUploadDocument');
+    const btnUploadMobile = document.getElementById('btnUploadDocumentMobile');
+    if (form && progressBarContainer && progressBar) {
+        // Mostrar barra de progreso al hacer submit
+        form.addEventListener('submit', function(e) {
+            progressBarContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.innerText = '0%';
+            // Simular progreso mientras se sube (ya que es submit clásico)
+            let percent = 0;
+            const interval = setInterval(() => {
+                if (percent < 95) {
+                    percent += 5;
+                    progressBar.style.width = percent + '%';
+                    progressBar.innerText = percent + '%';
+                } else {
+                    clearInterval(interval);
+                }
+            }, 100);
+        });
+        // Ocultar barra de progreso cuando la sección de documentos se actualiza en vivo
+        window.updateDocumentsSection = (function(orig) {
+            return function() {
+                if (progressBarContainer) {
+                    progressBarContainer.style.display = 'none';
+                }
+                if (orig) orig.apply(this, arguments);
+            };
+        })(window.updateDocumentsSection);
+    }
+});
+</script> 

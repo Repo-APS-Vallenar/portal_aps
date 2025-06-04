@@ -51,7 +51,7 @@
             <a href="{{ url('/tickets') }}">{{ url('/tickets') }}</a>
             <br><br>
             &copy; {{ date('Y') }} TicketGo. Todos los derechos reservados.
-        </div>
+    </div>
     </div>
 </body>
 </html>

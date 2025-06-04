@@ -73,7 +73,7 @@
                                                     </span>
                                                 </td>
                                                 <td>{{ $ticket->creator->name }}</td>
-                                                <td>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</td>
+                                                    <td>{{ $ticket->assignedTo ? $ticket->assignedTo->name : 'Sin asignar' }}</td>
                                                 <td>
                                                     <div class="d-flex justify-content-end">
                                                         <div class="btn-group" role="group" aria-label="Acciones del ticket">

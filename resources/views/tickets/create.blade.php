@@ -267,6 +267,14 @@
                                 <input type="text" name="contact_phone" class="form-control" value="{{ old('contact_phone', $ticket->contact_phone ?? '') }}">
                             </div>
 
+                            @if(auth()->user()->role === 'user')
+                            <div class="mb-3">
+                                <label for="attachments" class="form-label">Adjuntar archivos (opcional)</label>
+                                <input type="file" class="form-control" id="attachments" name="attachments[]" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png">
+                                <div class="form-text">Puedes adjuntar varios archivos. Tamaño máximo por archivo: 10MB.</div>
+                            </div>
+                            @endif
+
                             @if(Auth::user()->isAdmin())
                             <div class="row mb-3">
                                 <div class="col-md-12">
@@ -279,6 +287,12 @@
                                 </div>
                             </div>
                             @endif
+                            <!-- Barra de progreso de carga -->
+                            <div id="uploadProgressBarContainer" style="display:none; width:100%; margin-bottom: 10px;">
+                                <div class="progress" style="height: 18px;">
+                                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%; font-weight:600; font-size:1em;">0%</div>
+                                </div>
+                            </div>
                             <div class="d-flex justify-content-between">
                                 <a href="{{ route('tickets.index') }}" class="btn btn-secondary">Cancelar</a>
                                 <button type="submit" class="btn btn-gradient">Crear Ticket</button>
@@ -290,4 +304,40 @@
     </div>
 </div>
 {{-- @include('tickets.partials.document-upload') --}}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[action="{{ route('tickets.store') }}"]');
+    const progressBarContainer = document.getElementById('uploadProgressBarContainer');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const fileInput = document.getElementById('attachments');
+    if (form && progressBarContainer && progressBar) {
+        form.addEventListener('submit', function(e) {
+            if (fileInput && fileInput.files.length > 0) {
+                progressBarContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressBar.innerText = '0%';
+                let percent = 0;
+                const interval = setInterval(() => {
+                    if (percent < 95) {
+                        percent += 5;
+                        progressBar.style.width = percent + '%';
+                        progressBar.innerText = percent + '%';
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 100);
+            }
+        });
+        window.updateDocumentsSection = (function(orig) {
+            return function() {
+                if (progressBarContainer) {
+                    progressBarContainer.style.display = 'none';
+                }
+                if (orig) orig.apply(this, arguments);
+            };
+        })(window.updateDocumentsSection);
+    }
+});
+</script>
 @endsection

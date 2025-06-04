@@ -73,7 +73,7 @@ class TicketDocumentController extends Controller
             ]);
         }
 
-        return redirect()->back()->with('success', 'Documento subido exitosamente');
+        return redirect()->route('tickets.show', $ticket->id)->with('success', '¡Documento subido correctamente!');
     }
 
     public function destroy(TicketDocument $document)

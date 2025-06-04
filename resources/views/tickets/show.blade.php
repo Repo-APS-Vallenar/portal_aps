@@ -311,6 +311,22 @@
         .catch(error => console.error('Error al actualizar comentarios:', error));
     }
 
+    function updateDocumentsSection() {
+        fetch(window.location.pathname, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newDocs = doc.querySelector('.card .card-body .d-flex.flex-column.gap-3');
+            const currentDocs = document.querySelector('.card .card-body .d-flex.flex-column.gap-3');
+            if (newDocs && currentDocs) {
+                currentDocs.innerHTML = newDocs.innerHTML;
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         // Modal de eliminación de ticket
         var confirmDeleteModal = document.getElementById('confirmDeleteModal');
@@ -401,62 +417,10 @@
                     updateComments();
                 })
                 .listen('.document-deleted', (e) => {
-                    console.log('Evento document-deleted recibido', e);
-                    // Eliminar el documento del DOM usando data-document-id
-                    const docContainer = document.querySelector(`[data-document-id="${e.document_id}"]`);
-                    if (docContainer) {
-                        docContainer.remove();
-                    }
-                    // Si no quedan documentos, mostrar mensaje vacío
-                    const docsRow = document.querySelector('.card-body .row.g-3');
-                    if (docsRow && docsRow.children.length === 0) {
-                        docsRow.innerHTML = `<div class=\"col-12 text-center text-muted py-4\" style=\"font-size:1.1em;\"><i class=\"fas fa-image fa-2x mb-2\"></i><br>No hay imágenes subidas aún</div>`;
-                    }
+                    updateDocumentsSection();
                 })
                 .listen('.document-added', (e) => {
-                    // Agregar el nuevo documento al DOM sin recargar la página
-                    const docsRow = document.querySelector('.card-body .row.g-3');
-                    if (!docsRow) return;
-                    // Si hay mensaje de vacío, eliminarlo
-                    const emptyMsg = docsRow.querySelector('.text-muted');
-                    if (emptyMsg) emptyMsg.remove();
-                    // Construir el HTML del nuevo adjunto
-                    let html = '';
-                    const doc = e.document;
-                    const isImage = doc.file_type && doc.file_type.startsWith('image/');
-                    html += `<div class=\"col-12 col-md-6 col-lg-4\" data-document-id=\"${doc.id}\">`;
-                    html += `<div class=\"doc-card card h-100 shadow-sm border-0 d-flex flex-column align-items-center justify-content-between\">`;
-                    if (isImage) {
-                        html += `<img src=\"/storage/${doc.file_path}\" alt=\"Imagen adjunta\" class=\"img-fluid doc-img-thumb mb-3 mt-3\" style=\"max-width: 180px; max-height: 140px; border-radius: 16px; border: 1.5px solid #e3e8ee; cursor:pointer; box-shadow: 0 2px 8px rgba(33,150,243,0.07);\" data-bs-toggle=\"modal\" data-bs-target=\"#imageModal\" data-img-src=\"/storage/${doc.file_path}\">`;
-                    } else {
-                        html += `<i class=\"fas fa-file fa-3x text-secondary mb-3 mt-3\"></i>`;
-                    }
-                    html += `<div class=\"w-100 text-center mb-2\"><strong>${doc.file_name}</strong>`;
-                    if (doc.description) {
-                        html += `<div class=\"text-muted small mt-1\">${doc.description}</div>`;
-                    }
-                    if (doc.user && doc.user.name) {
-                        html += `<div class=\"text-muted small mt-1\">Subido por: <strong>${doc.user.name}</strong><br>el ${doc.created_at}</div>`;
-                    }
-                    html += `</div>`;
-                    html += `<div class=\"pill-btn-group mt-auto mb-2 justify-content-center w-100 flex-row flex-nowrap\">`;
-                    html += `<a href=\"/tickets/documents/${doc.id}/download\" class=\"pill-btn pill-btn-download text-center\" title=\"Descargar\"><i class=\"fas fa-download\"></i></a>`;
-                    if (window.authUserRole === 'admin' || window.authUserRole === 'superadmin') {
-                        html += `<form action=\"/tickets/documents/${doc.id}\" method=\"POST\" class=\"d-inline m-0 p-0 delete-document-form\">`;
-                        html += `<input type=\"hidden\" name=\"_token\" value=\"${document.querySelector('meta[name=csrf-token]').content}\">`;
-                        html += `<input type=\"hidden\" name=\"_method\" value=\"DELETE\">`;
-                        html += `<button type=\"button\" class=\"pill-btn pill-btn-delete btn-delete-document text-center\" title=\"Eliminar\"><i class=\"fas fa-trash\"></i></button>`;
-                        html += `</form>`;
-                    }
-                    html += `</div></div></div>`;
-                    docsRow.insertAdjacentHTML('afterbegin', html);
-                    // Reasignar eventos a miniaturas
-                    if (isImage) {
-                        document.querySelector('.doc-img-thumb[data-img-src="/storage/' + doc.file_path + '"]')?.addEventListener('click', function() {
-                            const modalImg = document.getElementById('modalImage');
-                            modalImg.src = this.getAttribute('data-img-src');
-                        });
-                    }
+                    updateDocumentsSection();
                 });
         }
     });
