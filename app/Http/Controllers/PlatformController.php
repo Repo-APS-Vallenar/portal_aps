@@ -17,6 +17,7 @@ class PlatformController extends Controller
                     'url' => 'https://deptodesalud.izytimecontrol.com/#/auto-consulta/login',
                     'imagen' => 'izy-timecontrol.png',
                     'categoria' => 'Control de Asistencia',
+                    'icono' => 'fa-clock',
                     'estadisticas' => [
                         'usuarios_activos' => 150,
                         'accesos_diarios' => 45,
@@ -31,6 +32,7 @@ class PlatformController extends Controller
                     'url' => 'https://www.rayenaps.cl/',
                     'imagen' => 'rayen-aps.png',
                     'categoria' => 'Gestión APS',
+                    'icono' => 'fa-hospital',
                     'estadisticas' => [
                         'usuarios_activos' => 200,
                         'accesos_diarios' => 75,
@@ -45,6 +47,7 @@ class PlatformController extends Controller
                     'url' => 'https://www.licencia.cl/sesiones/nueva/rol.profesional',
                     'imagen' => 'imed.png',
                     'categoria' => 'Licencias Médicas',
+                    'icono' => 'fa-file-medical',
                     'guia_acceso' => 'Se requiere lector de huellas y credenciales MINSAL.',
                     'contacto_soporte' => 'soporte@imed.cl'
                 ],
@@ -56,8 +59,31 @@ class PlatformController extends Controller
                     'url' => '/login',
                     'imagen' => 'fixsalud.png',
                     'categoria' => 'Gestión de Tickets',
+                    'icono' => 'fa-ticket-alt',
                     'guia_acceso' => 'Accede a una plataforma de tickets para soluciones TI enfocado en el area de Salud Urbana y Rural de la ciudad de Vallenar',
                     'contacto_soporte' => 'informatica.aps.vallenar@gmail.cl'
+                ],
+            ],
+            'administrativos' => [
+                [
+                    'nombre' => 'HoraFacil',
+                    'descripcion' => 'Sistema de Gestión de Horarios',
+                    'url' => 'https://vallenar.horafacil.cl/login',
+                    'imagen' => 'horafacil.png',
+                    'categoria' => 'Gestión de Horarios',
+                    'icono' => 'fa-calendar-alt',
+                    'guia_acceso' => 'Acceso mediante credenciales institucionales',
+                    'contacto_soporte' => 'soporte@aps-vallenar.cl'
+                ],
+                [
+                    'nombre' => 'Carrera Funcionaria',
+                    'descripcion' => 'Sistema de Gestión de Carrera Funcionaria',
+                    'url' => 'https://vallenar.carrerafuncionaria.com/login',
+                    'imagen' => 'carrera-funcionaria.png',
+                    'categoria' => 'Gestión de Personal',
+                    'icono' => 'fa-users',
+                    'guia_acceso' => 'Acceso mediante credenciales institucionales',
+                    'contacto_soporte' => 'soporte@aps-vallenar.cl'
                 ],
             ]
         ];

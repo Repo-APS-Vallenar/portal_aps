@@ -7,8 +7,8 @@
     <div class="container" style="padding-top: 20px;">
         <!-- Título del Portal con animación -->
         <div class="text-center mb-4 fade-in">
-            <p class="lead mt-3">Acceso centralizado a todos los sistemas utilizados por los usuarios de la institución
-            </p>
+            <h2 class="mb-3">Portal APS Vallenar</h2>
+            <p class="lead mt-3">Acceso centralizado a todos los sistemas utilizados por los usuarios de la institución</p>
         </div>
 
         <!-- Carrusel Informativo -->
@@ -66,40 +66,81 @@
             </div>
         </div>
 
-        <div class="section-title mb-3">
-            <h2>Plataformas Utilizadas</h2>
+        <!-- Plataformas -->
+        <div class="section-title mb-4">
+            <h3><i class="fas fa-th-large me-2"></i>Plataformas</h3>
             <div class="title-underline"></div>
         </div>
 
         <div class="row mb-4">
             @foreach($platforms['clinicos'] as $platform)
-                <div class="col-md-3 mb-4 h-100">
-                    <div class="card h-100 platform-card d-flex flex-column align-items-center justify-content-between">
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 platform-card">
                         <div class="platform-image-container mt-4">
-                                    <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                        class="platform-image lazy" loading="lazy"
-                                        data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                        alt="{{ $platform['nombre'] }}">
-                                </div>
+                            <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                class="platform-image lazy" loading="lazy"
+                                data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                alt="{{ $platform['nombre'] }}">
+                        </div>
                         <div class="card-body d-flex flex-column align-items-center w-100">
                             <h5 class="card-title text-center">
-                                            <i class="fas {{ $platform['icono'] }} me-2"></i>
-                                            {{ $platform['nombre'] }}
-                                        </h5>
+                                <i class="fas {{ $platform['icono'] ?? 'fa-external-link-alt' }} me-2"></i>
+                                {{ $platform['nombre'] }}
+                            </h5>
                             <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
                             <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button mt-auto" target="_blank"
-                                            rel="noopener noreferrer">
+                                rel="noopener noreferrer">
                                 <i class="fas {{ $platform['url'] != '/tickets' ? 'fa-external-link-alt' : 'fa-play' }} me-1"></i> Acceder
-                                        </a>
+                            </a>
                         </div>
                     </div>
                 </div>
             @endforeach
         </div>
     </div>
-    {{-- @include('layouts.footer') --}}
 
+    @push('styles')
+        <style>
+            .platform-image-container {
+                width: 120px;
+                height: 120px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #fff;
+                border-radius: 10px;
+                padding: 0;
+                overflow: hidden;
+                margin: 0 auto 10px auto;
+            }
 
+            .platform-image {
+                width: 80px;
+                height: 80px;
+                object-fit: contain;
+                transition: transform 0.3s ease;
+            }
+
+            .platform-card:hover .platform-image {
+                transform: scale(1.05);
+            }
+
+            .platform-button {
+                background-color: #01a3d5 !important;
+                border-color: #01a3d5 !important;
+                color: white !important;
+                border-radius: 50px;
+                padding: 8px 20px;
+                transition: all 0.3s ease;
+            }
+
+            .platform-button:hover {
+                background-color: #0188b3 !important;
+                border-color: #0188b3 !important;
+                box-shadow: 0 4px 8px rgba(1, 163, 213, 0.3) !important;
+            }
+        </style>
+    @endpush
 
     @push('scripts')
         <script>
@@ -119,9 +160,9 @@
                     const description = normalizarTexto(card.querySelector('.card-text').textContent);
 
                     if (title.includes(searchText) || description.includes(searchText)) {
-                        card.closest('.col-md-4').style.display = '';
+                        card.closest('.col-md-3').style.display = '';
                     } else {
-                        card.closest('.col-md-4').style.display = 'none';
+                        card.closest('.col-md-3').style.display = 'none';
                     }
                 });
             });

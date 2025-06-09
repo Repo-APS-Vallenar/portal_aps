@@ -6,8 +6,50 @@
     <div class="container">
         <!-- Encabezado de la página -->
         <div class="text-center mb-4 fade-in">
+            <h2 class="mb-3">Plataformas Institucionales</h2>
             <p class="lead text-muted">Encuentra aquí todas las plataformas y sistemas utilizados en la institución por el
                 personal de salud</p>
+        </div>
+
+        <div class="row mb-5">
+            @foreach($platforms as $categoria => $plataformas)
+                @foreach($plataformas as $platform)
+                    @if($platform['destacado'] ?? false)
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 platform-card featured">
+                                <div class="platform-image-container mt-4">
+                                    <img src="{{ asset('images/' . $platform['imagen']) }}" class="platform-image" alt="{{ $platform['nombre'] }}">
+                                </div>
+                                <div class="card-body d-flex flex-column align-items-center w-100">
+                                    <h5 class="card-title text-center">
+                                        <i class="fas {{ $platform['icono'] ?? 'fa-external-link-alt' }} me-2"></i>
+                                        {{ $platform['nombre'] }}
+                                    </h5>
+                                    <span class="badge bg-primary mb-2">{{ $platform['categoria'] }}</span>
+                                    <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
+                                    <div class="platform-actions mt-auto w-100">
+                                        <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2" target="_blank">
+                                            <i class="fas fa-external-link-alt me-2"></i>Acceder
+                                        </a>
+                                        <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
+                                            <i class="fas fa-info-circle me-2"></i>Más Información
+                                        </button>
+                                    </div>
+                                    <div class="collapse mt-3 w-100" id="platformInfo{{ $loop->index }}">
+                                        <div class="card card-body bg-light">
+                                            <h6 class="mb-2"><i class="fas fa-key me-2"></i>Guía de Acceso</h6>
+                                            <p class="small mb-3">{{ $platform['guia_acceso'] }}</p>
+                                            <h6 class="mb-2"><i class="fas fa-headset me-2"></i>Soporte</h6>
+                                            <p class="small mb-0">{{ $platform['contacto_soporte'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+            @endforeach
         </div>
 
         <!-- Filtros y búsqueda mejorados -->
@@ -35,7 +77,10 @@
                                 <i class="fas fa-heartbeat me-2"></i>Salud
                             </button>
                             <button type="button" class="btn btn-outline-primary" data-filter="tecnicos">
-                                <i class="fas fa-building me-2"></i>Soluciones TI
+                                <i class="fas fa-tools me-2"></i>Soluciones TI
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="administrativos">
+                                <i class="fas fa-building me-2"></i>Administrativos
                             </button>
                         </div>
                     </div>
@@ -48,33 +93,26 @@
             @foreach($platforms as $categoria => $plataformas)
                 @foreach($plataformas as $platform)
                     <div class="col-md-6 col-lg-4 mb-4 platform-item" data-category="{{ $categoria }}">
-                        <div class="card h-100 platform-card d-flex flex-column align-items-center justify-content-between">
+                        <div class="card h-100 platform-card">
                             <div class="platform-image-container mt-4">
                                 <img src="{{ asset('images/' . $platform['imagen']) }}" class="platform-image" alt="{{ $platform['nombre'] }}">
-                                    </div>
+                            </div>
                             <div class="card-body d-flex flex-column align-items-center w-100">
-                                <h5 class="card-title text-center mt-3">{{ $platform['nombre'] }}</h5>
+                                <h5 class="card-title text-center">
+                                    <i class="fas {{ $platform['icono'] ?? 'fa-external-link-alt' }} me-2"></i>
+                                    {{ $platform['nombre'] }}
+                                </h5>
                                 <span class="badge bg-primary mb-2">{{ $platform['categoria'] }}</span>
                                 <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
                                 <div class="platform-actions mt-auto w-100">
-                                @if($platform['url'] != '/login')
-                                        <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2" target="_blank">
-                                            <i class="fas fa-external-link-alt me-2"></i>Acceder
-                                        </a>
-                                        <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
-                                            <i class="fas fa-info-circle me-2"></i>Más Información
-                                        </button>
-                                @else
-                                        <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2">
-                                            <i class="fas fa-play me-1"></i>Acceder
-                                        </a>
-                                        <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse"
-                                            data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
-                                            <i class="fas fa-info-circle me-2"></i>Más Información
-                                        </button>
-                                    @endif
-                                    </div>
+                                    <a href="{{ $platform['url'] }}" class="btn btn-primary w-100 mb-2" target="_blank">
+                                        <i class="fas fa-external-link-alt me-2"></i>Acceder
+                                    </a>
+                                    <button class="btn btn-outline-secondary w-100" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#platformInfo{{ $loop->index }}" aria-expanded="false">
+                                        <i class="fas fa-info-circle me-2"></i>Más Información
+                                    </button>
+                                </div>
                                 <div class="collapse mt-3 w-100" id="platformInfo{{ $loop->index }}">
                                     <div class="card card-body bg-light">
                                         <h6 class="mb-2"><i class="fas fa-key me-2"></i>Guía de Acceso</h6>
@@ -126,7 +164,7 @@
 
             .search-input:focus {
                 border-color: #01a3d5;
-                box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+                box-shadow: 0 0 0 0.2rem rgba(1, 163, 213, 0.15);
             }
 
             .search-clear {
@@ -149,8 +187,9 @@
             }
 
             .btn-group .btn.active {
-                background-color: #28a745;
-                border-color: #28a745;
+                background-color: #01a3d5;
+                border-color: #01a3d5;
+                color: white;
             }
 
             /* Estilos de las tarjetas de plataforma */
@@ -162,9 +201,13 @@
                 box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             }
 
+            .platform-card.featured {
+                border: 2px solid #ffc107;
+            }
+
             .platform-card:hover {
                 transform: translateY(-5px);
-                box-shadow: 0 8px 25px #01a3d5;
+                box-shadow: 0 8px 25px rgba(1, 163, 213, 0.2);
             }
 
             .platform-image-container {
@@ -181,37 +224,14 @@
             }
 
             .platform-image {
-                width: 150px;
-                height: 150px;
-                object-fit: cover;
-                border-radius: 10px;
-                background: #fff;
-                display: block;
-                margin: 0;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            }
-
-            @media (max-width: 600px) {
-                .platform-image-container,
-                .platform-image {
-                    width: 90px;
-                    height: 90px;
-                }
+                width: 100px;
+                height: 100px;
+                object-fit: contain;
+                transition: transform 0.3s ease;
             }
 
             .platform-card:hover .platform-image {
                 transform: scale(1.05);
-            }
-
-            .platform-stats {
-                background-color: #f8f9fa;
-                border-radius: 10px;
-                padding: 1rem;
-            }
-
-            .platform-stats p {
-                font-weight: 600;
-                color: #2c3e50;
             }
 
             .badge {
@@ -230,7 +250,6 @@
                     opacity: 0;
                     transform: translateY(-20px);
                 }
-
                 to {
                     opacity: 1;
                     transform: translateY(0);

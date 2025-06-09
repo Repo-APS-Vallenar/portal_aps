@@ -18,6 +18,8 @@
                 <li><a href="https://deptodesalud.izytimecontrol.com/#/auto-consulta/login">IZY TIMECONTROL</a></li>
                 <li><a href="https://www.rayenaps.cl/">Rayen</a></li>
                 <li><a href="https://www.licencia.cl/sesiones/nueva/rol.profesional">IMED</a></li>
+                <li><a href="https://vallenar.horafacil.cl/login">HoraFacil</a></li>
+                <li><a href="https://vallenar.carrerafuncionaria.com/login">Carrera Funcionaria</a></li>
             </ul>
         </div>
         <div class=" footer-col-logo">
