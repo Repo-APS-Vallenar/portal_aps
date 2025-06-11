@@ -28,7 +28,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        Departamento de Salud de Vallenar &copy; {{ date('Y') }} | TBJE
+        Departamento de Salud de Vallenar &copy; {{ date('Y') }} | Equipo de Desarrollo
     </div>
 </footer>
 <style>
