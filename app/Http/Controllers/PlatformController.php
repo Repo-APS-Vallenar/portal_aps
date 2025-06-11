@@ -90,4 +90,4 @@ class PlatformController extends Controller
 
         return view('platforms.index', compact('platforms'));
     }
-}
+}   
