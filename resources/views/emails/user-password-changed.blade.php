@@ -47,7 +47,7 @@
         <a href="{{ url('/login') }}" class="button">Ir a la plataforma</a>
         <div class="signature">
             Gracias por usar TicketGo.<br>
-            <strong>Equipo TicketGo</strong>
+            <strong>Equipo TI APS</strong>
         </div>
         <div class="footer">
             Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br>

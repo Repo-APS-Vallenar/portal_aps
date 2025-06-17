@@ -35,19 +35,14 @@ class TicketReopenedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('🔄 Ticket reabierto: #' . $this->ticket->id)
-            ->greeting('¡Hola! 👋')
-            ->line('El siguiente ticket ha sido reabierto:')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('📄 *Descripción:* ' . $this->ticket->description)
-            ->line('🏷️ *Categoría:* ' . ($this->ticket->category->name ?? 'Sin categoría'))
-            ->line('👤 *Reabierto por:* ' . $this->updatedBy->name)
-            ->line('')
-            ->line('Estado: de ' . $this->oldStatus . ' a ' . $this->newStatus)
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('')
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('🔄 Ticket reabierto: #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-reopened', [
+                'ticket' => $this->ticket,
+                'updatedBy' => $this->updatedBy,
+                'oldStatus' => $this->oldStatus,
+                'newStatus' => $this->newStatus
+            ]);
     }
 
     public function toDatabase($notifiable)

@@ -77,21 +77,21 @@
                 <div class="col-md-3 mb-4">
                     <div class="card h-100 platform-card">
                         <div class="platform-image-container mt-4">
-                            <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                class="platform-image lazy" loading="lazy"
-                                data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
-                                alt="{{ $platform['nombre'] }}">
-                        </div>
+                                    <img src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                        class="platform-image lazy" loading="lazy"
+                                        data-src="{{ asset('images/' . ($platform['imagen'] ?? 'default-platform.png')) }}"
+                                        alt="{{ $platform['nombre'] }}">
+                                </div>
                         <div class="card-body d-flex flex-column align-items-center w-100">
                             <h5 class="card-title text-center">
                                 <i class="fas {{ $platform['icono'] ?? 'fa-external-link-alt' }} me-2"></i>
-                                {{ $platform['nombre'] }}
-                            </h5>
+                                            {{ $platform['nombre'] }}
+                                        </h5>
                             <p class="card-text text-center">{{ $platform['descripcion'] }}</p>
                             <a href="{{ $platform['url'] }}" class="btn btn-primary platform-button mt-auto" target="_blank"
-                                rel="noopener noreferrer">
+                                            rel="noopener noreferrer">
                                 <i class="fas {{ $platform['url'] != '/tickets' ? 'fa-external-link-alt' : 'fa-play' }} me-1"></i> Acceder
-                            </a>
+                                        </a>
                         </div>
                     </div>
                 </div>

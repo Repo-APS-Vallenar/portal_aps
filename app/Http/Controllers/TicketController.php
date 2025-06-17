@@ -8,6 +8,7 @@ use App\Models\TicketStatus;
 use App\Models\TicketComment;
 use App\Models\User;
 use App\Models\Location;
+use App\Models\EquipmentInventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AuditLog;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\NotificationService;
 use App\Notifications\TicketUpdatedNotification;
 use App\Notifications\TicketCommentedNotification;
+use App\Models\EquipmentMaintenanceLog;
 
 class TicketController extends Controller
 {
@@ -68,7 +70,7 @@ class TicketController extends Controller
      */
     public function create()
     {
-        $categories = TicketCategory::all();
+        $categories = TicketCategory::where('name', 'like', '%(%')->get();
         $locations = Location::all();
         if (Auth::user()->role === 'user') {
             $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
@@ -97,31 +99,82 @@ class TicketController extends Controller
             'description' => 'required|string',
             'category_id' => 'required|exists:ticket_categories,id',
             'priority' => 'required|in:baja,media,alta,urgente',
-            'marca' => 'nullable|string|max:255',
-            'modelo' => 'nullable|string|max:255',
-            'numero_serie' => 'nullable|string|max:255',
             'location_id' => 'required|exists:locations,id',
-            'usuario' => 'nullable|string|max:255',
-            'ip_red_wifi' => 'nullable|string|max:255',
-            'cpu' => 'nullable|string|max:255',
-            'ram' => 'nullable|string|max:255',
-            'capacidad_almacenamiento' => 'nullable|string|max:255',
-            'tarjeta_video' => 'nullable|string|max:255',
-            'id_anydesk' => 'nullable|string|max:255',
-            'pass_anydesk' => 'nullable|string|max:255',
-            'version_windows' => 'nullable|string|max:255',
-            'licencia_windows' => 'nullable|string|max:255',
-            'version_office' => 'nullable|string|max:255',
-            'licencia_office' => 'nullable|string|max:255',
-            'password_cuenta' => 'nullable|string|max:255',
-            'fecha_instalacion' => 'nullable|date',
-            'comentarios' => 'nullable|string',
             'contact_phone' => 'nullable|string|max:255',
             'contact_email' => 'nullable|email|max:255',
+            'numero_serie' => 'nullable|string|max:255',
         ]);
+
+        // Definir los estados de tickets relevantes para la lógica del equipo
+        $statusEnProceso = TicketStatus::where('name', 'En Proceso')->first();
+        $statusPendiente = TicketStatus::where('name', 'Pendiente')->first();
+        $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
+        $statusCancelado = TicketStatus::where('name', 'Cancelado')->first();
+        $statusResuelto = TicketStatus::where('name', 'Resuelto')->first();
+        $statusCerrado = TicketStatus::where('name', 'Cerrado')->first();
+
+        // Estados que deberían poner el equipo 'En Reparación'
+        $enReparacionStatusIds = [
+            optional($statusEnProceso)->id,
+            optional($statusPendiente)->id,
+            optional($statusSolicitado)->id,
+        ];
+
+        // Lógica para manejar el EquipmentInventory
+        $equipmentInventory = null;
+        if ($request->filled('numero_serie')) {
+            $equipmentData = [
+                'marca' => $request->marca,
+                'modelo' => $request->modelo,
+                'tipo' => $request->input('tipo', 'Otro'),
+                'estado' => $request->input('estado', 'Activo'), // Default a 'Activo' si no se provee
+                'usuario' => $request->usuario,
+                'box_oficina' => $request->input('box_oficina', ''),
+                'location_id' => $request->location_id, // Usar el location_id del ticket para el equipo
+                'ip_red_wifi' => $request->ip_red_wifi,
+                'cpu' => $request->cpu,
+                'ram' => $request->ram,
+                'capacidad_almacenamiento' => $request->capacidad_almacenamiento,
+                'tarjeta_video' => $request->tarjeta_video,
+                'id_anydesk' => $request->id_anydesk,
+                'pass_anydesk' => $request->pass_anydesk,
+                'version_windows' => $request->version_windows,
+                'licencia_windows' => $request->licencia_windows,
+                'version_office' => $request->version_office,
+                'licencia_office' => $request->licencia_office,
+                'password_cuenta' => $request->password_cuenta,
+                'fecha_instalacion' => $request->fecha_instalacion,
+                'comentarios' => $request->comentarios,
+            ];
+
+            $equipmentInventory = EquipmentInventory::firstOrCreate(
+                ['numero_serie' => $request->numero_serie],
+                $equipmentData
+            );
+
+            // Si el equipo ya existía, actualizamos sus datos (incluyendo el location_id)
+            if ($equipmentInventory->wasRecentlyCreated === false) {
+                $equipmentInventory->update($equipmentData);
+            }
+
+            // Lógica para asignar estado 'En Reparación' al equipo al crear un ticket
+            // Si el usuario es 'user', el estado siempre será 'Solicitado'.
+            $ticketStatusIdForEquipment = Auth::user()->role === 'user' ? optional($statusSolicitado)->id : $request->status_id;
+
+            if (
+                $equipmentInventory &&
+                in_array($ticketStatusIdForEquipment, $enReparacionStatusIds) &&
+                !in_array($equipmentInventory->estado, ['En Reparación', 'Dado de Baja'])
+            ) {
+                $equipmentInventory->estado = 'En Reparación';
+                $equipmentInventory->save();
+                Log::info('Equipo ' . $equipmentInventory->numero_serie . ' puesto en estado "En Reparación" debido al estado inicial del ticket.');
+            }
+        }
 
         $ticket = new Ticket($validated);
         $ticket->created_by = Auth::id();
+        $ticket->equipment_inventory_id = $equipmentInventory ? $equipmentInventory->id : null; // Asignar el ID del equipo
 
         // Obtener el estado "Solicitado"
         $solicitadoStatus = TicketStatus::where('name', 'Solicitado')->first();
@@ -211,6 +264,7 @@ class TicketController extends Controller
         $this->authorize('update', $ticket);
         $locations = Location::all();
         $categories = TicketCategory::where('is_active', true)
+            ->where('name', 'like', '%(%)')
             ->orderBy('name')
             ->distinct()
             ->get();
@@ -232,6 +286,15 @@ class TicketController extends Controller
         $this->authorize('update', $ticket);
 
         $user = Auth::user();
+
+        // Definir los estados de tickets relevantes para la lógica del equipo
+        $statusEnProceso = TicketStatus::where('name', 'En Proceso')->first();
+        $statusPendiente = TicketStatus::where('name', 'Pendiente')->first();
+        $statusSolicitado = TicketStatus::where('name', 'Solicitado')->first();
+        $statusCancelado = TicketStatus::where('name', 'Cancelado')->first();
+        $statusResuelto = TicketStatus::where('name', 'Resuelto')->first();
+        $statusCerrado = TicketStatus::where('name', 'Cerrado')->first();
+
         $rules = [
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -240,82 +303,157 @@ class TicketController extends Controller
             'priority' => 'required|in:baja,media,alta,urgente',
             'assigned_to' => 'nullable|exists:users,id',
             'solucion_aplicada' => ($request->status_id && TicketStatus::find($request->status_id)?->name === 'Resuelto') ? 'required|string' : 'nullable|string',
-        ];
-        if ($user->isAdmin() || $user->isSuperadmin()) {
-            $rules = array_merge($rules, [
-                'location_id' => 'nullable|exists:locations,id',
-            'marca' => 'nullable|string|max:255',
-            'modelo' => 'nullable|string|max:255',
+            'location_id' => 'required|exists:locations,id',
             'numero_serie' => 'nullable|string|max:255',
-            'usuario' => 'nullable|string|max:255',
-            'ip_red_wifi' => 'nullable|string|max:255',
-            'cpu' => 'nullable|string|max:255',
-            'ram' => 'nullable|string|max:255',
-            'capacidad_almacenamiento' => 'nullable|string|max:255',
-            'tarjeta_video' => 'nullable|string|max:255',
-            'id_anydesk' => 'nullable|string|max:255',
-            'pass_anydesk' => 'nullable|string|max:255',
-            'version_windows' => 'nullable|string|max:255',
-            'licencia_windows' => 'nullable|string|max:255',
-            'version_office' => 'nullable|string|max:255',
-            'licencia_office' => 'nullable|string|max:255',
-            'password_cuenta' => 'nullable|string|max:255',
-            'fecha_instalacion' => 'nullable|date',
-            'comentarios' => 'nullable|string',
-            'contact_phone' => 'nullable|string|max:255',
-            'contact_email' => 'nullable|email|max:255',
-        ]);
-        }
+        ];
+
         $validated = $request->validate($rules);
 
-        // Solo el asignado puede marcar como Resuelto
-        $statusResuelto = TicketStatus::where('name', 'Resuelto')->first();
-        $statusCerrado = TicketStatus::where('name', 'Cerrado')->first();
-        if ($request->status_id == optional($statusResuelto)->id) {
-            if (auth()->id() !== $ticket->assigned_to) {
-                return redirect()->back()->with('error', 'Solo el usuario asignado puede marcar el ticket como Resuelto.');
+        // Guardar los valores originales del ticket antes de la actualización
+        $oldEquipmentInventoryId = $ticket->equipment_inventory_id;
+        $oldCategoryId = $ticket->category_id;
+        $oldStatusId = $ticket->status_id;
+
+        // Lógica para manejar el EquipmentInventory
+        $equipmentInventory = null;
+        if ($request->filled('equipment_inventory_id')) {
+            // Si se seleccionó un equipo existente
+            $equipmentInventory = EquipmentInventory::find($request->equipment_inventory_id);
+        } elseif ($request->filled('numero_serie')) {
+            // Si es un equipo nuevo o un numero de serie para buscar/crear
+            $equipmentData = [
+                'marca' => $request->marca,
+                'modelo' => $request->modelo,
+                'tipo' => $request->input('tipo', 'Otro'),
+                'estado' => $request->input('estado', 'Activo'), // Default a 'Activo' si no se provee
+                'usuario' => $request->usuario,
+                'box_oficina' => $request->input('box_oficina', ''),
+                'location_id' => $request->location_id,
+                'ip_red_wifi' => $request->ip_red_wifi,
+                'cpu' => $request->cpu,
+                'ram' => $request->ram,
+                'capacidad_almacenamiento' => $request->capacidad_almacenamiento,
+                'tarjeta_video' => $request->tarjeta_video,
+                'id_anydesk' => $request->id_anydesk,
+                'pass_anydesk' => $request->pass_anydesk,
+                'version_windows' => $request->version_windows,
+                'licencia_windows' => $request->licencia_windows,
+                'version_office' => $request->version_office,
+                'licencia_office' => $request->licencia_office,
+                'password_cuenta' => $request->password_cuenta,
+                'fecha_instalacion' => $request->fecha_instalacion,
+                'comentarios' => $request->comentarios,
+            ];
+
+            $equipmentInventory = EquipmentInventory::firstOrCreate(
+                ['numero_serie' => $request->numero_serie],
+                $equipmentData
+            );
+
+            // Si el equipo ya existía, actualizamos sus datos (incluyendo el location_id)
+            if ($equipmentInventory->wasRecentlyCreated === false) {
+                $equipmentInventory->update($equipmentData);
             }
-            if (empty($validated['solucion_aplicada'])) {
-                return redirect()->back()->with('error', 'Debe ingresar la solución aplicada para resolver el ticket.');
-        }
-            // Cambiar automáticamente a Cerrado
-            $validated['status_id'] = optional($statusCerrado)->id ?? $request->status_id;
         }
 
-        // Guardar los cambios originales para la notificación
-        $changes = [];
-        foreach ($validated as $field => $newValue) {
-            if ($ticket->$field != $newValue) {
-                $changes[$field] = [
-                    'old' => $ticket->$field,
-                    'new' => $newValue
-                ];
-            }
-        }
+        // Asignar el ID del equipo al ticket antes de llenar con otros datos
+        $ticket->equipment_inventory_id = $equipmentInventory ? $equipmentInventory->id : null;
 
-        // Notificar cambio de asignado
-        if (isset($changes['assigned_to']) && $validated['assigned_to']) {
-            $nuevoAsignado = \App\Models\User::find($validated['assigned_to']);
-            if ($nuevoAsignado) {
-                // Notificar al nuevo asignado
-                $nuevoAsignado->notify(new \App\Notifications\TicketAssignedChangedNotification($ticket, $nuevoAsignado, $nuevoAsignado->id));
-                // Notificar al creador si no es el mismo
-                if ($ticket->creator && $ticket->creator->id != $nuevoAsignado->id) {
-                    $mensajeCreador = 'Tu ticket fue asignado a: ' . $nuevoAsignado->name;
-                    $ticket->creator->notify(new \App\Notifications\TicketAssignedChangedNotification($ticket, $nuevoAsignado, $ticket->creator->id, $mensajeCreador));
+        $ticket->fill($request->only([
+            'title', 'description', 'category_id', 'status_id', 'priority', 'assigned_to',
+            'solucion_aplicada', 'contact_phone', 'contact_email', 'location_id'
+        ]));
+
+        if ($ticket->isDirty() || $ticket->equipment_inventory_id !== $oldEquipmentInventoryId) {
+            // Cargar datos previos del ticket para la auditoría y notificaciones
+            $oldValues = $ticket->getOriginal();
+            $newValues = $ticket->getDirty();
+            $this->logAudit('Actualizar Ticket', $this->generarMensajeAuditoria($ticket, $oldValues, $newValues));
+
+            $ticket->save();
+
+            // Lógica para actualizar el estado del equipo en el inventario
+            if ($ticket->equipment_inventory_id) {
+                $currentEquipment = EquipmentInventory::find($ticket->equipment_inventory_id);
+
+                if ($currentEquipment) {
+                    // Estados que deberían poner el equipo 'En Reparación'
+                    $enReparacionStatusIds = [
+                        optional($statusEnProceso)->id,
+                        optional($statusPendiente)->id,
+                        optional($statusSolicitado)->id,
+                    ];
+
+                    // Estados que deberían poner el equipo 'Activo'
+                    $activoStatusIds = [
+                        optional($statusCancelado)->id,
+                        optional($statusResuelto)->id,
+                        optional($statusCerrado)->id,
+                    ];
+
+                    // Caso 1: El ticket cambia a un estado que implica 'En Reparación'
+                    if (
+                        in_array($request->status_id, $enReparacionStatusIds) &&
+                        $currentEquipment->estado !== 'En Reparación' &&
+                        $currentEquipment->estado !== 'Dado de Baja' // No cambiar si está dado de baja
+                    ) {
+                        $currentEquipment->estado = 'En Reparación';
+                        $currentEquipment->save();
+                        Log::info('Equipo ' . $currentEquipment->numero_serie . ' puesto en estado "En Reparación" debido al estado del ticket.');
+                    }
+
+                    // Caso 2: El ticket cambia a un estado que implica 'Activo'
+                    if (
+                        in_array($request->status_id, $activoStatusIds) &&
+                        $currentEquipment->estado === 'En Reparación' // Solo si estaba en reparación
+                    ) {
+                        // Verificar si existen otros tickets (no el actual) para este equipo que lo mantengan 'En Reparación'
+                        // Es decir, tickets que NO estén en estados de 'Activo' (Cancelado, Resuelto, Cerrado)
+                        $otherActiveMaintenanceTickets = Ticket::where('equipment_inventory_id', $currentEquipment->id)
+                            ->where('id', '!=', $ticket->id) // Excluir el ticket actual
+                            ->whereHas('status', function ($query) use ($activoStatusIds) {
+                                $query->whereNotIn('id', $activoStatusIds); // Filtrar por estados que NO sean Activo
+                            })
+                            ->exists();
+
+                        if (!$otherActiveMaintenanceTickets) {
+                            $currentEquipment->estado = 'Activo';
+                            $currentEquipment->save();
+                            Log::info('Equipo ' . $currentEquipment->numero_serie . ' puesto en estado "Activo" porque no hay otros tickets activos que lo mantengan en mantenimiento.');
+                        } else {
+                            Log::info('Equipo ' . $currentEquipment->numero_serie . ' permanece "En Reparación" porque aún hay otros tickets activos que lo mantienen en mantenimiento.');
+                        }
+                    }
+                }
+            }
+
+            // Lógica para registrar mantenimiento de equipo
+            if (
+                $ticket->equipment_inventory_id &&
+                $ticket->status_id == optional($statusResuelto)->id &&
+                $request->filled('solucion_aplicada')
+            ) {
+                try {
+                    EquipmentMaintenanceLog::create([
+                        'equipment_inventory_id' => $ticket->equipment_inventory_id,
+                        'ticket_id' => $ticket->id,
+                        'user_id' => Auth::id(),
+                        'maintenance_date' => now(),
+                        'description_of_work' => $request->solucion_aplicada,
+                        'type_of_maintenance' => 'Reparación', // O un valor más dinámico si lo requieres
+                    ]);
+                    Log::info('Registro de mantenimiento creado para el equipo: ' . $ticket->equipment_inventory_id . ' a través del ticket: ' . $ticket->id);
+                } catch (\Exception $e) {
+                    Log::error('Error al crear el registro de mantenimiento: ' . $e->getMessage());
                 }
             }
         }
-
-        // Detectar cambio de prioridad a urgente
-        $prioridadAnterior = $ticket->priority;
-        $ticket->update($validated);
 
         // Cargar relaciones necesarias para evitar nulls
         $ticket->load(['category', 'creator', 'assignedTo']);
 
         // Notificar cambio de prioridad
-        if (isset($changes['priority']) && $changes['priority']['old'] !== $changes['priority']['new']) {
+        if (isset($newValues['priority']) && $oldValues['priority'] !== $newValues['priority']) {
             $usuariosNotificar = collect();
             
             // Notificar al creador si no es el que hizo el cambio
@@ -334,15 +472,15 @@ class TicketController extends Controller
                 $usuario->notify(new \App\Notifications\TicketPriorityChangedNotification(
                     $ticket,
                     auth()->user(),
-                    $changes['priority']['old'],
-                    $changes['priority']['new'],
+                    $oldValues['priority'],
+                    $newValues['priority'],
                     $usuario->id
                 ));
             }
         }
 
         // Notificar involucrados si se resolvió/cerró
-        if (isset($changes['status_id']) && $validated['status_id'] == optional($statusCerrado)->id) {
+        if (isset($newValues['status_id']) && $newValues['status_id'] == optional($statusCerrado)->id) {
             $usuariosNotificar = collect();
             
             // Notificar al creador si no es el que hizo el cambio
@@ -359,20 +497,20 @@ class TicketController extends Controller
             $usuariosNotificar = $usuariosNotificar->unique('id');
             foreach ($usuariosNotificar as $usuario) {
                 \Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
-                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $changes, auth()->user(), $usuario->id));
+                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $newValues, auth()->user(), $usuario->id));
             }
         }
 
         // Detectar reapertura de ticket (de Cerrado o Resuelto a otro estado)
         if (
-            isset($changes['status_id']) &&
-            isset($changes['status_id']['old'], $changes['status_id']['new']) &&
-            $changes['status_id']['old'] != $changes['status_id']['new']
+            isset($newValues['status_id']) &&
+            isset($oldValues['status_id'], $newValues['status_id']) &&
+            $oldValues['status_id'] != $newValues['status_id']
         ) {
             $statusCerrado = \App\Models\TicketStatus::where('name', 'Cerrado')->first();
             $statusResuelto = \App\Models\TicketStatus::where('name', 'Resuelto')->first();
-            $oldStatus = \App\Models\TicketStatus::find($changes['status_id']['old']);
-            $newStatus = \App\Models\TicketStatus::find($changes['status_id']['new']);
+            $oldStatus = \App\Models\TicketStatus::find($oldValues['status_id']);
+            $newStatus = \App\Models\TicketStatus::find($newValues['status_id']);
             $esReapertura = false;
             if (
                 ($oldStatus && in_array($oldStatus->name, ['Cerrado', 'Resuelto'])) &&
@@ -402,9 +540,9 @@ class TicketController extends Controller
         }
 
         // Notificar cambio de categoría
-        if (isset($changes['category_id']) && $changes['category_id']['old'] !== $changes['category_id']['new']) {
-            $oldCategory = \App\Models\TicketCategory::find($changes['category_id']['old']);
-            $newCategory = \App\Models\TicketCategory::find($changes['category_id']['new']);
+        if (isset($newValues['category_id']) && $oldValues['category_id'] !== $newValues['category_id']) {
+            $oldCategory = \App\Models\TicketCategory::find($oldValues['category_id']);
+            $newCategory = \App\Models\TicketCategory::find($newValues['category_id']);
             $usuariosNotificar = collect();
             if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
                 $usuariosNotificar->push($ticket->creator);

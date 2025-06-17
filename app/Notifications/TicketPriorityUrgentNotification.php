@@ -31,20 +31,12 @@ class TicketPriorityUrgentNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('🚨 Ticket marcado como URGENTE: #' . $this->ticket->id)
-            ->greeting('¡Atención! 🚨')
-            ->line('La prioridad del siguiente ticket ha sido cambiada a URGENTE:')
-            ->line('')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('📄 *Descripción:* ' . $this->ticket->description)
-            ->line('🏷️ *Categoría:* ' . ($this->ticket->category->name ?? 'Sin categoría'))
-            ->line('👤 *Actualizado por:* ' . $this->updatedBy->name)
-            ->line('')
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('')
-            ->line('Por favor, atiende este ticket con máxima prioridad.')
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('🚨 Ticket marcado como URGENTE: #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-priority-urgent', [
+                'ticket' => $this->ticket,
+                'updatedBy' => $this->updatedBy
+            ]);
     }
 
     public function toDatabase($notifiable)

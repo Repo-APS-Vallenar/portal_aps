@@ -1,59 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TicketGo - Notificación</title>
+    <title>Cuenta habilitada</title>
     <style>
-        body { font-family: Arial, Helvetica, sans-serif; background: #f4f6fb; margin: 0; padding: 0; }
-        .container { background: #fff; max-width: 520px; margin: 40px auto; border-radius: 12px; box-shadow: 0 4px 24px #2563eb22; padding: 40px 32px 32px 32px; border-top: 6px solid #2563eb; }
-        .header { text-align: center; color: #2563eb; font-size: 2em; font-weight: bold; margin-bottom: 32px; letter-spacing: 1px; }
-        .button {
-            display: inline-block;
-            background: #2563eb;
-            color: #fff !important;
-            padding: 14px 38px;
+        body { font-family: Arial, Helvetica, sans-serif; background:rgb(54, 168, 64); margin: 0; padding: 0; line-height: 1.6; color: #333; }
+        .card {
+            background: rgb(190, 212, 245);
+            max-width: 550px;
+            margin: 30px auto;
             border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 32px 0 24px 0;
-            font-size: 1.1em;
-            box-shadow: 0 2px 8px #2563eb33;
-            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 32px 28px;
         }
-        .button:hover { background: #1e40af; box-shadow: 0 4px 16px #2563eb44; }
-        .signature {
-            margin-top: 40px;
-            color: #444;
-            font-size: 1.08em;
+        .header { text-align: center; color: #1a202c; font-size: 1.8em; font-weight: bold; margin-bottom: 28px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .content p { margin-bottom: 1em; font-size: 1.05em; }
+        .datacard {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
         }
-        .footer {
-            margin-top: 40px;
-            font-size: 0.93em;
-            color: #aaa;
-            text-align: center;
-        }
-        .main-title { font-size: 1.25em; font-weight: bold; color: #222; margin-bottom: 18px; }
-        .main-text { font-size: 1.08em; color: #333; margin-bottom: 8px; }
+        .datacard-title { font-weight: bold; color: #1a202c; margin-bottom: 10px; }
+        .datacard-content { color: #4a5568; }
+        .button { display: inline-block; background: #2563eb; color: #fff !important; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1.1em; transition: background 0.2s; margin: 20px 0; }
+        .button:hover { background: #1e40af; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #718096; font-size: 0.9em; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">TicketGo</div>
-        <div class="main-title">¡Hola!</div>
-        <div class="main-text">
-            Tu cuenta en <strong>TicketGo</strong> ha sido habilitada correctamente.<br>
-            Ya puedes acceder al sistema con tus credenciales.
+    <div class="card">
+        <div class="header">
+            Cuenta habilitada
         </div>
-        <a href="{{ url('/login') }}" class="button">Ir a la plataforma</a>
-        <div class="signature">
-            Gracias por usar TicketGo.<br>
-            <strong>Equipo TicketGo</strong>
+        <div class="content">
+            <p>Hola {{ $user->name }},</p>
+            <p>¡Tu cuenta ha sido habilitada exitosamente!</p>
+            <div class="datacard">
+                <p><strong>Nombre:</strong> {{ $user->name }}</p>
+                <p><strong>Email:</strong> {{ $user->email }}</p>
+            </div>
+            <div style="text-align:center;">
+                <a href="{{ url('/login') }}" class="button">Ir a la plataforma</a>
+            </div>
         </div>
         <div class="footer">
-            Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br>
-            <a href="{{ url('/login') }}">{{ url('/login') }}</a>
-            <br><br>
-            &copy; {{ date('Y') }} TicketGo. Todos los derechos reservados.
+            <p>¡Saludos!<br><strong>APS | TicketGo</strong></p>
         </div>
     </div>
 </body>

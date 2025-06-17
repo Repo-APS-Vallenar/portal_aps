@@ -255,11 +255,11 @@
                             </div>
                             @endif
                             <div class="mb-3">
-                                <label for="contact_email" class="form-label">Correo de contacto</label>
-                                <input type="email" name="contact_email" class="form-control"
-                                    value="{{ old('contact_email', auth()->user()->email) }}"
-                                    @if(auth()->user()->role === 'usuario') readonly @endif
-                                >
+                                <div class="col-md-12 mb-3">
+                                    <label for="contact_email" class="form-label">Correo de contacto</label>
+                                    <input type="email" name="contact_email" class="form-control"
+                                           value="{{ old('contact_email', auth()->user()->email) }}" {{ auth()->user()->role === 'user' ? 'disabled' : '' }}>
+                                </div>
                             </div>
 
                             <div class="mb-3">

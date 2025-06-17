@@ -51,12 +51,13 @@ class TicketAssignedChangedNotification extends Notification implements ShouldBr
         $msg = $this->customMessage
             ? ('Ticket #' . $ticketNumber . ': ' . $this->customMessage)
             : ('Se asignó el ticket a: ' . $this->newAssigned->name);
-        return (new MailMessage)
-            ->subject('Cambio de asignado en el ticket #' . $ticketNumber)
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line($msg)
-            ->action('Ver ticket', url('/tickets/' . $ticketNumber))
-            ->line('Gracias por usar nuestro sistema.');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Cambio de asignado en el ticket #' . $ticketNumber . ' | APS | TicketGo')
+            ->view('emails.ticket-assigned-changed', [
+                'ticket' => $this->ticket,
+                'newAssigned' => $this->newAssigned,
+                'message' => $msg
+            ]);
     }
 
     public function toBroadcast()

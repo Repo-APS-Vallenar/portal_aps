@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\TicketCategory;
+use App\Models\EquipmentInventory;
+use App\Models\EquipmentMaintenanceLog;
 
 class Ticket extends Model
 {
@@ -55,6 +57,7 @@ class Ticket extends Model
         'contact_phone',
         'contact_email',
         'solucion_aplicada',
+        'equipment_inventory_id',
     ];
 
     protected $casts = [
@@ -122,6 +125,21 @@ class Ticket extends Model
         return $this->hasMany(TicketDocument::class);
     }
 
+    public function equipmentInventory()
+    {
+        return $this->belongsTo(EquipmentInventory::class, 'equipment_inventory_id');
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function maintenanceLogs()
+    {
+        return $this->hasMany(EquipmentMaintenanceLog::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -185,9 +203,5 @@ class Ticket extends Model
             self::PRIORITY_URGENTE => 'Urgente',
             default => 'Desconocida'
         };
-    }
-    public function location()
-    {
-        return $this->belongsTo(Location::class);
     }
 }

@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             AddSolicitadoStatusSeeder::class,
             UpdateTicketStatusColorsSeeder::class,
+            EquipmentInventorySeeder::class,
         ]);
     }
 }

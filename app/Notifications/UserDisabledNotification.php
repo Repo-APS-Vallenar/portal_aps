@@ -38,9 +38,11 @@ class UserDisabledNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('Tu cuenta ha sido deshabilitada')
-            ->view('emails.user-disabled');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Tu cuenta ha sido deshabilitada | APS | TicketGo')
+            ->view('emails.user-disabled', [
+                'user' => $this->user
+            ]);
     }
 
     public function toBroadcast($notifiable)

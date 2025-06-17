@@ -199,9 +199,10 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @vite('resources/js/app.js')
     
-    @yield('scripts')
+    
 
     @include('layouts.footer')
 
@@ -264,5 +265,6 @@
     @endpush
 
     @stack('scripts')
+    
 </body>
 </html> 

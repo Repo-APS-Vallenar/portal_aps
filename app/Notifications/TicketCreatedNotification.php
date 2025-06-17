@@ -39,21 +39,12 @@ class TicketCreatedNotification extends Notification implements ShouldBroadcastN
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('🎫 Nuevo Ticket Creado: #' . $this->ticket->id)
-            ->greeting('¡Hola ' . $notifiable->name . '! 👋')
-            ->line('Se ha creado un nuevo ticket en el sistema. Estos son los detalles:')
-            ->line('')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('📄 *Descripción:* ' . $this->ticket->description)
-            ->line('🏷️ *Categoría:* ' . ($this->ticket->category->name ?? 'Sin categoría'))
-            ->line('⚡ *Prioridad:* ' . ucfirst($this->ticket->priority))
-            ->line('👤 *Creado por:* ' . $this->ticket->creator->name)
-            ->line('')
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('')
-            ->line('Gracias por usar nuestro sistema de tickets. Si tienes dudas, responde a este correo o contacta a soporte.')
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('🎫 Nuevo Ticket Creado: #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-created', [
+                'ticket' => $this->ticket,
+                'notifiable' => $notifiable
+            ]);
     }
 
     /**

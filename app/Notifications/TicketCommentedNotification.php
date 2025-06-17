@@ -64,14 +64,13 @@ class TicketCommentedNotification extends Notification implements ShouldBroadcas
 
     public function toMail($notifiable)
     {
-        \Log::info('Notificación por correo por comentario a: ' . $notifiable->email);
-        return (new MailMessage)
-            ->subject('Nuevo comentario en el ticket #' . $this->ticket->id)
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('Se ha añadido un nuevo comentario en el ticket:')
-            ->line('"' . $this->comment->comment . '"')
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('Gracias por usar nuestro sistema.');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Nuevo comentario en el ticket #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-commented', [
+                'ticket' => $this->ticket,
+                'comment' => $this->comment,
+                'commentedBy' => $this->commentedBy ?? $this->commenter ?? null,
+            ]);
     }
 
     public function toBroadcast()

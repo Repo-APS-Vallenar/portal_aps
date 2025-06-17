@@ -1,57 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>TicketGo - Notificación</title>
+    <title>Ticket creado</title>
     <style>
-        body { font-family: Arial, Helvetica, sans-serif; background: #f6f8fb; margin: 0; padding: 0; }
-        .container { background: #fff; max-width: 500px; margin: 30px auto; border-radius: 8px; box-shadow: 0 2px 8px #e0e0e0; padding: 32px 24px; }
-        .header { text-align: center; color: #2d3748; font-size: 1.6em; font-weight: bold; margin-bottom: 24px; }
-        .button {
-            display: inline-block;
-            background: #2563eb;
-            color: #fff !important;
-            padding: 12px 32px;
+        body { font-family: Arial, Helvetica, sans-serif; background:rgb(54, 168, 64); margin: 0; padding: 0; line-height: 1.6; color: #333; }
+        .card {
+            background: rgb(190, 212, 245);
+            max-width: 550px;
+            margin: 30px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 32px 28px;
+        }
+        .header { text-align: center; color: #1a202c; font-size: 1.8em; font-weight: bold; margin-bottom: 28px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .content p { margin-bottom: 1em; font-size: 1.05em; }
+        .datacard {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 24px 0;
-            transition: background 0.2s;
+            padding: 20px;
+            margin: 20px 0;
         }
+        .datacard-title { font-weight: bold; color: #1a202c; margin-bottom: 10px; }
+        .datacard-content { color: #4a5568; }
+        .button { display: inline-block; background: #2563eb; color: #fff !important; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 1.1em; transition: background 0.2s; margin: 20px 0; }
         .button:hover { background: #1e40af; }
-        .footer {
-            margin-top: 32px;
-            font-size: 0.9em;
-            color: #888;
-            text-align: center;
-        }
-        .signature {
-            margin-top: 32px;
-            color: #444;
-        }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #718096; font-size: 0.9em; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="card">
         <div class="header">
-            TicketGo
+            Ticket creado
         </div>
-        <p style="font-size: 1.1em;"><strong>¡Hola!</strong></p>
-        <p>
-            Se ha <strong>creado un nuevo ticket</strong> en TicketGo.<br>
-            {{-- Aquí puedes agregar detalles dinámicos del ticket si lo deseas --}}
-        </p>
-        <a href="{{ url('/tickets') }}" class="button">Ver ticket</a>
-        <p class="signature">
-            Gracias por usar TicketGo.<br>
-            <strong>Equipo TicketGo</strong>
-        </p>
+        <div class="content">
+            <p>Hola,</p>
+            <p>Se ha creado un nuevo ticket:</p>
+            <div class="datacard">
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
+                <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
+                <p><strong>Categoría:</strong> {{ $ticket->category->name ?? 'Sin categoría' }}</p>
+                <p><strong>Creado por:</strong> {{ $createdBy->name }}</p>
+            </div>
+            <div style="text-align:center;">
+                <a href="{{ url('/tickets/'.$ticket->id) }}" class="button">Ver ticket</a>
+            </div>
+        </div>
         <div class="footer">
-            Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br>
-            <a href="{{ url('/tickets') }}">{{ url('/tickets') }}</a>
-            <br><br>
-            &copy; {{ date('Y') }} TicketGo. Todos los derechos reservados.
-    </div>
+            <p>¡Saludos!<br><strong>APS | TicketGo</strong></p>
+        </div>
     </div>
 </body>
 </html>

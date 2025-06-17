@@ -1,14 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>APS | TicketGo - Notificación</title>
+    <title>Cambio de asignado en el ticket</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; background: #f6f8fb; margin: 0; padding: 0; line-height: 1.6; color: #333; }
         .container { background: #fff; max-width: 550px; margin: 30px auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 32px 28px; }
         .header { text-align: center; color: #1a202c; font-size: 1.8em; font-weight: bold; margin-bottom: 28px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .header img { max-width: 150px; height: auto; margin-bottom: 15px; }
         .content p { margin-bottom: 1em; font-size: 1.05em; }
+        .card {
+            background: #f8fafd;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #0001;
+            padding: 18px 18px 10px 18px;
+            margin-bottom: 18px;
+        }
         .button-container { text-align: center; margin: 30px 0; }
         .button {
             display: inline-block;
@@ -31,28 +37,29 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ asset('images/PortalAPS.png') }}" alt="Logo APS | TicketGo">
             APS | TicketGo
         </div>
         <div class="content">
             <p class="saludo">¡Hola!</p>
-            <p>
-                Se te ha <strong>asignado un ticket</strong> en TicketGo.<br>
-                {{-- Aquí puedes agregar detalles dinámicos del ticket si lo deseas --}}
-            </p>
+            <p>{{ $message }}</p>
+            <div class="card">
+                <p><b>Título:</b> {{ $ticket->title }}</p>
+                <p><b>Descripción:</b> {{ $ticket->description }}</p>
+                <p>👤 <b>Nuevo asignado:</b> {{ $newAssigned->name }}</p>
+            </div>
             <div class="button-container">
-                <a href="{{ url('/tickets') }}" class="button">Ver ticket</a>
+                <a href="{{ url('/tickets/' . $ticket->id) }}" class="button">Ver ticket</a>
             </div>
             <p class="signature">
-                Gracias por usar TicketGo.<br>
-                <strong>Equipo TI APS</strong>
+                ¡Saludos!<br>
+                <strong>APS | TicketGo</strong>
             </p>
         </div>
         <div class="footer-text">
             Si tienes problemas para hacer clic en el botón "Ver ticket", copia y pega el siguiente enlace en tu navegador:<br>
-            <a href="{{ url('/tickets') }}" class="footer-link">{{ url('/tickets') }}</a>
+            <a href="{{ url('/tickets/' . $ticket->id) }}" class="footer-link">{{ url('/tickets/' . $ticket->id) }}</a>
             <br><br>
-            &copy; {{ date('Y') }} TicketGo. Todos los derechos reservados.
+            &copy; {{ date('Y') }} APS | TicketGo. Todos los derechos reservados.
         </div>
     </div>
 </body>

@@ -35,9 +35,11 @@ class UserEnabledNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('¡Tu cuenta ha sido habilitada!')
-            ->view('emails.user-enabled');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('¡Tu cuenta ha sido habilitada! | APS | TicketGo')
+            ->view('emails.user-enabled', [
+                'notifiable' => $notifiable
+            ]);
     }
 
     /**

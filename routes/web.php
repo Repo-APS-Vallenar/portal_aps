@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\ParameterController;
 use App\Http\Controllers\TicketDocumentController;
+use App\Http\Controllers\EquipmentInventoryController;
 
 // Autenticación
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -90,6 +91,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/admin/parameters/statuses', [ParameterController::class, 'storeStatus'])->name('admin.parameters.statuses.store');
     Route::put('/admin/parameters/statuses/{status}', [ParameterController::class, 'updateStatus'])->name('admin.parameters.statuses.update');
     Route::delete('/admin/parameters/statuses/{status}', [ParameterController::class, 'destroyStatus'])->name('admin.parameters.statuses.destroy');
+
+    // Rutas del inventario de equipos
+    Route::post('/equipment-inventory/check-serial-number', [EquipmentInventoryController::class, 'checkSerialNumber'])->name('equipment-inventory.check-serial-number');
+    Route::get('equipment-inventory/export', [EquipmentInventoryController::class, 'export'])->name('equipment-inventory.export');
+    Route::get('equipment-inventory/{equipment}/show-partial', [EquipmentInventoryController::class, 'showPartial'])->name('equipment-inventory.show-partial');
+    Route::get('equipment-inventory/{equipment}/edit-partial', [EquipmentInventoryController::class, 'editPartial'])->name('equipment-inventory.edit-partial');
+    Route::resource('equipment-inventory', EquipmentInventoryController::class)->except(['show']);
+    Route::get('/equipment-inventory/search', [EquipmentInventoryController::class, 'search'])->name('equipment-inventory.search');
 });
 
 // Ruta de subida de documentos SIN middleware auth para prueba

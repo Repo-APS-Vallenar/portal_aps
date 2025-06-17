@@ -41,24 +41,15 @@ class TicketPriorityChangedNotification extends Notification
             'alta' => '#dc3545',
             'urgente' => '#fd7e14',
         ];
-
-        return (new MailMessage)
-            ->subject('🔄 Cambio de prioridad en ticket #' . $this->ticket->id)
-            ->greeting('¡Hola! 👋')
-            ->line('La prioridad del siguiente ticket ha sido modificada:')
-            ->line('')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('📄 *Descripción:* ' . $this->ticket->description)
-            ->line('🏷️ *Categoría:* ' . ($this->ticket->category->name ?? 'Sin categoría'))
-            ->line('👤 *Actualizado por:* ' . $this->updatedBy->name)
-            ->line('')
-            ->line('*Cambio de prioridad:*')
-            ->line('De: <span style="color:' . ($priorityColors[$this->oldPriority] ?? '#000') . '; font-weight:bold;">' . ucfirst($this->oldPriority) . '</span>')
-            ->line('A: <span style="color:' . ($priorityColors[$this->newPriority] ?? '#000') . '; font-weight:bold;">' . ucfirst($this->newPriority) . '</span>')
-            ->line('')
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('')
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('🔄 Cambio de prioridad en ticket #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-priority-changed', [
+                'ticket' => $this->ticket,
+                'updatedBy' => $this->updatedBy,
+                'oldPriority' => $this->oldPriority,
+                'newPriority' => $this->newPriority,
+                'priorityColors' => $priorityColors
+            ]);
     }
 
     public function toDatabase($notifiable)

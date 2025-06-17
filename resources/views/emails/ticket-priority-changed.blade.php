@@ -1,8 +1,12 @@
+@php
+    $colorOld = $priorityColors[$oldPriority] ?? '#000';
+    $colorNew = $priorityColors[$newPriority] ?? '#000';
+@endphp
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cambio de rol de usuario</title>
+    <title>Cambio de prioridad en ticket</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; background:rgb(54, 168, 64); margin: 0; padding: 0; line-height: 1.6; color: #333; }
         .card {
@@ -32,18 +36,21 @@
 <body>
     <div class="card">
         <div class="header">
-            Cambio de rol de usuario
+            Cambio de prioridad en ticket
         </div>
         <div class="content">
             <p>Hola,</p>
-            <p>El rol del siguiente usuario ha sido actualizado:</p>
+            <p>La prioridad del siguiente ticket ha sido modificada:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $user->name }}</p>
-                <p><strong>Rol anterior:</strong> {{ $oldRole }}</p>
-                <p><strong>Nuevo rol:</strong> {{ $newRole }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
+                <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
+                <p><strong>Categoría:</strong> {{ $ticket->category->name ?? 'Sin categoría' }}</p>
+                <p><strong>Actualizado por:</strong> {{ $updatedBy->name }}</p>
+                <p><strong>Prioridad anterior:</strong> <span style="color: {{ $colorOld }}; font-weight:bold;">{{ ucfirst($oldPriority) }}</span></p>
+                <p><strong>Nueva prioridad:</strong> <span style="color: {{ $colorNew }}; font-weight:bold;">{{ ucfirst($newPriority) }}</span></p>
             </div>
             <div style="text-align:center;">
-                <a href="{{ url('/users/'.$user->id) }}" class="button">Ver usuario</a>
+                <a href="{{ url('/tickets/'.$ticket->id) }}" class="button">Ver ticket</a>
             </div>
         </div>
         <div class="footer">
@@ -51,4 +58,4 @@
         </div>
     </div>
 </body>
-</html> 
+</html>

@@ -35,6 +35,14 @@
                             <i class="bi bi-ticket-detailed menu-icon"></i> Tickets
                         </a>
                     </li>
+                    @if (auth()->user()->role === 'admin' || auth()->user()->role === 'superadmin')
+                        <li class="nav-item">
+                            <a aria-current="page" class="nav-link {{ request()->is('equipment-inventory*') ? 'active' : '' }}"
+                                href="{{ route('equipment-inventory.index') }}">
+                                <i class="bi bi-pc-display menu-icon"></i> Inventario
+                            </a>
+                        </li>
+                    @endif
                 @endauth
                 <li class="nav-item">
                     <a aria-current="page" class="nav-link {{ request()->is('contacto*') ? 'active' : '' }}" href="{{ route('contacto') }}">

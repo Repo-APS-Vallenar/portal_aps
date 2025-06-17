@@ -35,16 +35,14 @@ class TicketCategoryChangedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('🔄 Cambio de categoría en ticket #' . $this->ticket->id)
-            ->greeting('¡Hola! 👋')
-            ->line('La categoría del siguiente ticket ha sido modificada:')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('👤 *Actualizado por:* ' . $this->updatedBy->name)
-            ->line('')
-            ->line('Categoría: de "' . $this->oldCategory . '" a "' . $this->newCategory . '"')
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('🔄 Cambio de categoría en ticket #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-category-changed', [
+                'ticket' => $this->ticket,
+                'updatedBy' => $this->updatedBy,
+                'oldCategory' => $this->oldCategory,
+                'newCategory' => $this->newCategory
+            ]);
     }
 
     public function toDatabase($notifiable)

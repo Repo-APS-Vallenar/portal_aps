@@ -41,12 +41,13 @@ class TicketManualNotification extends Notification implements ShouldBroadcastNo
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('Notificación manual de ticket')
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('Tienes una notificación manual sobre el ticket #' . $this->ticket->id . ': ' . $this->ticket->title)
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('Gracias por usar el sistema.');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Notificación manual de ticket #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-manual', [
+                'ticket' => $this->ticket,
+                'messageManual' => $this->messageManual,
+                'updatedBy' => $this->updatedBy
+            ]);
     }
 
     public function toBroadcast()

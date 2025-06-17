@@ -33,15 +33,12 @@ class TicketAttachmentAddedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('📎 Nuevo adjunto en el ticket #' . $this->ticket->id)
-            ->greeting('¡Hola! 👋')
-            ->line('Se ha agregado un nuevo archivo adjunto al ticket:')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
-            ->line('📄 *Archivo:* ' . $this->fileName)
-            ->line('👤 *Subido por:* ' . $this->uploadedBy->name)
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('¡Saludos! 😊');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Adjunto agregado al ticket #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-attachment-added', [
+                'ticket' => $this->ticket,
+                'attachedBy' => $this->attachedBy ?? $this->uploadedBy ?? null,
+            ]);
     }
 
     public function toDatabase($notifiable)

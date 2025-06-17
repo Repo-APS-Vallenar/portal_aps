@@ -40,9 +40,12 @@ class UserRoleChangedNotification extends Notification
 
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->subject('Cambio de rol de usuario')
-            ->view('emails.user-role-changed');
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Cambio de rol de usuario | APS | TicketGo')
+            ->view('emails.user-role-changed', [
+                'user' => $this->user,
+                'oldRole' => $this->oldRole
+            ]);
     }
 
     public function toBroadcast($notifiable)

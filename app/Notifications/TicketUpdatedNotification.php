@@ -43,28 +43,14 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
      */
     public function toMail($notifiable)
     {
-        $message = (new MailMessage)
-            ->subject('Ticket actualizado: #' . $this->ticket->id)
-            ->greeting('¡Hola ' . $notifiable->name . '!')
-            ->line('Se han realizado cambios en tu ticket:')
-            ->line('📋 Título: ' . $this->ticket->title);
-
         $formatted = $this->formattedChanges();
-        if (count($formatted)) {
-            $message->line('Cambios realizados:');
-            foreach ($formatted as $cambio) {
-                $message->line('- ' . $cambio['label'] . ': de \' ' . $cambio['old'] . '\' a \' ' . $cambio['new'] . '\'');
-            }
-        } else {
-            $message->line('Se han realizado cambios en el ticket.');
-        }
-
-        $message->line('👤 Actualizado por: ' . $this->updatedBy->name)
-            ->line('⏰ Fecha: ' . Carbon::now()->format('d/m/Y H:i'))
-            ->action('Ver ticket', url('/tickets/' . $this->ticket->id))
-            ->line('Gracias por usar nuestro sistema de tickets.');
-
-        return $message;
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('Ticket actualizado: #' . $this->ticket->id . ' | APS | TicketGo')
+            ->view('emails.ticket-updated', [
+                'ticket' => $this->ticket,
+                'updatedBy' => $this->updatedBy,
+                'formattedChanges' => $formatted
+            ]);
     }
 
     /**

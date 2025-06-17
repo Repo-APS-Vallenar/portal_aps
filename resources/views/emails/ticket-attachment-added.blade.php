@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cambio de rol de usuario</title>
+    <title>Adjunto agregado al ticket</title>
     <style>
         body { font-family: Arial, Helvetica, sans-serif; background:rgb(54, 168, 64); margin: 0; padding: 0; line-height: 1.6; color: #333; }
         .card {
@@ -32,18 +32,18 @@
 <body>
     <div class="card">
         <div class="header">
-            Cambio de rol de usuario
+            Adjunto agregado al ticket
         </div>
         <div class="content">
             <p>Hola,</p>
-            <p>El rol del siguiente usuario ha sido actualizado:</p>
+            <p>Se ha agregado un nuevo adjunto al siguiente ticket:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $user->name }}</p>
-                <p><strong>Rol anterior:</strong> {{ $oldRole }}</p>
-                <p><strong>Nuevo rol:</strong> {{ $newRole }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
+                <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
+                <p><strong>Adjuntado por:</strong> {{ $attachedBy->name }}</p>
             </div>
             <div style="text-align:center;">
-                <a href="{{ url('/users/'.$user->id) }}" class="button">Ver usuario</a>
+                <a href="{{ url('/tickets/'.$ticket->id) }}" class="button">Ver ticket</a>
             </div>
         </div>
         <div class="footer">

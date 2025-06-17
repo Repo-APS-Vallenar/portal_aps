@@ -37,7 +37,6 @@ class TicketInternalCommentedNotification extends Notification
             ->subject('🛡️ Comentario interno en ticket #' . $this->ticket->id)
             ->greeting('¡Hola!')
             ->line('Se ha agregado un comentario interno en el ticket:')
-            ->line('📝 *Título:* **' . $this->ticket->title . '**')
             ->line('👤 *Por:* ' . $this->commenter->name)
             ->line('')
             ->line('Comentario: "' . (mb_strlen($this->comment) > 80 ? mb_substr($this->comment, 0, 80) . '...' : $this->comment) . '"')
