@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Inventario Equipos')
+
 @section('content')
 <div class="container-fluid">
     <div class="row justify-content-center">
@@ -54,13 +56,33 @@
                             <table class="table table-hover table-striped table-bordered table-sm">
                                 <thead class="bg-dark text-white">
                                     <tr>
-                                        <th>Marca</th>
-                                        <th>Modelo</th>
-                                        <th>N° Serie</th>
-                                        <th>Centro</th>
-                                        <th>Usuario</th>
-                                        <th>Box/Oficina</th>
-                                        <th>Estado</th>
+                                        @php
+                                            $columns = [
+                                                'marca' => 'Marca',
+                                                'modelo' => 'Modelo',
+                                                'numero_serie' => 'N° Serie',
+                                                'location_id' => 'Centro',
+                                                'usuario' => 'Usuario',
+                                                'box_oficina' => 'Box/Oficina',
+                                                'estado' => 'Estado',
+                                            ];
+                                            $currentSort = request('sort', 'marca');
+                                            $currentDirection = request('direction', 'asc');
+                                        @endphp
+                                        @foreach($columns as $col => $label)
+                                            <th>
+                                                @php
+                                                    $newDirection = ($currentSort === $col && $currentDirection === 'asc') ? 'desc' : 'asc';
+                                                    $icon = '';
+                                                    if ($currentSort === $col) {
+                                                        $icon = $currentDirection === 'asc' ? '↑' : '↓';
+                                                    }
+                                                @endphp
+                                                <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:inherit;">
+                                                    {{ $label }} {!! $icon !!}
+                                                </a>
+                                            </th>
+                                        @endforeach
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>

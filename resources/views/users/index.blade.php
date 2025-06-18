@@ -56,10 +56,30 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th>Nombre</th>
-                        <th>Correo</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
+                        @php
+                            $columns = [
+                                'name' => 'Nombre',
+                                'email' => 'Correo',
+                                'role' => 'Rol',
+                                'is_blocked' => 'Estado',
+                            ];
+                            $currentSort = request('sort', 'name');
+                            $currentDirection = request('direction', 'asc');
+                        @endphp
+                        @foreach($columns as $col => $label)
+                            <th>
+                                @php
+                                    $newDirection = ($currentSort === $col && $currentDirection === 'asc') ? 'desc' : 'asc';
+                                    $icon = '';
+                                    if ($currentSort === $col) {
+                                        $icon = $currentDirection === 'asc' ? '↑' : '↓';
+                                    }
+                                @endphp
+                                <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:inherit;">
+                                    {{ $label }} {!! $icon !!}
+                                </a>
+                            </th>
+                        @endforeach
                         <th>Acciones</th>
                     </tr>
                 </thead>

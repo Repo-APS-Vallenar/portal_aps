@@ -19,14 +19,13 @@ class AuditLogController extends Controller
     {
         $query = AuditLog::with('user')->latest();
 
-        if ($request->has('search')) {
-            $search = $request->search;
-
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
             $query->where(function ($q) use ($search) {
-                $q->whereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%']))
-                    ->orWhereRaw('LOWER(action) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(description) LIKE ?', ['%' . strtolower($search) . '%'])
-                    ->orWhereRaw('LOWER(ip_address) LIKE ?', ['%' . strtolower($search) . '%']);
+                $q->whereRaw('LOWER(action) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(ip_address::text) LIKE ?', ["%$search%"])
+                    ->orWhereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%$search%"]));
             });
         }
 
@@ -52,13 +51,12 @@ class AuditLogController extends Controller
 
         // Filtro de búsqueda general
         if ($request->filled('search')) {
-            $search = $request->search;
-
+            $search = strtolower($request->search);
             $query->where(function ($q) use ($search) {
-                $q->whereHas('user', fn($q2) => $q2->where('name', 'ilike', "%$search%"))
-                    ->orWhere('action', 'ilike', "%$search%")
-                    ->orWhere('description', 'ilike', "%$search%")
-                    ->orWhere('ip_address', 'ilike', "%$search%");
+                $q->whereRaw('LOWER(action) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(ip_address::text) LIKE ?', ["%$search%"])
+                    ->orWhereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%$search%"]));
             });
         }
 
@@ -97,12 +95,12 @@ class AuditLogController extends Controller
     {
         $query = AuditLog::with('user')->latest();
 
-        if ($request->has('search') && $request->filled('search')) {
+        if ($request->filled('search')) {
             $search = strtolower($request->search);
             $query->where(function ($q) use ($search) {
                 $q->whereRaw('LOWER(action) LIKE ?', ["%$search%"])
                     ->orWhereRaw('LOWER(description) LIKE ?', ["%$search%"])
-                    ->orWhereRaw('LOWER(ip_address) LIKE ?', ["%$search%"])
+                    ->orWhereRaw('LOWER(ip_address::text) LIKE ?', ["%$search%"])
                     ->orWhereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%$search%"]));
             });
         }
@@ -166,9 +164,9 @@ class AuditLogController extends Controller
         $query = $request->input('query');
 
         $logs = AuditLog::with('user')
-            ->where('description', 'like', "%{$query}%")
-            ->orWhere('action', 'like', "%{$query}%")
-            ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$query}%"))
+            ->whereRaw('LOWER(description) LIKE ?', ["%{$query}%"])
+            ->orWhereRaw('LOWER(action) LIKE ?', ["%{$query}%"])
+            ->orWhereHas('user', fn($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$query}%"]))
             ->orderByDesc('created_at')
             ->limit(20)
             ->get();

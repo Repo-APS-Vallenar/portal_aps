@@ -52,7 +52,7 @@
                 @auth
                     @if (auth()->user()->role === 'superadmin')
                         <li class="nav-item">
-                            <a aria-current="page" class="nav-link" href="{{ route('audit.index') }}">
+                            <a aria-current="page" class="nav-link {{ request()->is('audit*') ? 'active' : '' }}" href="{{ route('audit.index') }}">
                                 <i class="bi bi-shield-check menu-icon"></i> Auditoría
                             </a>
                         </li>

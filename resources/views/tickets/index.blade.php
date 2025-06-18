@@ -31,6 +31,22 @@
                             </script>
                         @endif
 
+                        @auth
+                        @if(Auth::user()->isAdmin() || Auth::user()->isSuperadmin())
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="user-search" class="form-label">Buscar usuario</label>
+                                <input type="text" id="user-search" class="form-control" placeholder="Nombre o email del usuario...">
+                                <input type="hidden" id="user-id" name="user_id" value="{{ request('user_id') }}">
+                                <div id="user-suggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button id="clear-user-filter" class="btn btn-secondary ms-2" style="display:none;">Limpiar filtro</button>
+                            </div>
+                        </div>
+                        @endif
+                        @endauth
+
                         <div id="tickets-list-container">
                         @if($tickets->isEmpty())
                             <div class="alert" style="background: #c8f4fc; color: #222; border-radius: 10px; border: 1px solid #b6e6f7;">
@@ -41,13 +57,33 @@
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
-                                            <th>Usuario</th>
-                                            <th>Categoría</th>
-                                            <th>Estado</th>
-                                            <th>Prioridad</th>
-                                            <th>Creado por</th>
-                                            <th>Asignado a</th>
+                                            @php
+                                                $columns = [
+                                                    'id' => 'ID',
+                                                    'title' => 'Usuario',
+                                                    'category_id' => 'Categoría',
+                                                    'status_id' => 'Estado',
+                                                    'priority' => 'Prioridad',
+                                                    'created_by' => 'Creado por',
+                                                    'assigned_to' => 'Asignado a',
+                                                ];
+                                                $currentSort = request('sort', 'id');
+                                                $currentDirection = request('direction', 'desc');
+                                            @endphp
+                                            @foreach($columns as $col => $label)
+                                                <th>
+                                                    @php
+                                                        $newDirection = ($currentSort === $col && $currentDirection === 'asc') ? 'desc' : 'asc';
+                                                        $icon = '';
+                                                        if ($currentSort === $col) {
+                                                            $icon = $currentDirection === 'asc' ? '↑' : '↓';
+                                                        }
+                                                    @endphp
+                                                    <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:inherit;">
+                                                        {{ $label }} {!! $icon !!}
+                                                    </a>
+                                                </th>
+                                            @endforeach
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -232,6 +268,71 @@
                 });
             }
             setInterval(updateTicketsList, 60000);
+
+            document.addEventListener('DOMContentLoaded', function () {
+                const userSearch = document.getElementById('user-search');
+                const userSuggestions = document.getElementById('user-suggestions');
+                const userIdInput = document.getElementById('user-id');
+                const clearUserFilter = document.getElementById('clear-user-filter');
+
+                if (userSearch) {
+                    let timeout = null;
+                    userSearch.addEventListener('input', function () {
+                        const query = this.value.trim();
+                        if (timeout) clearTimeout(timeout);
+                        if (query.length < 2) {
+                            userSuggestions.innerHTML = '';
+                            userSuggestions.style.display = 'none';
+                            return;
+                        }
+                        timeout = setTimeout(() => {
+                            fetch(`/admin/users/search?query=${encodeURIComponent(query)}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    userSuggestions.innerHTML = '';
+                                    if (data.length > 0) {
+                                        data.forEach(user => {
+                                            const item = document.createElement('a');
+                                            item.href = '#';
+                                            item.className = 'list-group-item list-group-item-action';
+                                            item.textContent = `${user.name} (${user.email})`;
+                                            item.addEventListener('click', function (e) {
+                                                e.preventDefault();
+                                                userSearch.value = `${user.name} (${user.email})`;
+                                                userIdInput.value = user.id;
+                                                userSuggestions.innerHTML = '';
+                                                userSuggestions.style.display = 'none';
+                                                clearUserFilter.style.display = 'inline-block';
+                                                // Redirigir con filtro
+                                                const url = new URL(window.location.href);
+                                                url.searchParams.set('user_id', user.id);
+                                                window.location.href = url.toString();
+                                            });
+                                            userSuggestions.appendChild(item);
+                                        });
+                                        userSuggestions.style.display = 'block';
+                                    } else {
+                                        userSuggestions.style.display = 'none';
+                                    }
+                                });
+                        }, 250);
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (!userSuggestions.contains(e.target) && e.target !== userSearch) {
+                            userSuggestions.innerHTML = '';
+                            userSuggestions.style.display = 'none';
+                        }
+                    });
+                    clearUserFilter.addEventListener('click', function () {
+                        userSearch.value = '';
+                        userIdInput.value = '';
+                        clearUserFilter.style.display = 'none';
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete('user_id');
+                        window.location.href = url.toString();
+                    });
+                }
+            });
         </script>
     @endpush
 

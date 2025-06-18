@@ -27,11 +27,11 @@ class EquipmentInventoryController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('marca', 'like', "%{$search}%")
-                  ->orWhere('modelo', 'like', "%{$search}%")
-                  ->orWhere('numero_serie', 'like', "%{$search}%")
-                  ->orWhere('usuario', 'like', "%{$search}%")
-                  ->orWhere('box_oficina', 'like', "%{$search}%");
+                $q->whereRaw('LOWER(marca) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(modelo) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(numero_serie) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(usuario) LIKE ?', ['%' . strtolower($search) . '%'])
+                  ->orWhereRaw('LOWER(box_oficina) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
@@ -39,11 +39,23 @@ class EquipmentInventoryController extends Controller
             $query->where('location_id', $request->ubicacion);
         }
 
+        // Ordenamiento
+        $sortable = ['marca', 'modelo', 'numero_serie', 'location_id', 'usuario', 'box_oficina', 'estado'];
+        $sort = $request->get('sort', 'marca');
+        $direction = $request->get('direction', 'asc');
+        if (!in_array($sort, $sortable)) {
+            $sort = 'marca';
+        }
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'asc';
+        }
+        $query->orderBy($sort, $direction);
+
         // Obtener valores únicos para los filtros
         $marcas = EquipmentInventory::distinct()->pluck('marca');
         $locations = Location::orderBy('name')->pluck('name', 'id');
 
-        $equipment = $query->paginate(10);
+        $equipment = $query->paginate(10)->appends($request->except('page'));
 
         return view('equipment-inventory.index', compact('equipment', 'marcas', 'locations'));
     }
@@ -191,10 +203,10 @@ class EquipmentInventoryController extends Controller
     {
         $query = $request->get('query');
         
-        $equipment = EquipmentInventory::where('numero_serie', 'like', "%{$query}%")
-            ->orWhere('marca', 'like', "%{$query}%")
-            ->orWhere('modelo', 'like', "%{$query}%")
-            ->orWhere('usuario', 'like', "%{$query}%")
+        $equipment = EquipmentInventory::whereRaw('LOWER(numero_serie) LIKE ?', ['%' . strtolower($query) . '%'])
+            ->orWhereRaw('LOWER(marca) LIKE ?', ['%' . strtolower($query) . '%'])
+            ->orWhereRaw('LOWER(modelo) LIKE ?', ['%' . strtolower($query) . '%'])
+            ->orWhereRaw('LOWER(usuario) LIKE ?', ['%' . strtolower($query) . '%'])
             ->with('location:id,name')
             ->take(10)
             ->get(['id', 'marca', 'modelo', 'numero_serie', 'usuario', 'box_oficina', 'location_id']);

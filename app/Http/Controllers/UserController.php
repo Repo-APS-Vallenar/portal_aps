@@ -68,11 +68,22 @@ class UserController extends Controller
         if ($request->has('search') && $request->search !== null) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', "%$search%")
-                    ->orWhere('email', 'ilike', "%$search%");
+                $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($search) . '%'])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         }
 
+        // Ordenamiento
+        $sortable = ['name', 'email', 'role', 'is_blocked', 'locked_until'];
+        $sort = $request->get('sort', 'name');
+        $direction = $request->get('direction', 'asc');
+        if (!in_array($sort, $sortable)) {
+            $sort = 'name';
+        }
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'asc';
+        }
+        $query->orderBy($sort, $direction);
         $users = $query->get();
         return view('users.index', compact('users'));
     }

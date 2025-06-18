@@ -43,20 +43,31 @@ class TicketController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
+        $query = Ticket::with(['category', 'status', 'creator', 'assignedTo']);
+
         if ($user->isAdmin() || $user->isSuperadmin()) {
-            $tickets = Ticket::with(['category', 'status', 'creator', 'assignedTo'])
-                ->latest()
-                ->paginate(10);
+            // No hay filtro adicional para administradores
         } else {
-            $tickets = Ticket::with(['category', 'status', 'creator', 'assignedTo'])
-                ->where('created_by', $user->id)
-            ->latest()
-            ->paginate(10);
+            $query->where('created_by', $user->id);
         }
+
+        // Ordenamiento
+        $sortable = ['id', 'title', 'category_id', 'status_id', 'priority', 'created_by', 'assigned_to'];
+        $sort = $request->get('sort', 'id');
+        $direction = $request->get('direction', 'desc');
+        if (!in_array($sort, $sortable)) {
+            $sort = 'id';
+        }
+        if (!in_array($direction, ['asc', 'desc'])) {
+            $direction = 'desc';
+        }
+        $query->orderBy($sort, $direction);
+
+        $tickets = $query->paginate(10)->appends($request->except('page'));
 
         if (request()->ajax()) {
             return response()->view('tickets.partials.tickets-list', compact('tickets'));
@@ -104,6 +115,11 @@ class TicketController extends Controller
             'contact_email' => 'nullable|email|max:255',
             'numero_serie' => 'nullable|string|max:255',
         ]);
+
+        // Si el email de contacto viene vacío, asignar el del usuario autenticado
+        if (empty($validated['contact_email'])) {
+            $validated['contact_email'] = Auth::user()->email;
+        }
 
         // Definir los estados de tickets relevantes para la lógica del equipo
         $statusEnProceso = TicketStatus::where('name', 'En Proceso')->first();
