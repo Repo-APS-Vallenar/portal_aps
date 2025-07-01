@@ -20,6 +20,7 @@ use App\Services\NotificationService;
 use App\Notifications\TicketUpdatedNotification;
 use App\Notifications\TicketCommentedNotification;
 use App\Models\EquipmentMaintenanceLog;
+use Log as LaravelLog;
 
 class TicketController extends Controller
 {
@@ -225,10 +226,10 @@ class TicketController extends Controller
                     'file_name' => $file->getClientOriginalName(),
                     'file_type' => $file->getClientMimeType(),
                     'file_size' => $file->getSize(),
-                    'user_id' => auth()->id()
+                    'user_id' => Auth::id()
                 ]);
             }
-            \Log::info('Archivos adjuntos guardados para el ticket: ' . $ticket->id);
+            Log::info('Archivos adjuntos guardados para el ticket: ' . $ticket->id);
         }
 
         // Ejemplo para la creación de ticket (en store):
@@ -473,12 +474,12 @@ class TicketController extends Controller
             $usuariosNotificar = collect();
             
             // Notificar al creador si no es el que hizo el cambio
-            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+            if ($ticket->creator && $ticket->creator->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->creator);
             }
             
             // Notificar al asignado si existe y no es el que hizo el cambio
-            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->assignedTo);
             }
             
@@ -487,7 +488,7 @@ class TicketController extends Controller
             foreach ($usuariosNotificar as $usuario) {
                 $usuario->notify(new \App\Notifications\TicketPriorityChangedNotification(
                     $ticket,
-                    auth()->user(),
+                    Auth::user(),
                     $oldValues['priority'],
                     $newValues['priority'],
                     $usuario->id
@@ -500,20 +501,20 @@ class TicketController extends Controller
             $usuariosNotificar = collect();
             
             // Notificar al creador si no es el que hizo el cambio
-            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+            if ($ticket->creator && $ticket->creator->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->creator);
             }
             
             // Notificar al asignado si existe y no es el que hizo el cambio
-            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->assignedTo);
             }
             
             // Eliminar duplicados y enviar notificaciones
             $usuariosNotificar = $usuariosNotificar->unique('id');
             foreach ($usuariosNotificar as $usuario) {
-                \Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
-                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $newValues, auth()->user(), $usuario->id));
+                Log::info('Notificando a usuario único (estado)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                $usuario->notify(new \App\Notifications\TicketUpdatedNotification($ticket, $newValues, Auth::user(), $usuario->id));
             }
         }
 
@@ -536,17 +537,17 @@ class TicketController extends Controller
             }
             if ($esReapertura) {
                 $usuariosNotificar = collect();
-                if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+                if ($ticket->creator && $ticket->creator->id !== Auth::id()) {
                     $usuariosNotificar->push($ticket->creator);
                 }
-                if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+                if ($ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
                     $usuariosNotificar->push($ticket->assignedTo);
                 }
                 $usuariosNotificar = $usuariosNotificar->unique('id');
                 foreach ($usuariosNotificar as $usuario) {
                     $usuario->notify(new \App\Notifications\TicketReopenedNotification(
                         $ticket,
-                        auth()->user(),
+                        Auth::user(),
                         $oldStatus->name,
                         $newStatus->name,
                         $usuario->id
@@ -560,17 +561,17 @@ class TicketController extends Controller
             $oldCategory = \App\Models\TicketCategory::find($oldValues['category_id']);
             $newCategory = \App\Models\TicketCategory::find($newValues['category_id']);
             $usuariosNotificar = collect();
-            if ($ticket->creator && $ticket->creator->id !== auth()->id()) {
+            if ($ticket->creator && $ticket->creator->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->creator);
             }
-            if ($ticket->assignedTo && $ticket->assignedTo->id !== auth()->id()) {
+            if ($ticket->assignedTo && $ticket->assignedTo->id !== Auth::id()) {
                 $usuariosNotificar->push($ticket->assignedTo);
             }
             $usuariosNotificar = $usuariosNotificar->unique('id');
             foreach ($usuariosNotificar as $usuario) {
                 $usuario->notify(new \App\Notifications\TicketCategoryChangedNotification(
                     $ticket,
-                    auth()->user(),
+                    Auth::user(),
                     $oldCategory ? $oldCategory->name : 'Sin categoría',
                     $newCategory ? $newCategory->name : 'Sin categoría',
                     $usuario->id
@@ -619,7 +620,7 @@ class TicketController extends Controller
         // Emitir evento broadcast para comentarios en tiempo real
         event(new \App\Events\CommentAdded($ticket, $comentario));
 
-        \Log::info('Nuevo comentario creado', [
+        Log::info('Nuevo comentario creado', [
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'is_internal' => $isInternal,
@@ -650,7 +651,7 @@ class TicketController extends Controller
                 return $usuario->id !== Auth::id();
             });
             foreach ($usuariosNotificar as $usuario) {
-                \Log::info('Notificando a usuario único (comentario)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                Log::info('Notificando a usuario único (comentario)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
                 $usuario->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user(), $usuario->id));
                 // Emitir evento personalizado para notificación en vivo
                 event(new \App\Events\CommentNotificationBroadcasted(
@@ -726,7 +727,7 @@ class TicketController extends Controller
 
     public function deleteComment(Ticket $ticket, TicketComment $comment)
     {
-        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isSuperadmin()) {
+        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isSuperadmin) {
             // Solo el autor o superadmin puede eliminar
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este comentario.'], 403);
