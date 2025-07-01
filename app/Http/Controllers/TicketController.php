@@ -50,7 +50,7 @@ class TicketController extends Controller
 
         $query = Ticket::with(['category', 'status', 'creator', 'assignedTo']);
 
-        if ($user->isAdmin() || $user->isSuperadmin()) {
+        if ($user->isAdmin || $user->isSuperadmin) {
             // No hay filtro adicional para administradores
         } else {
             $query->where('created_by', $user->id);
@@ -235,7 +235,7 @@ class TicketController extends Controller
         // Ejemplo para la creación de ticket (en store):
         $usuariosNotificar = collect();
 
-        if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
+        if (Auth::user()->isAdmin || Auth::user()->isSuperadmin) {
             // Notificar a todos los admin y superadmin, excepto al propio creador
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])
                 ->where('id', '!=', Auth::id())
@@ -714,7 +714,7 @@ class TicketController extends Controller
         $comment = TicketComment::findOrFail($id);
 
         // Solo el autor o admin puede editar
-        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
+        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin) {
             return response()->json(['success' => false], 403);
         }
 
