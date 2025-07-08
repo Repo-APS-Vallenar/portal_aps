@@ -11,10 +11,16 @@
                 <form action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn btn-danger"
-                        onclick="return confirm('¿Estás seguro de eliminar este ticket?')">
+                    <button type="button" class="btn btn-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal"
+                        data-form="delete-ticket-details-{{ $ticket->id }}">
                         <i class="fas fa-trash"></i> Eliminar
                     </button>
+                    <form id="delete-ticket-details-{{ $ticket->id }}" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
+                        @csrf
+                        @method('DELETE')
+                    </form>
                 </form>
                 @endif
             </div>

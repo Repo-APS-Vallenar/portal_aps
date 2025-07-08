@@ -54,9 +54,15 @@
                                             <i class="fas fa-edit me-1"></i> Editar
                                         </a>
                                         <button type="button" class="btn btn-outline-danger btn-sm"
-                                            onclick="if(confirm('¿Estás seguro de que deseas eliminar este ticket?')) { document.getElementById('delete-ticket-{{ $ticket->id }}').submit(); }">
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#confirmDeleteModal"
+                                            data-form="delete-ticket-list-{{ $ticket->id }}">
                                             <i class="fas fa-trash me-1"></i> Eliminar
                                         </button>
+                                        <form id="delete-ticket-list-{{ $ticket->id }}" action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="d-none">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
                                     @endif
                                 </div>
                                 <form id="delete-ticket-{{ $ticket->id }}"

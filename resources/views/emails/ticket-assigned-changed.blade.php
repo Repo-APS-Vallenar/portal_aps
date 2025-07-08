@@ -43,7 +43,7 @@
             <p class="saludo">¡Hola!</p>
             <p>{{ $message }}</p>
             <div class="card">
-                <p><b>Título:</b> {{ $ticket->title }}</p>
+                <p><b>Usuario:</b> {{ $ticket->title }}</p>
                 <p><b>Descripción:</b> {{ $ticket->description }}</p>
                 <p>👤 <b>Nuevo asignado:</b> {{ $newAssigned->name }}</p>
             </div>

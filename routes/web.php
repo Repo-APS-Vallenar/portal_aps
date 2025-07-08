@@ -32,6 +32,7 @@ Route::get('/contacto', [ContactController::class, 'index'])->name('contacto');
 // Rutas protegidas
 Route::middleware(['auth'])->group(function () {
     // Tickets
+    Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
     Route::resource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment');
     Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments');

@@ -123,7 +123,7 @@ class TicketUpdatedNotification extends Notification implements ShouldBroadcastN
     protected function fieldLabel($field)
     {
         $labels = [
-            'title' => 'Título',
+            'title' => 'Usuario',
             'description' => 'Descripción',
             'category_id' => 'Categoría',
             'status_id' => 'Estado',

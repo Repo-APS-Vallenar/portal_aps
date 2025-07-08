@@ -28,7 +28,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        Departamento de Salud de Vallenar &copy; {{ date('Y') }} | Equipo de Desarrollo
+        Departamento de Salud de Vallenar &copy; {{ date('Y') }} | Equipo TIC APS
     </div>
 </footer>
 <style>

@@ -208,7 +208,7 @@
 
     <script>
     // Configuración: minutos antes de expirar para mostrar el modal
-    const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime', 120) }};
+    const SESSION_LIFETIME_MINUTES = {{ config('session.lifetime', 120) ?? 120 }};
     const WARNING_BEFORE_MINUTES = 2; // Mostrar modal 2 minutos antes de expirar
     let sessionTimeout, warningTimeout;
 

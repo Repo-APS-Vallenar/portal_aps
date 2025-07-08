@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderNotification(noti) {
-        console.log('NOTIFICACION DEBUG:', noti);
+        
         const isUnread = !noti.is_read;
         let icon = '<i class="bi bi-bell"></i>';
         let color = 'primary';

@@ -47,11 +47,37 @@ class TicketController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-
         $query = Ticket::with(['category', 'status', 'creator', 'assignedTo']);
 
-        if ($user->isAdmin || $user->isSuperadmin) {
-            // No hay filtro adicional para administradores
+        // Filtros avanzados para admin/superadmin
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            // Filtrar por usuario creador por ID
+            if ($request->filled('user_id')) {
+                $query->where('created_by', $request->user_id);
+            } else if ($request->filled('user_name')) {
+                // Si no hay user_id pero sí user_name, buscar por nombre o email del usuario creador (case-insensitive)
+                $userName = $request->input('user_name');
+                $userName = mb_strtolower($userName, 'UTF-8');
+                $query->whereHas('creator', function($q) use ($userName) {
+                    $q->whereRaw('LOWER(name) LIKE ?', ["%{$userName}%"])
+                      ->orWhereRaw('LOWER(email) LIKE ?', ["%{$userName}%"]);
+                });
+            }
+            // Filtrar por estado
+            if ($request->filled('status_id')) {
+                $query->where('status_id', $request->status_id);
+            }
+            // Filtrar por prioridad
+            if ($request->filled('priority')) {
+                $query->where('priority', $request->priority);
+            }
+            // Filtrar por rango de fechas
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
         } else {
             $query->where('created_by', $user->id);
         }
@@ -75,6 +101,53 @@ class TicketController extends Controller
         }
 
         return view('tickets.index', compact('tickets'));
+    }
+
+    /**
+     * Exporta los tickets filtrados a Excel
+     */
+    public function export(Request $request)
+    {
+        $user = Auth::user();
+        $query = Ticket::with(['category', 'status', 'creator', 'assignedTo']);
+
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            if ($request->filled('user_id')) {
+                $query->where('created_by', $request->user_id);
+            } else if ($request->filled('user_name')) {
+                $userName = $request->input('user_name');
+                $userName = mb_strtolower($userName, 'UTF-8');
+                $query->whereHas('creator', function($q) use ($userName) {
+                    $q->whereRaw('LOWER(name) LIKE ?', ["%{$userName}%"])
+                      ->orWhereRaw('LOWER(email) LIKE ?', ["%{$userName}%"]);
+                });
+            }
+            if ($request->filled('status_id')) {
+                $query->where('status_id', $request->status_id);
+            }
+            if ($request->filled('priority')) {
+                $query->where('priority', $request->priority);
+            }
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+        } else {
+            $query->where('created_by', $user->id);
+        }
+
+        $tickets = $query->get();
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\TicketsExport(
+                $tickets,
+                $request->input('date_from'),
+                $request->input('date_to')
+            ),
+            'tickets_' . now()->format('Y-m-d_H-i-s') . '.xlsx'
+        );
     }
 
     /**
@@ -235,7 +308,7 @@ class TicketController extends Controller
         // Ejemplo para la creación de ticket (en store):
         $usuariosNotificar = collect();
 
-        if (Auth::user()->isAdmin || Auth::user()->isSuperadmin) {
+        if (Auth::user()->isAdmin() || Auth::user()->isSuperadmin()) {
             // Notificar a todos los admin y superadmin, excepto al propio creador
             $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])
                 ->where('id', '!=', Auth::id())
@@ -257,7 +330,9 @@ class TicketController extends Controller
         }
 
         $this->logAudit('Crear Ticket', 'Ticket creado por: ' . Auth::user()->name);
-        Mail::to(Auth::user()->email)->send(new TicketCreatedMail($ticket));
+        // Pasar el usuario creador al mail
+        $createdBy = Auth::user();
+        Mail::to($createdBy->email)->send(new TicketCreatedMail($ticket, $createdBy));
         return redirect()->route('tickets.show', $ticket)
             ->with('success', 'Ticket creado exitosamente.');
     }
@@ -620,7 +695,7 @@ class TicketController extends Controller
         // Emitir evento broadcast para comentarios en tiempo real
         event(new \App\Events\CommentAdded($ticket, $comentario));
 
-        Log::info('Nuevo comentario creado', [
+        \Log::info('Nuevo comentario creado', [
             'ticket_id' => $ticket->id,
             'user_id' => Auth::id(),
             'is_internal' => $isInternal,
@@ -651,7 +726,7 @@ class TicketController extends Controller
                 return $usuario->id !== Auth::id();
             });
             foreach ($usuariosNotificar as $usuario) {
-                Log::info('Notificando a usuario único (comentario)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
+                \Log::info('Notificando a usuario único (comentario)', ['ticket_id' => $ticket->id, 'user_id' => $usuario->id]);
                 $usuario->notify(new TicketCommentedNotification($ticket, $comentario, Auth::user(), $usuario->id));
                 // Emitir evento personalizado para notificación en vivo
                 event(new \App\Events\CommentNotificationBroadcasted(
@@ -714,7 +789,7 @@ class TicketController extends Controller
         $comment = TicketComment::findOrFail($id);
 
         // Solo el autor o admin puede editar
-        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin) {
+        if (Auth::id() !== $comment->user_id && !Auth::user()->isAdmin()) {
             return response()->json(['success' => false], 403);
         }
 
@@ -727,7 +802,7 @@ class TicketController extends Controller
 
     public function deleteComment(Ticket $ticket, TicketComment $comment)
     {
-        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isSuperadmin) {
+        if (Auth::check() && Auth::id() !== $comment->user_id && !Auth::user()->isSuperadmin()) {
             // Solo el autor o superadmin puede eliminar
             if (request()->ajax()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso para eliminar este comentario.'], 403);
@@ -765,7 +840,7 @@ class TicketController extends Controller
     {
         // Mapas de traducción locales y etiquetas para los campos
         $fields = [
-            'title'        => ['label' => 'Título'],
+            'title'        => ['label' => 'Usuario'],
             'description'  => ['label' => 'Descripción'],
             'category_id'  => [
                 'label' => 'Categoría',
