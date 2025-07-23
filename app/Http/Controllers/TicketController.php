@@ -104,6 +104,80 @@ class TicketController extends Controller
     }
 
     /**
+     * Vista Kanban de los tickets
+     */
+    public function kanban(Request $request)
+    {
+        $user = Auth::user();
+        $query = Ticket::with(['category', 'status', 'creator', 'assignedTo', 'location']);
+
+        // Aplicar mismos filtros que en index
+        if ($user->isAdmin() || $user->isSuperadmin()) {
+            if ($request->filled('user_id')) {
+                $query->where('created_by', $request->user_id);
+            } else if ($request->filled('user_name')) {
+                $userName = $request->input('user_name');
+                $userName = mb_strtolower($userName, 'UTF-8');
+                $query->whereHas('creator', function($q) use ($userName) {
+                    $q->whereRaw('LOWER(name) LIKE ?', ["%{$userName}%"])
+                      ->orWhereRaw('LOWER(email) LIKE ?', ["%{$userName}%"]);
+                });
+            }
+            if ($request->filled('priority')) {
+                $query->where('priority', $request->priority);
+            }
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+        } else {
+            $query->where('created_by', $user->id);
+        }
+
+        $tickets = $query->orderBy('created_at', 'desc')->get();
+        $statuses = \App\Models\TicketStatus::orderBy('name')->get();
+
+        // Organizar tickets por estado
+        $ticketsByStatus = $statuses->mapWithKeys(function ($status) use ($tickets) {
+            return [$status->id => $tickets->where('status_id', $status->id)];
+        });
+
+        if ($request->ajax()) {
+            return response()->view('tickets.partials.kanban-board', compact('ticketsByStatus', 'statuses'));
+        }
+
+        return view('tickets.kanban', compact('ticketsByStatus', 'statuses'));
+    }
+
+    /**
+     * Actualizar estado de ticket via AJAX (para drag & drop)
+     */
+    public function updateStatus(Request $request, Ticket $ticket)
+    {
+        $request->validate([
+            'status_id' => 'required|exists:ticket_statuses,id'
+        ]);
+
+        $oldStatus = $ticket->status;
+        $newStatus = \App\Models\TicketStatus::find($request->status_id);
+        
+        $ticket->update(['status_id' => $request->status_id]);
+
+        // Log the audit
+        $this->logAudit(
+            'update_ticket_status',
+            "Estado del ticket #{$ticket->id} cambiado de '{$oldStatus->name}' a '{$newStatus->name}'"
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "Ticket movido a '{$newStatus->name}'"
+        ]);
+    }
+
+    /**
      * Exporta los tickets filtrados a Excel
      */
     public function export(Request $request)

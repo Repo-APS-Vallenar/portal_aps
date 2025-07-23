@@ -33,6 +33,8 @@ Route::get('/contacto', [ContactController::class, 'index'])->name('contacto');
 Route::middleware(['auth'])->group(function () {
     // Tickets
     Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
+    Route::get('tickets/kanban', [TicketController::class, 'kanban'])->name('tickets.kanban');
+    Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
     Route::resource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment');
     Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments');
@@ -71,9 +73,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Notificaciones
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::post('/notifications/cleanup', [NotificationController::class, 'cleanup'])->name('notifications.cleanup');
 
     // Perfil

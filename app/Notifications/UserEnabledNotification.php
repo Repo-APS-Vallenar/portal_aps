@@ -5,19 +5,24 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Carbon;
+use App\Models\User;
 
 class UserEnabledNotification extends Notification
 {
     use Queueable;
 
+    public $user;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(User $user)
     {
-        //
+        $this->user = $user;
     }
 
     /**
@@ -27,7 +32,17 @@ class UserEnabledNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail', 'broadcast'];
+    }
+
+    public function toDatabase($notifiable)
+    {
+        return [
+            'title' => 'Usuario habilitado',
+            'message' => 'El usuario ' . $this->user->name . ' ha sido habilitado.',
+            'user_id' => $this->user->id,
+            'created_at' => \Illuminate\Support\Carbon::now()->toDateTimeString(),
+        ];
     }
 
     /**
@@ -38,8 +53,18 @@ class UserEnabledNotification extends Notification
         return (new \Illuminate\Notifications\Messages\MailMessage)
             ->subject('¡Tu cuenta ha sido habilitada! | APS | TicketGo')
             ->view('emails.user-enabled', [
-                'notifiable' => $notifiable
+                'user' => $this->user
             ]);
+    }
+
+    public function toBroadcast($notifiable)
+    {
+        return new \Illuminate\Notifications\Messages\BroadcastMessage([
+            'title' => 'Usuario habilitado',
+            'message' => 'El usuario ' . $this->user->name . ' ha sido habilitado.',
+            'user_id' => $this->user->id,
+            'created_at' => \Illuminate\Support\Carbon::now()->toDateTimeString(),
+        ]);
     }
 
     /**
@@ -50,7 +75,10 @@ class UserEnabledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'title' => 'Usuario habilitado',
+            'message' => 'El usuario ' . $this->user->name . ' ha sido habilitado.',
+            'user_id' => $this->user->id,
+            'created_at' => \Illuminate\Support\Carbon::now()->toDateTimeString(),
         ];
     }
 }

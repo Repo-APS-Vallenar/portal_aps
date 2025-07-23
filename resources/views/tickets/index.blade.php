@@ -2,16 +2,88 @@
 
 @section('title', 'Tickets')
 
+@push('styles')
+<style>
+    /* Botón Nuevo Ticket mejorado */
+    .btn-new-ticket {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-new-ticket:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-new-ticket:active {
+        transform: translateY(0);
+    }
+
+    .btn-new-ticket::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-new-ticket:hover::before {
+        left: 100%;
+    }
+
+    .btn-new-ticket i {
+        font-size: 1rem;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    }
+
+    /* Responsive para botones */
+    @media (max-width: 768px) {
+        .btn-new-ticket {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
                     <h2 class="mb-0">Tickets</h2>
-                    <a href="{{ route('tickets.create') }}" class="btn btn-gradient">
-                        <i class="fas fa-plus"></i> Nuevo Ticket
-                    </a>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <!-- Toggle de vista -->
+                        <div class="btn-group" role="group">
+                            <a href="{{ route('tickets.index') }}" class="btn btn-primary">
+                                <i class="fas fa-list"></i> Lista
+                            </a>
+                            <a href="{{ route('tickets.kanban') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-columns"></i> Kanban
+                            </a>
+                        </div>
+                        <a href="{{ route('tickets.create') }}" class="btn btn-new-ticket">
+                            <i class="fas fa-plus"></i> Nuevo Ticket
+                        </a>
+                    </div>
                 </div>
                 <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                 <div class="card-body">

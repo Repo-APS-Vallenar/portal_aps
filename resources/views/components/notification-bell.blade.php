@@ -19,8 +19,8 @@
 <div class="modal fade" id="notificacionesModal" tabindex="-1" aria-labelledby="notificacionesModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+        <div class="modal-content" style="background: #fff; border-color: #dee2e6;">
+            <div class="modal-header" style="background: #0d6efd; color: white; border-bottom-color: #dee2e6;">
                 <h5 class="modal-title" id="notificacionesModalLabel">
                     <i class="bi bi-bell me-2"></i> Notificaciones
                 </h5>
@@ -28,27 +28,33 @@
                     aria-label="Cerrar"></button>
             </div>
             <div class="modal-body p-0">
-                <div class="noti-header p-3 border-bottom">
+                <div class="noti-header p-3" style="border-bottom: 1px solid #dee2e6; background: #fff;">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="noti-filters">
-                            <button class="btn btn-sm btn-outline-primary active" data-filter="all">
+                            <button class="btn btn-sm btn-outline-primary active" data-filter="all" 
+                                    style="border-color: #0d6efd; color: #0d6efd;">
                                 Todas
                             </button>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" id="marcar-todas-leidas" disabled>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="marcar-todas-leidas" disabled
+                                style="border-color: #0d6efd; color: #0d6efd;">
                             <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
                         </button>
                     </div>
                 </div>
-                <div class="noti-container" id="notificaciones-lista" style="max-height: 400px; overflow-y: auto;">
+                <div class="noti-container" id="notificaciones-lista" 
+                     style="max-height: 400px; overflow-y: auto; background: #fff;">
                     <!-- Las notificaciones se cargarán aquí dinámicamente -->
                 </div>
             </div>
-            <div class="modal-footer justify-content-between">
-                <button type="button" class="btn btn-outline-danger btn-sm" id="limpiar-notificaciones">
+            <div class="modal-footer justify-content-between" 
+                 style="border-top-color: #dee2e6; background: #fff;">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="limpiar-notificaciones"
+                        style="border-color: #dc3545; color: #dc3545;">
                     <i class="bi bi-trash me-1"></i>Limpiar notificaciones leídas
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"
+                        style="background: #6c757d; border-color: #6c757d; color: white;">
                     <i class="bi bi-x-lg me-1"></i>Cerrar
                 </button>
             </div>
@@ -111,35 +117,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderNotification(noti) {
-        
         const isUnread = !noti.is_read;
         let icon = '<i class="bi bi-bell"></i>';
         let color = 'primary';
         let typeLabel = 'Notificación';
         let extraInfo = '';
         let ticketNumber = noti.ticket_id || '';
-        let notiTitle = noti.title;
-        let notiMessage = noti.message;
+        let notiTitle = noti.title || 'Notificación';
+        let notiMessage = noti.message || 'Nueva notificación recibida';
+
+        // Manejar diferentes tipos de notificaciones
         if (noti.type === 'ticket_commented') {
-            let user = (noti.data && noti.data.commenter_name) || noti.commenter_name || (noti.data && (noti.data.creator || noti.data.commented_by)) || 'Desconocido';
-            let comment = noti.comment || (noti.data && noti.data.comment) || '';
+            icon = '<i class="bi bi-chat-dots"></i>';
+            color = 'info';
+            typeLabel = 'Comentario';
+            let user = (noti.data && noti.data.commenter_name) || noti.commenter_name || 'Usuario';
+            let comment = noti.comment || (noti.data && noti.data.comment) || notiMessage;
             if (comment && comment.length > 50) {
                 comment = comment.substring(0, 50) + '...';
             }
-            notiTitle = `Nuevo comentario en el ticket #${ticketNumber}`;
-            notiMessage = comment ? `"${comment}"` : 'Nuevo comentario en el ticket';
-            // Mostrar "Enviado por: NOMBRE" abajo SIEMPRE
-            extraInfo += `<div class='noti-meta small text-secondary mt-1'>Enviado por: <b>${user}</b></div>`;
+            notiTitle = `Nuevo comentario en ticket #${ticketNumber}`;
+            notiMessage = comment;
+            extraInfo += `<div class='noti-meta small mt-1' style='color: #212529 !important'>Comentario por: <b style='color: #212529 !important'>${user}</b></div>`;
         } else if (noti.type === 'ticket_created') {
-            notiTitle = `Nuevo ticket #${ticketNumber}`;
-            notiMessage = (noti.data && noti.data.description) ? noti.data.description : noti.message;
+            icon = '<i class="bi bi-ticket-detailed"></i>';
+            color = 'success';
+            typeLabel = 'Nuevo Ticket';
+            notiTitle = `Ticket #${ticketNumber} creado`;
+            notiMessage = noti.description || notiMessage;
         } else if (noti.type === 'ticket_updated') {
+            icon = '<i class="bi bi-arrow-repeat"></i>';
+            color = 'warning';
+            typeLabel = 'Ticket Actualizado';
             notiTitle = `Ticket #${ticketNumber} actualizado`;
-            notiMessage = noti.message;
+        } else if (noti.type === 'user_enabled' || noti.type === 'user_disabled' || noti.type === 'user_updated') {
+            icon = '<i class="bi bi-person-gear"></i>';
+            color = 'secondary';
+            typeLabel = 'Usuario';
+            // Ya tiene title y message definidos
         }
+
         // Badge de nuevo
         const newBadge = isUnread ? '<span class="badge bg-danger ms-2">Nuevo</span>' : '';
-        // Mostrar cambios si es actualización
+
+        // Mostrar cambios si es actualización de ticket
         if (noti.type === 'ticket_updated' && noti.data && noti.data.changes) {
             let cambios = '';
             for (const campo in noti.data.changes) {
@@ -152,37 +173,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 extraInfo += `<ul class='noti-changes mb-1 mt-1'>${cambios}</ul>`;
             }
         }
+
         return `
-            <div class="noti-item shadow-sm mb-2 rounded border border-${color} ${isUnread ? 'noti-unread' : ''}" data-id="${noti.id}" style="background: ${isUnread ? '#f8fafd' : '#fff'}; transition: background 0.3s;">
+            <div class="noti-item shadow-sm mb-2 rounded border border-${color} ${isUnread ? 'noti-unread' : ''}" 
+                 data-id="${noti.id}" 
+                 style="background: #fff; border-color: #dee2e6 !important; transition: all 0.3s; padding: 0.75rem;">
                 <div class="d-flex align-items-center gap-2 mb-1">
-                    ${icon}
-                    <span class="fw-bold text-${color}">${typeLabel}</span>
+                    <span style="color: #0d6efd">${icon}</span>
+                    <span class="fw-bold" style="color: #0d6efd">${typeLabel}</span>
                     ${newBadge}
-                    <small class="text-muted ms-auto">${formatDate(noti.created_at)}</small>
+                    <small class="ms-auto" style="color: #212529; font-weight: 500;">${formatDate(noti.created_at)}</small>
                 </div>
                 <div class="noti-content ps-1">
-                    <h6 class="noti-title mb-1">${notiTitle}</h6>
-                    <p class="noti-message mb-1">${notiMessage}</p>
+                    <h6 class="noti-title mb-1 fw-semibold" style="color: #212529 !important;">${notiTitle}</h6>
+                    <p class="noti-message mb-1" style="color: #212529 !important;">${notiMessage}</p>
                     ${extraInfo}
-                    ${noti.data ? `
-                        <div class="noti-meta small text-secondary">
-                            ${noti.data.category ? `<span><i class='bi bi-tag'></i> ${noti.data.category}</span>` : ''}
-                            ${noti.data.creator ? `<span><i class='bi bi-person'></i> ${noti.data.creator}</span>` : ''}
+                    ${noti.data && (noti.data.category || noti.data.creator) ? `
+                        <div class="noti-meta small mt-2" style="color: #212529 !important;">
+                            ${noti.data.category ? `<span style="color: #212529 !important;"><i class='bi bi-tag'></i> ${noti.data.category}</span>` : ''}
+                            ${noti.data.creator ? `<span class="ms-2" style="color: #212529 !important;"><i class='bi bi-person'></i> ${noti.data.creator}</span>` : ''}
                         </div>
                     ` : ''}
                 </div>
                 <div class="noti-actions d-flex gap-2 mt-2">
-                    ${(noti.link || noti.url) ? `
-                        <a href="${noti.link || noti.url}" class="btn btn-sm btn-outline-${color} px-2 py-1">
+                    ${(noti.link || noti.url || (ticketNumber && noti.type.includes('ticket'))) ? `
+                        <a href="${noti.link || noti.url || (ticketNumber ? `/tickets/${ticketNumber}` : '#')}" 
+                           class="btn btn-sm btn-outline-primary px-2 py-1" 
+                           style="border-color: #0d6efd !important; color: #0d6efd !important; background: #fff !important;">
                             <i class="bi bi-box-arrow-up-right me-1"></i>Ver detalles
                         </a>
                     ` : ''}
                     ${isUnread ? `
-                        <button class="btn btn-sm btn-outline-primary mark-read px-2 py-1" data-id="${noti.id}">
+                        <button class="btn btn-sm btn-outline-primary mark-read px-2 py-1" data-id="${noti.id}"
+                                style="border-color: #0d6efd !important; color: #0d6efd !important; background: #fff !important;">
                             <i class="bi bi-check2 me-1"></i>Marcar como leída
                         </button>
                     ` : `
-
+                        <button class="btn btn-sm btn-outline-danger delete-noti px-2 py-1" data-id="${noti.id}"
+                                style="border-color: #dc3545 !important; color: #dc3545 !important; background: #fff !important;">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </button>
                     `}
                 </div>
             </div>
@@ -206,9 +236,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Mostrar todas las notificaciones
                 if (notifications.length === 0) {
                     notiContainer.innerHTML = `
-                        <div class="noti-empty">
-                            <i class="fas fa-bell-slash"></i>
-                            <p>No hay notificaciones</p>
+                        <div class="noti-empty text-center p-4" style="color: #6c757d;">
+                            <i class="bi bi-bell-slash fs-1 mb-2 d-block" style="color: #6c757d;"></i>
+                            <p class="mb-0">No hay notificaciones</p>
                         </div>
                     `;
                 } else {
@@ -406,6 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 16px;
     border-radius: 10px;
     position: relative;
+    border: 1px solid #dee2e6;
 }
 
 .noti-unread {
@@ -428,48 +459,48 @@ document.addEventListener('DOMContentLoaded', function() {
 .noti-title {
     font-size: 1.1em;
     font-weight: 600;
-    color: #212529;
+    color: #212529 !important;
     margin-bottom: 4px;
 }
 
 .noti-message {
     font-size: 0.97em;
-    color: #495057;
+    color: #212529 !important;
     margin-bottom: 4px;
     line-height: 1.4;
 }
 
 .noti-meta {
     font-size: 0.85em;
-    color: #6c757d;
+    color: #212529 !important;
     display: flex;
     gap: 12px;
     margin-top: 4px;
 }
 
 .noti-meta span {
-        display: flex;
-        align-items: center;
+    display: flex;
+    align-items: center;
     gap: 4px;
-    }
+}
 
 .noti-actions {
     display: flex;
     gap: 8px;
     margin-top: 8px;
-    }
+}
 
 .noti-empty {
     text-align: center;
     padding: 32px;
-    color: #6c757d;
-    }
+    color: #6c757d !important;
+}
 
 .noti-empty i {
     font-size: 2.5em;
     margin-bottom: 16px;
-    color: #dee2e6;
-    }
+    color: #6c757d !important;
+}
 
 .noti-filters {
     display: flex;
@@ -501,11 +532,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .noti-changes {
     font-size: 0.95em;
-    color: #444;
+    color: #212529 !important;
     padding-left: 1.2em;
     margin-bottom: 0.5em;
 }
+
 .noti-changes li {
     margin-bottom: 2px;
+    color: #212529 !important;
+}
+
+.noti-changes strong {
+    color: #212529 !important;
 }
 </style>

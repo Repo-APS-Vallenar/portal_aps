@@ -112,6 +112,13 @@
                 @auth
                     {{-- <x-notification-bell /> --}}
                 @endauth
+                
+                <!-- Toggle Modo Oscuro -->
+                <li class="nav-item">
+                    <button class="dark-mode-toggle" id="darkModeToggle" title="Cambiar modo oscuro/claro">
+                        <i class="fas fa-moon" id="darkModeIcon"></i>
+                    </button>
+                </li>
             </ul>
         </div>
     </div>

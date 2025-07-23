@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-//use Illuminate\Support\Facades\Auth; // Removida importación redundante
-use Illuminate\Support\Facades\Auth; // Usamos Auth directamente para evitar conflictos
-use Illuminate\Support\Facades\Log; // Importamos Log para registrar información
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\AuditLog;
 use App\Exports\UsersExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -292,12 +291,27 @@ class UserController extends Controller
                 'User',
                 $user->id
             );
+
+            // Notificar sobre cambios generales (no de estado de bloqueo)
+            $notificationService = app(\App\Services\NotificationService::class);
+            $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
+            foreach ($admins as $admin) {
+                $notificationService->send(
+                    $admin,
+                    new \App\Notifications\UserUpdatedNotification($user, $changes)
+                );
+            }
         }
 
-        // Notificar a admin y superadmin sobre el desbloqueo o bloqueo
+        // Notificar a admin y superadmin SOLO si cambió el estado de bloqueo/desbloqueo
         $notificationService = app(\App\Services\NotificationService::class);
         $admins = \App\Models\User::whereIn('role', ['admin', 'superadmin'])->get();
-        if ($user->is_active && (!$user->locked_until || now()->greaterThan($user->locked_until))) {
+        
+        // Verificar si el usuario pasó de bloqueado a desbloqueado
+        $wasLocked = $original->locked_until && now()->lessThan($original->locked_until);
+        $isNowUnlocked = !$user->locked_until || now()->greaterThan($user->locked_until);
+        
+        if ($wasLocked && $isNowUnlocked) {
             $this->logAudit(
                 'Habilitar Usuario',
                 'Se habilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
@@ -309,7 +323,12 @@ class UserController extends Controller
                 );
             }
         }
-        if ($user->locked_until && now()->lessThan($user->locked_until)) {
+        
+        // Verificar si el usuario pasó de desbloqueado a bloqueado
+        $wasUnlocked = !$original->locked_until || now()->greaterThan($original->locked_until);
+        $isNowLocked = $user->locked_until && now()->lessThan($user->locked_until);
+        
+        if ($wasUnlocked && $isNowLocked) {
             $this->logAudit(
                 'Deshabilitar Usuario',
                 'Se deshabilito el usuario: ' . $user->name . ' (Rol: ' . $user->role . ')'
@@ -449,13 +468,13 @@ class UserController extends Controller
 
     public function profile()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         return view('users.profile', compact('user'));
     }
 
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
@@ -484,7 +503,7 @@ class UserController extends Controller
     public function updatePasswordFromProfile(Request $request)
     {
         try {
-            $user = auth()->user();
+            $user = Auth::user();
             $request->validate([
                 'password' => [
                     'required',
