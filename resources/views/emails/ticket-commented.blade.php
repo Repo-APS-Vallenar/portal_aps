@@ -38,7 +38,7 @@
             <p><strong>¡Hola!</strong></p>
             <p>Se ha añadido un nuevo comentario en el ticket #{{ $ticket->id }}:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $ticket->title }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
                 <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
                 <p><strong>Comentario:</strong> "{{ $comment->comment ?? $comment->content ?? '' }}"</p>
                 <p><strong>Comentado por:</strong> {{ $commentedBy->name ?? '' }}</p>

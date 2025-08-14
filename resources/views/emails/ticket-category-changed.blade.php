@@ -43,7 +43,7 @@
             <p class="saludo">¡Hola!</p>
             <p>La categoría del siguiente ticket ha sido modificada:</p>
             <div class="card">
-                <p><b>Usuario:</b> {{ $ticket->title }}</p>
+                <p><b>Título:</b> {{ $ticket->title }}</p>
                 <p><b>Descripción:</b> {{ $ticket->description }}</p>
                 <p><b>Categoría:</b> de <b>{{ $oldCategory }}</b> a <b>{{ $newCategory }}</b></p>
                 <p>👤 <b>Actualizado por:</b> {{ $updatedBy->name }}</p>

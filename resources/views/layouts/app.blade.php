@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-bs-theme="light" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -242,70 +242,6 @@
         border-top-color: var(--divider-color);
         background-color: var(--bg-secondary) !important;
         border-radius: 0 0 12px 12px !important;
-    }
-
-    /* Botón toggle modo oscuro - Diseño profesional */
-    .dark-mode-toggle {
-        background: var(--surface-color);
-        border: 2px solid var(--border-color);
-        color: var(--text-color);
-        border-radius: 12px;
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        margin-left: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .dark-mode-toggle::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-        transition: left 0.5s ease;
-    }
-
-    .dark-mode-toggle:hover::before {
-        left: 100%;
-    }
-
-    .dark-mode-toggle:hover {
-        background: var(--hover-color);
-        border-color: var(--accent-color);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .dark-mode-toggle i {
-        font-size: 1.1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1;
-    }
-
-    .dark-mode-toggle:hover i {
-        transform: rotate(180deg) scale(1.1);
-        color: var(--accent-color);
-    }
-
-    /* Estados específicos para modo oscuro */
-    [data-theme="dark"] .dark-mode-toggle {
-        background: var(--surface-color);
-        border-color: var(--border-color);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    [data-theme="dark"] .dark-mode-toggle:hover {
-        background: var(--hover-color);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     .navbar .container-fluid {
@@ -860,52 +796,25 @@
     // Inicializar al cargar
     resetSessionTimers();
 
-    // Funcionalidad de modo oscuro
-    function initDarkMode() {
-        const darkModeToggle = document.getElementById('darkModeToggle');
-        const darkModeIcon = document.getElementById('darkModeIcon');
-        
-        // Verificar si hay preferencia guardada
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        // Aplicar tema inicial
-        if (savedTheme) {
-            setTheme(savedTheme);
-        } else if (prefersDark) {
-            setTheme('dark');
-        } else {
-            setTheme('light');
-        }
-        
-        // Event listener para el toggle
-        if (darkModeToggle) {
-            darkModeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                localStorage.setItem('theme', newTheme);
-            });
-        }
-        
-        function setTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            if (darkModeIcon) {
-                if (theme === 'dark') {
-                    darkModeIcon.className = 'fas fa-sun';
-                } else {
-                    darkModeIcon.className = 'fas fa-moon';
-                }
-            }
-        }
+    // Forzar siempre tema claro
+    function forceLight() {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+        document.body.setAttribute('data-bs-theme', 'light');
+        document.body.setAttribute('data-theme', 'light');
+        // Remover cualquier preferencia guardada
+        localStorage.removeItem('theme');
     }
     
-    // Inicializar modo oscuro cuando el DOM esté listo
+    // Aplicar tema claro cuando el DOM esté listo
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initDarkMode);
+        document.addEventListener('DOMContentLoaded', forceLight);
     } else {
-        initDarkMode();
+        forceLight();
     }
+    
+    // Forzar tema claro en cada carga de página
+    window.addEventListener('load', forceLight);
     </script>
 
     @push('scripts')

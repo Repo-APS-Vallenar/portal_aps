@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Mail\UserLockedMail;
 use App\Models\User;
+use App\Services\SecurityLogger;
 class LoginController extends Controller
 {
     use AuthenticatesUsers;
@@ -60,7 +61,20 @@ class LoginController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
+        // Log del intento fallido
+        SecurityLogger::logSecurityEvent(
+            'LOGIN_FAILED',
+            "Intento de login fallido para email: {$request->email}",
+            ['email' => $request->email]
+        );
+
         if ($user && !$user->is_active) {
+            SecurityLogger::logSecurityEvent(
+                'LOGIN_BLOCKED_USER',
+                "Intento de login de usuario deshabilitado: {$user->email}",
+                ['user_id' => $user->id, 'email' => $user->email]
+            );
+            
             throw ValidationException::withMessages([
                 'email' => ['Tu cuenta está deshabilitada. Contacta con el administrador.'],
             ]);
@@ -125,6 +139,14 @@ class LoginController extends Controller
             'description' => "El usuario {$user->name} inició sesión exitosamente.",
             'ip_address' => $request->ip(),
         ]);
+        
+        // Log de éxito
+        SecurityLogger::logSecurityEvent(
+            'LOGIN_SUCCESS',
+            "Login exitoso de usuario: {$user->email}",
+            ['user_id' => $user->id, 'email' => $user->email, 'role' => $user->role]
+        );
+        
         $user->update([
             'login_attempts' => 0,
             'locked_until' => null,
@@ -135,16 +157,29 @@ class LoginController extends Controller
     {
         if ($user->role === 'superadmin') {
             // No incrementar intentos ni bloquear
+            SecurityLogger::logSecurityEvent(
+                'SUPERADMIN_LOGIN_FAILED',
+                "Intento fallido de login de superadmin: {$user->email}",
+                ['user_id' => $user->id, 'email' => $user->email]
+            );
             return;
         }
         $user->login_attempts++;
         $user->last_login_attempt_at = now();
+        
+        SecurityLogger::logSecurityEvent(
+            'USER_LOGIN_FAILED_ATTEMPT',
+            "Intento fallido #{$user->login_attempts} para usuario: {$user->email}",
+            ['user_id' => $user->id, 'email' => $user->email, 'attempts' => $user->login_attempts]
+        );
+        
         AuditLog::create([
             'user_id' => $user->id,
             'action' => 'Intento de inicio fallido',
             'description' => "El usuario {$user->name} intentó iniciar sesión pero falló (intentos: {$user->login_attempts}).",
             'ip_address' => $request->ip(),
         ]);
+        
         if ($user->login_attempts >= self::MAX_ATTEMPTS) {
             $user->locked_until = now()->addMinutes(self::BLOCK_MINUTES);
             $user->login_attempts = 0;

@@ -32,9 +32,20 @@ return [
     |
     */
 
-    'lifetime' => (int) env('SESSION_LIFETIME', 120),
+        /*
+    |--------------------------------------------------------------------------
+    | Session Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify the number of minutes that you wish the session
+    | to be allowed to remain idle before it expires. If you want them
+    | to immediately expire on the browser closing, set that option.
+    |
+    */
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    'lifetime' => env('SESSION_LIFETIME', 60), // Cambiado de 120 a 60 minutos
+
+    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', true), // Expirar al cerrar navegador
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +58,7 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    'encrypt' => env('SESSION_ENCRYPT', true), // Activar encriptación de sesiones
 
     /*
     |--------------------------------------------------------------------------
@@ -169,7 +180,7 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', true), // HTTPS obligatorio en producción
 
     /*
     |--------------------------------------------------------------------------
@@ -182,7 +193,7 @@ return [
     |
     */
 
-    'http_only' => env('SESSION_HTTP_ONLY', true),
+    'http_only' => env('SESSION_HTTP_ONLY', true), // Mantener HttpOnly
 
     /*
     |--------------------------------------------------------------------------
@@ -199,7 +210,7 @@ return [
     |
     */
 
-    'same_site' => env('SESSION_SAME_SITE', 'lax'),
+    'same_site' => env('SESSION_SAME_SITE', 'strict'), // Más restrictivo para seguridad
 
     /*
     |--------------------------------------------------------------------------

@@ -38,7 +38,7 @@
             <p>Hola,</p>
             <p>Se ha creado un nuevo ticket:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $ticket->title }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
                 <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
                 <p><strong>Categoría:</strong> {{ $ticket->category->name ?? 'Sin categoría' }}</p>
                 <p><strong>Creado por:</strong> {{ isset($createdBy) ? $createdBy->name : 'Desconocido' }}</p>

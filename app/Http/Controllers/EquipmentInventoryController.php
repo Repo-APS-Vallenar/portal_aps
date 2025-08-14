@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\EquipmentInventory;
 use App\Models\Ticket;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use App\Exports\EquipmentInventoryExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Location;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class EquipmentInventoryController extends Controller
 {
@@ -60,9 +62,25 @@ class EquipmentInventoryController extends Controller
         return view('equipment-inventory.index', compact('equipment', 'marcas', 'locations'));
     }
 
-    public function show(EquipmentInventory $equipmentInventory)
+    public function show(Request $request, EquipmentInventory $equipmentInventory)
     {
         $tickets = $equipmentInventory->tickets()->latest()->get();
+        
+        // Registrar consulta en auditoría
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Consultar',
+            'description' => "Equipo consultado: {$equipmentInventory->marca} {$equipmentInventory->modelo} (S/N: {$equipmentInventory->numero_serie})",
+            'ip_address' => $request->ip(),
+            'model' => 'EquipmentInventory',
+            'record_id' => $equipmentInventory->id,
+            'data' => json_encode([
+                'marca' => $equipmentInventory->marca,
+                'modelo' => $equipmentInventory->modelo,
+                'numero_serie' => $equipmentInventory->numero_serie
+            ]),
+        ]);
+        
         return view('equipment-inventory.show', compact('equipmentInventory', 'tickets'));
     }
 
@@ -109,6 +127,17 @@ class EquipmentInventoryController extends Controller
 
             $equipment = EquipmentInventory::create($validated);
             Log::info('Equipo creado exitosamente:', ['id' => $equipment->id]);
+
+            // Registrar en auditoría
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'action' => 'Crear',
+                'description' => "Equipo creado: {$equipment->marca} {$equipment->modelo} (S/N: {$equipment->numero_serie})",
+                'ip_address' => $request->ip(),
+                'model' => 'EquipmentInventory',
+                'record_id' => $equipment->id,
+                'data' => json_encode($equipment->toArray()),
+            ]);
 
             return redirect()->route('equipment-inventory.index')
                 ->with('success', 'Equipo agregado exitosamente.');
@@ -168,22 +197,67 @@ class EquipmentInventoryController extends Controller
             'comentarios' => 'nullable|string',
         ]);
 
+        // Guardar datos originales para auditoría
+        $originalData = $equipmentInventory->toArray();
+        
         $equipmentInventory->update($validated);
+
+        // Registrar en auditoría
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Actualizar',
+            'description' => "Equipo actualizado: {$equipmentInventory->marca} {$equipmentInventory->modelo} (S/N: {$equipmentInventory->numero_serie})",
+            'ip_address' => $request->ip(),
+            'model' => 'EquipmentInventory',
+            'record_id' => $equipmentInventory->id,
+            'data' => json_encode([
+                'original' => $originalData,
+                'updated' => $equipmentInventory->fresh()->toArray()
+            ]),
+        ]);
 
         return redirect()->route('equipment-inventory.index')
             ->with('success', 'Equipo actualizado exitosamente.');
     }
 
-    public function destroy(EquipmentInventory $equipmentInventory)
+    public function destroy(Request $request, EquipmentInventory $equipmentInventory)
     {
+        // Guardar datos para auditoría antes de eliminar
+        $equipmentData = $equipmentInventory->toArray();
+        
+        // Registrar en auditoría
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Eliminar',
+            'description' => "Equipo eliminado: {$equipmentInventory->marca} {$equipmentInventory->modelo} (S/N: {$equipmentInventory->numero_serie})",
+            'ip_address' => $request->ip(),
+            'model' => 'EquipmentInventory',
+            'record_id' => $equipmentInventory->id,
+            'data' => json_encode($equipmentData),
+        ]);
+
         $equipmentInventory->delete();
 
         return redirect()->route('equipment-inventory.index')
             ->with('success', 'Equipo eliminado exitosamente.');
     }
 
-    public function export()
+    public function export(Request $request)
     {
+        // Registrar exportación en auditoría
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Exportar',
+            'description' => "Exportación de inventario de equipos realizada",
+            'ip_address' => $request->ip(),
+            'model' => 'EquipmentInventory',
+            'record_id' => null,
+            'data' => json_encode([
+                'export_type' => 'excel',
+                'export_time' => now()->format('Y-m-d H:i:s')
+            ]),
+        ]);
+        
         return Excel::download(new EquipmentInventoryExport, 'inventario-equipos.xlsx');
     }
 

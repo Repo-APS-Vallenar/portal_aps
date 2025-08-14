@@ -19,9 +19,9 @@ use App\Http\Controllers\Admin\ParameterController;
 use App\Http\Controllers\TicketDocumentController;
 use App\Http\Controllers\EquipmentInventoryController;
 
-// Autenticación
+// Autenticación con rate limiting
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('login', [LoginController::class, 'login']);
+Route::post('login', [LoginController::class, 'login'])->middleware('throttle:5,1'); // 5 intentos por minuto
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 // Públicas
@@ -34,29 +34,30 @@ Route::middleware(['auth'])->group(function () {
     // Tickets
     Route::get('tickets/export', [TicketController::class, 'export'])->name('tickets.export');
     Route::get('tickets/kanban', [TicketController::class, 'kanban'])->name('tickets.kanban');
-    Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
+    Route::patch('tickets/{ticket}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus')->middleware('check.ownership:ticket');
     Route::resource('tickets', TicketController::class);
-    Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment');
-    Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments');
-    Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser');
-    Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment');
+    Route::post('tickets/{ticket}/comments', [TicketController::class, 'addComment'])->name('tickets.addComment')->middleware('check.ownership:ticket');
+    Route::get('tickets/{ticket}/comments', [TicketController::class, 'getComments'])->name('tickets.getComments')->middleware('check.ownership:ticket');
+    Route::post('/tickets/{ticket}/notify', [NotificationController::class, 'notifyTicketUser'])->name('tickets.notifyUser')->middleware('check.ownership:ticket');
+    Route::delete('/tickets/{ticket}/comments/{comment}', [TicketController::class, 'deleteComment'])->name('tickets.deleteComment')->middleware('check.ownership:comment');
 
-    // Rutas para documentos de tickets (solo DELETE y GET protegidas)
-    Route::delete('/tickets/documents/{document}', [TicketDocumentController::class, 'destroy'])->name('tickets.documents.destroy');
-    Route::get('/tickets/documents/{document}/download', [TicketDocumentController::class, 'download'])->name('tickets.documents.download');
+    // Rutas para documentos de tickets - PROTEGIDAS
+    Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store')->middleware('check.ownership:ticket');
+    Route::delete('/tickets/documents/{document}', [TicketDocumentController::class, 'destroy'])->name('tickets.documents.destroy')->middleware('check.ownership:document');
+    Route::get('/tickets/documents/{document}/download', [TicketDocumentController::class, 'download'])->name('tickets.documents.download')->middleware('check.ownership:document');
 
-    // Comentarios
-    Route::get('/comments/{comment}/edit', [TicketCommentController::class, 'edit'])->name('comments.edit');
-    Route::put('/comments/{comment}', [TicketCommentController::class, 'update'])->name('comments.update');
-    Route::delete('/comments/{comment}', [TicketCommentController::class, 'destroy'])->name('comments.destroy');
+    // Comentarios - PROTEGIDOS
+    Route::get('/comments/{comment}/edit', [TicketCommentController::class, 'edit'])->name('comments.edit')->middleware('check.ownership:comment');
+    Route::put('/comments/{comment}', [TicketCommentController::class, 'update'])->name('comments.update')->middleware('check.ownership:comment');
+    Route::delete('/comments/{comment}', [TicketCommentController::class, 'destroy'])->name('comments.destroy')->middleware('check.ownership:comment');
 
-    // Usuarios
+    // Usuarios con rate limiting para operaciones críticas
     Route::get('/admin/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/admin/users/create', [UserController::class, 'create'])->name('users.create');
-    Route::post('/admin/users', [UserController::class, 'store'])->name('users.store');
-    Route::patch('/admin/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
-    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::put('/admin/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.updatePassword');
+    Route::post('/admin/users', [UserController::class, 'store'])->name('users.store')->middleware('throttle:5,10'); // 5 creaciones cada 10 min
+    Route::patch('/admin/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle')->middleware('throttle:10,5'); // 10 toggles cada 5 min
+    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('users.update')->middleware('throttle:10,5');
+    Route::put('/admin/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.updatePassword')->middleware('throttle:3,10'); // 3 cambios de contraseña cada 10 min
 
     // Auditoría
     Route::get('/admin/audit', [AuditLogController::class, 'index'])->name('audit.index');
@@ -71,14 +72,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/audit/export/pdf', [AuditLogController::class, 'exportPdf'])->name('audit.export.pdf');
     Route::post('/admin/audit/export-selected', [AuditLogController::class, 'exportSelected'])->name('audit.export.selected');
 
-    // Notificaciones
+    // Notificaciones con rate limiting y protección de propiedad
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::post('/notifications/cleanup', [NotificationController::class, 'cleanup'])->name('notifications.cleanup');
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read')->middleware(['throttle:10,1', 'check.ownership:notification']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read')->middleware('throttle:5,1');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy')->middleware(['throttle:10,1', 'check.ownership:notification']);
+    Route::post('/notifications/cleanup', [NotificationController::class, 'cleanup'])->name('notifications.cleanup')->middleware('throttle:3,5');
 
-    // Perfil
+    // Perfil - PROTEGIDO
     Route::get('/perfil', [UserController::class, 'profile'])->name('profile');
     Route::post('/perfil', [UserController::class, 'updateProfile'])->name('profile.update');
     Route::post('/perfil/password', [UserController::class, 'updatePasswordFromProfile'])->name('profile.password');
@@ -104,31 +105,63 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/equipment-inventory/search', [EquipmentInventoryController::class, 'search'])->name('equipment-inventory.search');
 });
 
-// Ruta de subida de documentos SIN middleware auth para prueba
-Route::post('/tickets/{ticket}/documents', [TicketDocumentController::class, 'store'])->name('tickets.documents.store');
-
-// Desarrollo
+// Desarrollo - Solo en local con autenticación de superadmin
 Route::middleware(['auth'])->group(function () {
     Route::get('/verificar-usuario', function () {
+        // Triple verificación de seguridad
         if (!app()->environment('local')) {
-            abort(404);
+            abort(404, 'Not found');
         }
-        $user = User::where('email', 'admin@admin.com')->first();
-        if (!$user) {
-            return 'Usuario no encontrado.';
+        
+        $user = Auth::user();
+        if (!$user || $user->role !== 'superadmin') {
+            abort(403, 'Unauthorized');
         }
-        return [
-            'email' => $user->email,
-            'role' => $user->role,
-            'is_active' => $user->is_active,
-            'password_encriptada' => Hash::needsRehash($user->password) ? 'No' : 'Sí',
-        ];
-    });
+        
+        $adminUser = User::where('email', 'admin@admin.com')->first();
+        if (!$adminUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+        
+        return response()->json([
+            'email' => $adminUser->email,
+            'role' => $adminUser->role,
+            'is_active' => $adminUser->is_active,
+            'password_hash_status' => Hash::needsRehash($adminUser->password) ? 'Needs rehash' : 'OK',
+            'timestamp' => now()->toISOString()
+        ]);
+    })->middleware('throttle:3,10'); // 3 intentos cada 10 minutos
 });
 
 // Ruta para refrescar el token CSRF
 Route::get('/refresh-csrf', function () {
     return response()->json(['csrfToken' => csrf_token()]);
 });
+
+// Ruta de prueba para headers de seguridad
+Route::get('/test-headers', function () {
+    $response = response()->json([
+        'message' => 'Headers de seguridad aplicados',
+        'timestamp' => now()->toISOString(),
+        'environment' => app()->environment()
+    ]);
+    
+    // Aplicar headers manualmente para esta prueba
+    $response->header('X-Frame-Options', 'DENY');
+    $response->header('X-Content-Type-Options', 'nosniff');
+    $response->header('X-XSS-Protection', '1; mode=block');
+    $response->header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-ancestors 'none';");
+    
+    return $response;
+});
+
+// Ruta de prueba para rate limiting (SIN CSRF)
+Route::post('/test-rate-limit', function () {
+    return response()->json([
+        'message' => 'Rate limit test',
+        'timestamp' => now()->toISOString(),
+        'ip' => request()->ip()
+    ]);
+})->middleware('throttle:3,1'); // 3 intentos por minuto
 
 require __DIR__.'/channels.php';

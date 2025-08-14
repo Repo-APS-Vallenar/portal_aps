@@ -20,13 +20,7 @@ class AuditLogController extends Controller
         $query = AuditLog::with('user')->latest();
 
         if ($request->filled('search')) {
-            $search = strtolower($request->search);
-            $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(action) LIKE ?', ["%$search%"])
-                    ->orWhereRaw('LOWER(description) LIKE ?', ["%$search%"])
-                    ->orWhereRaw('LOWER(ip_address::text) LIKE ?', ["%$search%"])
-                    ->orWhereHas('user', fn($q2) => $q2->whereRaw('LOWER(name) LIKE ?', ["%$search%"]));
-            });
+            $query = $this->applySearchFilters($query, $request->search);
         }
 
         $logs = $query->get();
@@ -240,5 +234,20 @@ class AuditLogController extends Controller
             'logs' => $logs,
             'accionesUnicas' => $accionesUnicas
         ]);
+    }
+
+    /**
+     * Aplicar filtros de búsqueda de forma segura
+     * Evita inyección SQL usando parámetros vinculados
+     */
+    private function applySearchFilters($query, $searchTerm)
+    {
+        $searchTerm = strtolower(trim($searchTerm));
+        return $query->where(function ($q) use ($searchTerm) {
+            $q->where('action', 'ILIKE', "%{$searchTerm}%")
+                ->orWhere('description', 'ILIKE', "%{$searchTerm}%")
+                ->orWhere('ip_address', 'ILIKE', "%{$searchTerm}%")
+                ->orWhereHas('user', fn($q2) => $q2->where('name', 'ILIKE', "%{$searchTerm}%"));
+        });
     }
 }

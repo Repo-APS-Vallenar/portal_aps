@@ -38,7 +38,7 @@
             <p>Hola,</p>
             <p>Se ha agregado un nuevo adjunto al siguiente ticket:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $ticket->title }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
                 <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
                 <p><strong>Adjuntado por:</strong> {{ $attachedBy->name }}</p>
             </div>

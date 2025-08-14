@@ -8,5 +8,6 @@ class VerifyCsrfToken extends Middleware
 {
     protected $except = [
         'tickets/*/documents',
+        'test-rate-limit',  // Ruta de prueba para rate limiting
     ];
 } 

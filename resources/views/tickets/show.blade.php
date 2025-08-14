@@ -164,7 +164,15 @@
                                             <div class="text-muted small text-truncate" style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">{{ $document->description }}</div>
                                         @endif
                                         @if ($document->user && $document->user->name)
-                                            <div class="text-muted small">Subido por: <strong>{{ $document->user->name }}</strong> el {{ $document->created_at->format('d/m/Y H:i') }}</div>
+                                            <div class="small" style="color: #6c757d; font-weight: 500;">Subido por: <strong style="color: #495057; font-weight: 600;">{{ $document->user->name }}</strong> el {{ $document->created_at->format('d/m/Y H:i') }}</div>
+                                            <style>
+                                                [data-bs-theme="dark"] .small {
+                                                    color: #adb5bd !important;
+                                                }
+                                                [data-bs-theme="dark"] .small strong {
+                                                    color: #e9ecef !important;
+                                                }
+                                            </style>
                                         @endif
                                     </div>
                                 </div>

@@ -54,7 +54,7 @@
                         <!-- Tabla (visible solo en pantallas medianas y grandes) -->
                         <div class="table-responsive d-none d-md-block">
                             <table class="table table-hover table-striped table-bordered table-sm">
-                                <thead class="bg-dark text-white">
+                                <thead style="background-color: #212529 !important; color: #ffffff !important;">
                                     <tr>
                                         @php
                                             $columns = [
@@ -70,7 +70,7 @@
                                             $currentDirection = request('direction', 'asc');
                                         @endphp
                                         @foreach($columns as $col => $label)
-                                            <th>
+                                            <th style="background-color: #212529 !important; color: #ffffff !important; font-weight: 600;">
                                                 @php
                                                     $newDirection = ($currentSort === $col && $currentDirection === 'asc') ? 'desc' : 'asc';
                                                     $icon = '';
@@ -78,12 +78,12 @@
                                                         $icon = $currentDirection === 'asc' ? '↑' : '↓';
                                                     }
                                                 @endphp
-                                                <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:inherit;">
+                                                <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:#ffffff !important;">
                                                     {{ $label }} {!! $icon !!}
                                                 </a>
                                             </th>
                                         @endforeach
-                                        <th>Acciones</th>
+                                        <th style="background-color: #212529 !important; color: #ffffff !important; font-weight: 600;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>

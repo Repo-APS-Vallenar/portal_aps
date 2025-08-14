@@ -11,7 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Middleware global de headers de seguridad
+        $middleware->web(append: [
+            \App\Http\Middleware\AddSecurityHeaders::class,
+        ]);
+        
+        // Registrar middleware de alias
+        $middleware->alias([
+            'check.ownership' => \App\Http\Middleware\CheckResourceOwnership::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

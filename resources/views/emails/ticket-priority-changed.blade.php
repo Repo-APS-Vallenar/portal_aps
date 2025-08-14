@@ -42,7 +42,7 @@
             <p>Hola,</p>
             <p>La prioridad del siguiente ticket ha sido modificada:</p>
             <div class="datacard">
-                <p><strong>Usuario:</strong> {{ $ticket->title }}</p>
+                <p><strong>Título:</strong> {{ $ticket->title }}</p>
                 <p><strong>Descripción:</strong> {{ $ticket->description }}</p>
                 <p><strong>Categoría:</strong> {{ $ticket->category->name ?? 'Sin categoría' }}</p>
                 <p><strong>Actualizado por:</strong> {{ $updatedBy->name }}</p>

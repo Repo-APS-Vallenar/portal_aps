@@ -7,18 +7,77 @@ use App\Models\TicketDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Services\SecurityLogger;
 
 class TicketDocumentController extends Controller
 {
     public function store(Request $request, Ticket $ticket)
     {
+        // Verificar permisos - solo el creador, asignado o admins pueden subir documentos
+        $user = Auth::user();
+        if (!$user) {
+            abort(401, 'No autenticado');
+        }
+
+        $canUpload = $user->role === 'admin' || 
+                    $user->role === 'superadmin' || 
+                    $ticket->created_by === $user->id || 
+                    $ticket->assigned_to === $user->id;
+
+        if (!$canUpload) {
+            SecurityLogger::logUnauthorizedAccess(
+                "ticket_document_upload:ticket_{$ticket->id}",
+                'upload'
+            );
+            abort(403, 'No tienes permisos para subir documentos a este ticket');
+        }
+
         $request->validate([
-            'document' => 'required|image|max:15240', // Solo imágenes, máximo 10MB
+            'document' => [
+                'required',
+                'file',
+                'max:10240', // Máximo 10MB
+                'mimes:jpeg,jpg,png,pdf,doc,docx,txt,xlsx,xls', // Tipos permitidos
+                function ($attribute, $value, $fail) {
+                    // Verificar contenido real del archivo
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mimeType = finfo_file($finfo, $value->getPathname());
+                    finfo_close($finfo);
+                    
+                    $allowedMimes = [
+                        'image/jpeg', 'image/jpg', 'image/png',
+                        'application/pdf',
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'text/plain',
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    ];
+                    
+                    if (!in_array($mimeType, $allowedMimes)) {
+                        $fail('El archivo no es de un tipo permitido.');
+                    }
+                }
+            ],
             'description' => 'nullable|string|max:255'
+        ], [
+            'document.required' => 'Debe seleccionar un archivo.',
+            'document.max' => 'El archivo no puede ser mayor a 10MB.',
+            'document.mimes' => 'Solo se permiten archivos: JPEG, PNG, PDF, DOC, DOCX, TXT, XLS, XLSX.',
+            'description.max' => 'La descripción no puede tener más de 255 caracteres.'
         ]);
 
         $file = $request->file('document');
-        $path = $file->store('ticket-documents/' . $ticket->id, 'public');
+        
+        // Sanitizar nombre del archivo
+        $originalName = $file->getClientOriginalName();
+        $sanitizedName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+        $sanitizedName = substr($sanitizedName, 0, 100); // Limitar longitud
+        
+        // Generar nombre único para evitar colisiones
+        $uniqueName = time() . '_' . $sanitizedName;
+        
+        $path = $file->storeAs('ticket-documents/' . $ticket->id, $uniqueName, 'public');
 
         $document = TicketDocument::create([
             'ticket_id' => $ticket->id,
@@ -29,6 +88,14 @@ class TicketDocumentController extends Controller
             'file_size' => $file->getSize(),
             'description' => $request->description
         ]);
+        
+        // Log del upload de archivo
+        SecurityLogger::logFileUpload(
+            $file->getClientOriginalName(),
+            $file->getClientMimeType(),
+            $file->getSize(),
+            "ticket_{$ticket->id}"
+        );
 
         // Emitir evento broadcast
         $documentData = $document->toArray();

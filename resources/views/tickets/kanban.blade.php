@@ -362,7 +362,7 @@
                     @if (session('error'))
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
-                            showAlert(@json(session('error')), 'danger', document.querySelector('.container-fluid'), 5000);
+                            showAlert({!! json_encode(session('error')) !!}, 'danger', document.querySelector('.container-fluid'), 5000);
                         });
                     </script>
                     @endif

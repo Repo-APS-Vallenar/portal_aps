@@ -159,7 +159,7 @@
                         @else
                         <div class="table-responsive d-none d-md-block">
                             <table class="table table-hover">
-                                <thead>
+                                <thead style="background-color: var(--color-primary) !important;">
                                     <tr>
                                         @php
                                         $columns = [
@@ -175,7 +175,7 @@
                                         $currentDirection = request('direction', 'desc');
                                         @endphp
                                         @foreach($columns as $col => $label)
-                                        <th>
+                                        <th style="background-color: var(--color-primary) !important; color: white !important; font-weight: 600 !important;">
                                             @php
                                             $newDirection = ($currentSort === $col && $currentDirection === 'asc') ? 'desc' : 'asc';
                                             $icon = '';
@@ -183,12 +183,12 @@
                                             $icon = $currentDirection === 'asc' ? '↑' : '↓';
                                             }
                                             @endphp
-                                            <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:inherit;">
+                                            <a href="{{ request()->fullUrlWithQuery(['sort' => $col, 'direction' => $newDirection, 'page' => null]) }}" style="text-decoration:none; color:white !important;">
                                                 {{ $label }} {!! $icon !!}
                                             </a>
                                         </th>
                                         @endforeach
-                                        <th>Acciones</th>
+                                        <th style="background-color: var(--color-primary) !important; color: white !important; font-weight: 600 !important;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>

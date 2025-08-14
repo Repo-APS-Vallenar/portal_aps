@@ -103,7 +103,15 @@ class UserController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:12',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]/',
+                'different:email',
+                'different:name'
+            ],
         ];
 
         // Solo el superadmin puede asignar roles
@@ -400,7 +408,20 @@ class UserController extends Controller
         }
 
         $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:12',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]/',
+                'different:email',
+                'different:name'
+            ],
+        ], [
+            'password.min' => 'La contraseña debe tener al menos 12 caracteres.',
+            'password.regex' => 'La contraseña debe contener al menos: una mayúscula, una minúscula, un número y un símbolo especial (@$!%*#?&).',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+            'password.different' => 'La contraseña no puede ser igual al email o nombre.'
         ]);
 
         $user->password = Hash::make($request->password);
